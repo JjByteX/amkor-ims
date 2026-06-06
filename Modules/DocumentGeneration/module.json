@@ -1,0 +1,11 @@
+{
+    "name": "DocumentGeneration",
+    "alias": "documentgeneration",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\DocumentGeneration\\Providers\\DocumentGenerationServiceProvider"
+    ],
+    "files": []
+}

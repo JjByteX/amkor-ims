@@ -1,0 +1,30 @@
+{
+    "name": "nwidart/iatapayments",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\IataPayments\\": "app/",
+            "Modules\\IataPayments\\Database\\Factories\\": "database/factories/",
+            "Modules\\IataPayments\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\IataPayments\\Tests\\": "tests/"
+        }
+    }
+}

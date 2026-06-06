@@ -1,0 +1,11 @@
+{
+    "name": "BirCompliance",
+    "alias": "bircompliance",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\BirCompliance\\Providers\\BirComplianceServiceProvider"
+    ],
+    "files": []
+}

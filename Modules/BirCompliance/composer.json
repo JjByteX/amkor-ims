@@ -1,0 +1,30 @@
+{
+    "name": "nwidart/bircompliance",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\BirCompliance\\": "app/",
+            "Modules\\BirCompliance\\Database\\Factories\\": "database/factories/",
+            "Modules\\BirCompliance\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\BirCompliance\\Tests\\": "tests/"
+        }
+    }
+}

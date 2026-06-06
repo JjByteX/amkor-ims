@@ -1,0 +1,11 @@
+{
+    "name": "Disbursement",
+    "alias": "disbursement",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Disbursement\\Providers\\DisbursementServiceProvider"
+    ],
+    "files": []
+}

@@ -1,0 +1,229 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600&family=Inter:wght@400;600&display=swap');
+@import "tailwindcss";
+
+/* ============================================================
+   AMKOR TRAVEL & TOURS INC. — DESIGN TOKENS
+   Source of truth for all UI. No module overrides these.
+   ============================================================ */
+
+:root {
+    /* --- Brand Colors --- */
+    --color-primary:        #3F9800;
+    --color-primary-dark:   #2E6F00;
+
+    /* --- Neutrals --- */
+    --color-bg:             #f8f8f8;
+    --color-card:           #FFFFFF;
+    --color-text:           #0F172A;
+    --color-text-muted:     #6B7280;   /* labels, captions, secondary text */
+
+    /* --- Status --- */
+    --color-success:        #22C55E;
+    --color-warning:        #F59E0B;
+    --color-error:          #EF4444;
+    --color-info:           #3B82F6;
+
+    /* --- Optional Accent --- */
+    --color-accent:         #38BDF8;
+
+    /* --- Typography --- */
+    --font-heading:         'Manrope', sans-serif;
+    --font-body:            'Inter', sans-serif;
+    --font-size-heading:    20px;
+    --font-size-body:       16px;
+    --font-size-small:      13px;
+    --font-weight-normal:   400;
+    --font-weight-semibold: 600;
+
+    /* --- Spacing (8px grid) --- */
+    --space-1:  8px;
+    --space-2:  16px;
+    --space-3:  24px;
+    --space-4:  32px;
+    --space-5:  40px;
+    --space-6:  48px;
+
+    /* --- Page & Card spacing tokens --- */
+    --space-page:    var(--space-3);   /* 24px — outer page edge on all sides */
+    --space-card:    var(--space-2);   /* 16px — card internal padding        */
+    --space-section: var(--space-2);   /* 16px — vertical gap between sections */
+
+    /* --- Sidebar inner padding (sides only) ---
+       12px = divisible by 4, gives breathing room without being as wide as --space-2.
+       Nav items still get their own left/right px-2 (8px) on top of this, so
+       icon/text never touches the sidebar edge.
+    */
+    --space-sidebar-x: 12px;
+
+    /* --- Border Radius --- */
+    --radius-md: 8px;
+    --radius-lg: 8px;
+
+    /* --- 4-Layer Card Shadow (always black, always layered) --- */
+    --shadow-card:
+        0 4px  6px -6px rgba(0, 0, 0, 0.015),
+        0 3px  4px -4px rgba(0, 0, 0, 0.012),
+        0 2px  2px -2px rgba(0, 0, 0, 0.010),
+        0 1px  1px -1px rgba(0, 0, 0, 0.008);
+
+    /* --- Container Border ---
+       Single token used by Card, DataTable, Input, Select, Sidebar border-right,
+       and the account-row border-top. Change once → all containers update.
+    */
+    --border-container: 1.5px solid #E5E7EB;
+    --color-border:     #E5E7EB;
+
+    /* --- Hover surface tint --- */
+    --color-hover: rgba(0, 0, 0, 0.04);
+
+    /* --- Component Dimensions --- */
+    --height-btn:              40px;
+    --height-btn-sm:           32px;
+    --height-input:            40px;
+    --height-table-row:        48px;
+    --height-table-header:     44px;
+    --width-sidebar:           240px;
+    --width-sidebar-collapsed: 64px;
+    --height-header:           60px;
+    --width-modal:             480px;
+    --width-modal-wide:        720px;
+}
+
+/* ── Dark mode — Excel "Black" theme inspiration ────────────────────────────
+   bg:    #0a0a0a — true near-black canvas
+   card:  #141414 — slightly elevated surface
+   text:  #e8e8e8 — warm off-white (not blinding)
+   muted: #9a9a9a — visible secondary text on #141414 (increased from gray-500)
+   border:#2a2a2a — tight charcoal separator
+   hover: rgba(255,255,255,0.05)
+*/
+.dark {
+    --color-primary:        #4DBA00;
+    --color-primary-dark:   #3F9800;
+    --color-bg:             #0a0a0a;
+    --color-card:           #141414;
+    --color-text:           #e8e8e8;
+    --color-text-muted:     #9a9a9a;
+    --color-success:        #34D399;
+    --color-warning:        #FBBF24;
+    --color-error:          #F87171;
+    --color-info:           #60A5FA;
+    --color-accent:         #7DD3FC;
+
+    --border-container: 1.5px solid #2a2a2a;
+    --color-border:     #2a2a2a;
+    --color-hover:      rgba(255, 255, 255, 0.05);
+}
+
+/* ============================================================
+   GLOBAL BASE STYLES
+   ============================================================ */
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font-family: var(--font-body);
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-normal);
+    color: var(--color-text);
+    background-color: var(--color-bg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-heading);
+    color: var(--color-text);
+}
+
+/* ============================================================
+   UTILITY HELPERS
+   ============================================================ */
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* Smooth dark-mode transition on all elements */
+*, *::before, *::after {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-duration: 0.15s;
+    transition-timing-function: ease;
+}
+
+/* ============================================================
+   COLLAPSED SIDEBAR TOOLTIPS — instant, no animation
+   Pure CSS via data-tooltip attribute.
+   Only active when sidebar is collapsed (parent has data-collapsed).
+   ============================================================ */
+[data-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+    white-space: nowrap;
+
+    background-color: var(--color-text);
+    color: var(--color-card);
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1;
+    padding: 5px 9px;
+    border-radius: var(--radius-md);
+    pointer-events: none;
+    z-index: 9999;
+
+    /* Instant — no transition, no delay */
+    opacity: 0;
+    visibility: hidden;
+}
+
+[data-tooltip]:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ============================================================
+   COLLAPSED LOGO → EXPAND ICON ON HOVER
+   The sidebar logo wrapper gets .sidebar-logo-toggle class.
+   Inside it: .sidebar-logo-brand (AT mark) and .sidebar-logo-expand (icon).
+   On hover the brand hides and the expand icon shows — pure CSS, no JS,
+   no animation (matches the instant tooltip behaviour).
+   ============================================================ */
+.sidebar-logo-toggle .sidebar-logo-expand {
+    display: none;
+}
+
+.sidebar-logo-toggle:hover .sidebar-logo-brand {
+    display: none;
+}
+
+.sidebar-logo-toggle:hover .sidebar-logo-expand {
+    display: flex;
+}

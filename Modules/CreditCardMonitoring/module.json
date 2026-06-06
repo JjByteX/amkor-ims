@@ -1,0 +1,11 @@
+{
+    "name": "CreditCardMonitoring",
+    "alias": "creditcardmonitoring",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\CreditCardMonitoring\\Providers\\CreditCardMonitoringServiceProvider"
+    ],
+    "files": []
+}

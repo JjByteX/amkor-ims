@@ -1,0 +1,30 @@
+{
+    "name": "nwidart/creditcardmonitoring",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\CreditCardMonitoring\\": "app/",
+            "Modules\\CreditCardMonitoring\\Database\\Factories\\": "database/factories/",
+            "Modules\\CreditCardMonitoring\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\CreditCardMonitoring\\Tests\\": "tests/"
+        }
+    }
+}

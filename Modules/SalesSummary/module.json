@@ -1,0 +1,11 @@
+{
+    "name": "SalesSummary",
+    "alias": "salessummary",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\SalesSummary\\Providers\\SalesSummaryServiceProvider"
+    ],
+    "files": []
+}

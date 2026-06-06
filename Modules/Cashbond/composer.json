@@ -1,0 +1,30 @@
+{
+    "name": "nwidart/cashbond",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Cashbond\\": "app/",
+            "Modules\\Cashbond\\Database\\Factories\\": "database/factories/",
+            "Modules\\Cashbond\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\Cashbond\\Tests\\": "tests/"
+        }
+    }
+}

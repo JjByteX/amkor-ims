@@ -1,0 +1,38 @@
+# ─── PHASE 4 — GMAIL SMTP CONFIGURATION ─────────────────────────────────────
+#
+# HOW TO SET UP GMAIL SMTP
+# ─────────────────────────
+# 1. Log in to the Gmail account that will send system notifications.
+# 2. Enable 2-Step Verification:
+#    https://myaccount.google.com/security
+# 3. Generate an App Password:
+#    https://myaccount.google.com/apppasswords
+#    App name: "Amkor IMS"  → copy the 16-character password
+# 4. Replace the placeholder values below with your actual credentials.
+# 5. Paste these lines into your .env file (replace the existing MAIL_ lines).
+#
+# DEVELOPMENT (no real email sent — writes to storage/logs/laravel.log):
+#   MAIL_MAILER=log
+#
+# PRODUCTION (real Gmail sending):
+#   MAIL_MAILER=smtp
+#   ...fill in values below...
+#
+# ─────────────────────────────────────────────────────────────────────────────
+
+MAIL_MAILER=log
+MAIL_SCHEME=tls
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your-gmail-address@gmail.com
+MAIL_PASSWORD=your-16-char-app-password
+MAIL_FROM_ADDRESS=your-gmail-address@gmail.com
+MAIL_FROM_NAME="Amkor Travel & Tours IMS"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Keep MAIL_MAILER=log while developing Phase 4.
+# Switch to MAIL_MAILER=smtp only when testing with real Gmail credentials.
+# The scheduler command (visa:send-payment-reminders) and the manual
+# "Send Payment Request" button both use the queue (QUEUE_CONNECTION=database),
+# so run `php artisan queue:work` in a second terminal when testing.
+# ─────────────────────────────────────────────────────────────────────────────

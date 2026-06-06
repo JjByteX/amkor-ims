@@ -1,0 +1,11 @@
+{
+    "name": "IataPayments",
+    "alias": "iatapayments",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\IataPayments\\Providers\\IataPaymentsServiceProvider"
+    ],
+    "files": []
+}

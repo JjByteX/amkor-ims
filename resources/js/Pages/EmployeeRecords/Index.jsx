@@ -1,0 +1,295 @@
+import { useState } from 'react';
+import { router, usePage } from '@inertiajs/react';
+import {
+    Plus, Search, Users, UserCheck, Clock, UserX,
+    AlertTriangle, Download, Eye,
+} from 'lucide-react';
+import AppShell from '../../Components/Layout/AppShell';
+import PageHeader from '../../Components/Shared/PageHeader';
+import Card from '../../Components/UI/Card';
+import Button from '../../Components/UI/Button';
+import Badge from '../../Components/UI/Badge';
+import DataTable from '../../Components/Shared/DataTable';
+import Input from '../../Components/UI/Input';
+import Select from '../../Components/UI/Select';
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+const fmt = (d) =>
+    d ? new Date(d).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+
+const STATUS_VARIANT = {
+    probationary: 'warning',
+    regular:      'success',
+    resigned:     'neutral',
+    terminated:   'error',
+};
+
+// ── Stat card ─────────────────────────────────────────────────────────────────
+
+function StatCard({ icon: Icon, label, value, color = 'var(--color-text)' }) {
+    return (
+        <Card>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                <div style={{
+                    width: 40, height: 40,
+                    borderRadius: 'var(--radius-md)',
+                    background: 'var(--color-bg)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0,
+                }}>
+                    <Icon size={18} style={{ color }} />
+                </div>
+                <div>
+                    <div className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)', opacity: 0.55 }}>
+                        {label}
+                    </div>
+                    <div className="font-heading font-semibold" style={{ fontSize: 'var(--font-size-heading)', color }}>
+                        {value}
+                    </div>
+                </div>
+            </div>
+        </Card>
+    );
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
+
+export default function EmployeeIndex({
+    employees,
+    stats,
+    regularizationDue,
+    filters,
+    statuses,
+    departments,
+    canManage,
+}) {
+    const { flash } = usePage().props;
+    const [searchInput, setSearchInput] = useState(filters.search ?? '');
+
+    function applyFilter(overrides = {}) {
+        router.get(
+            route('employees.index'),
+            { ...filters, search: searchInput, ...overrides },
+            { preserveState: true, preserveScroll: true }
+        );
+    }
+
+    function handleSearchKey(e) {
+        if (e.key === 'Enter') applyFilter();
+    }
+
+    function clearFilters() {
+        setSearchInput('');
+        router.get(route('employees.index'), {}, { preserveState: false });
+    }
+
+    const hasActiveFilters = filters.search || filters.status || filters.dept;
+
+    const columns = [
+        {
+            key: 'name',
+            label: 'Employee',
+            render: (row) => (
+                <div>
+                    <div className="font-body font-semibold text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-small)' }}>
+                        {row.last_name}, {row.first_name} {row.middle_name ? row.middle_name[0] + '.' : ''}
+                    </div>
+                    <div className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)', opacity: 0.5 }}>
+                        {row.employee_code ?? '—'}
+                    </div>
+                </div>
+            ),
+        },
+        {
+            key: 'position',
+            label: 'Position',
+            render: (row) => (
+                <div>
+                    <div className="font-body text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-small)' }}>
+                        {row.position}
+                    </div>
+                    <div className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)', opacity: 0.5 }}>
+                        {row.department ?? '—'}
+                    </div>
+                </div>
+            ),
+        },
+        {
+            key: 'branch',
+            label: 'Branch',
+            render: (row) => (
+                <span className="font-body text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-small)' }}>
+                    {row.branch?.name ?? '—'}
+                </span>
+            ),
+        },
+        {
+            key: 'date_hired',
+            label: 'Date Hired',
+            render: (row) => (
+                <span className="font-body text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-small)' }}>
+                    {fmt(row.date_hired)}
+                </span>
+            ),
+        },
+        {
+            key: 'employment_status',
+            label: 'Status',
+            render: (row) => (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
+                    <Badge variant={STATUS_VARIANT[row.employment_status] ?? 'neutral'}>
+                        {statuses[row.employment_status] ?? row.employment_status}
+                    </Badge>
+                    {/* Regularization due warning */}
+                    {row.employment_status === 'probationary' && row.date_hired &&
+                        new Date(row.date_hired) <= new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000) &&
+                        !row.regularization_date && (
+                            <span style={{ fontSize: 11, color: 'var(--color-warning)', display: 'flex', alignItems: 'center', gap: 3 }}>
+                                <AlertTriangle size={11} /> Reg. due
+                            </span>
+                        )
+                    }
+                </div>
+            ),
+        },
+        {
+            key: 'sil',
+            label: 'SIL',
+            render: (row) => {
+                const remaining = Math.max(0, (row.sil_total ?? 5) - (row.sil_used ?? 0));
+                return (
+                    <span className="font-body text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-small)' }}>
+                        {remaining} / {row.sil_total ?? 5}
+                    </span>
+                );
+            },
+        },
+        {
+            key: 'actions',
+            label: '',
+            render: (row) => (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-1)' }}>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        icon={Eye}
+                        onClick={() => router.get(route('employees.show', row.id))}
+                    >
+                        View
+                    </Button>
+                </div>
+            ),
+        },
+    ];
+
+    return (
+        <AppShell>
+            <div className="flex flex-col flex-1 min-h-0" style={{ gap: 'var(--space-section)' }}>
+
+                {/* Flash */}
+                {flash?.message && (
+                    <div className="font-body" style={{
+                        padding: 'var(--space-2)',
+                        background: flash.type === 'success' ? 'var(--color-success)' : flash.type === 'error' ? 'var(--color-error)' : 'var(--color-info)',
+                        color: '#fff',
+                        fontSize: 'var(--font-size-small)',
+                        borderRadius: 'var(--radius-md)',
+                    }}>
+                        {flash.message}
+                    </div>
+                )}
+
+                <PageHeader
+                    title="Employee Records"
+                    subtitle={`${employees.total ?? 0} employee${employees.total !== 1 ? 's' : ''}`}
+                    actions={
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
+                            <Button variant="secondary" icon={Download} onClick={() => {}}>
+                                Export
+                            </Button>
+                            {canManage && (
+                                <Button icon={Plus} onClick={() => router.get(route('employees.create'))}>
+                                    Add Employee
+                                </Button>
+                            )}
+                        </div>
+                    }
+                />
+
+                {/* Regularization alert */}
+                {regularizationDue > 0 && (
+                    <div style={{
+                        display: 'flex', alignItems: 'center', gap: 'var(--space-1)',
+                        padding: 'var(--space-2) var(--space-3)',
+                        background: 'rgba(245,158,11,0.1)',
+                        border: '1px solid var(--color-warning)',
+                        borderRadius: 'var(--radius-md)',
+                        color: 'var(--color-warning)',
+                        fontSize: 'var(--font-size-small)',
+                    }}>
+                        <AlertTriangle size={16} />
+                        <span className="font-body">
+                            <strong>{regularizationDue}</strong> probationary employee{regularizationDue !== 1 ? 's are' : ' is'} due for regularization review (6+ months on probation without regularization date set).
+                        </span>
+                    </div>
+                )}
+
+                {/* Stat strip */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'var(--space-2)' }}>
+                    <StatCard icon={Users}     label="Total"         value={stats.total}        color="var(--color-text)" />
+                    <StatCard icon={UserCheck} label="Active"        value={stats.active}       color="var(--color-success)" />
+                    <StatCard icon={Clock}     label="Probationary"  value={stats.probationary} color="var(--color-warning)" />
+                    <StatCard icon={UserCheck} label="Regular"       value={stats.regular}      color="var(--color-primary)" />
+                    <StatCard icon={UserX}     label="Inactive"      value={stats.inactive}     color="var(--color-error)" />
+                </div>
+
+                {/* Filters */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 'var(--space-2)' }}>
+                    <div style={{ flex: 1, minWidth: 200 }}>
+                        <Input
+                            placeholder="Name, code, position…"
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
+                            onKeyDown={handleSearchKey}
+                            icon={Search}
+                        />
+                    </div>
+                    <div style={{ minWidth: 160 }}>
+                        <Select
+                            options={[
+                                { value: '', label: 'All Statuses' },
+                                ...Object.entries(statuses).map(([v, l]) => ({ value: v, label: l })),
+                            ]}
+                            value={filters.status ?? ''}
+                            onChange={(e) => applyFilter({ status: e.target.value || undefined, page: 1 })}
+                        />
+                    </div>
+                    <div style={{ minWidth: 180 }}>
+                        <Select
+                            options={[
+                                { value: '', label: 'All Departments' },
+                                ...Object.entries(departments).map(([v, l]) => ({ value: v, label: l })),
+                            ]}
+                            value={filters.dept ?? ''}
+                            onChange={(e) => applyFilter({ dept: e.target.value || undefined, page: 1 })}
+                        />
+                    </div>
+                    {hasActiveFilters && (
+                        <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                    )}
+                </div>
+
+                {/* Table */}
+                <DataTable
+                    columns={columns}
+                    rows={employees.data ?? []}
+                    pagination={employees}
+                    onPageChange={(page) =>
+                        router.get(route('employees.index'), { ...filters, search: searchInput, page }, { preserveState: true })
+                    }
+                />
+            </div>
+        </AppShell>
+    );
+}

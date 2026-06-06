@@ -1,0 +1,21 @@
+{
+    "Auth": true,
+    "Contacts": true,
+    "Reservation": true,
+    "Visa": true,
+    "OrmocBranch": true,
+    "SalesSummary": true,
+    "AccountsReceivable": true,
+    "AccountsPayable": true,
+    "Disbursement": true,
+    "Cashbond": true,
+    "BillsMonitoring": true,
+    "CreditCardMonitoring": true,
+    "IataPayments": true,
+    "BirCompliance": true,
+    "EmployeeRecords": true,
+    "Attendance": true,
+    "Marketing": true,
+    "DocumentGeneration": true,
+    "Notifications": true
+}

@@ -1,0 +1,11 @@
+{
+    "name": "OrmocBranch",
+    "alias": "ormocbranch",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\OrmocBranch\\Providers\\OrmocBranchServiceProvider"
+    ],
+    "files": []
+}

@@ -1,0 +1,11 @@
+{
+    "name": "AccountsPayable",
+    "alias": "accountspayable",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\AccountsPayable\\Providers\\AccountsPayableServiceProvider"
+    ],
+    "files": []
+}

@@ -1,0 +1,11 @@
+{
+    "name": "BillsMonitoring",
+    "alias": "billsmonitoring",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\BillsMonitoring\\Providers\\BillsMonitoringServiceProvider"
+    ],
+    "files": []
+}

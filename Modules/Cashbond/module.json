@@ -1,0 +1,11 @@
+{
+    "name": "Cashbond",
+    "alias": "cashbond",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Cashbond\\Providers\\CashbondServiceProvider"
+    ],
+    "files": []
+}
