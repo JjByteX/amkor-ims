@@ -21,6 +21,8 @@ export default function Input({
     id,
     required    = false,
     className   = '',
+    onFocus,
+    onBlur,
     ...rest
 }) {
     const inputId = id ?? (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
@@ -46,6 +48,7 @@ export default function Input({
                         fontFamily : 'var(--font-body)',
                         fontWeight : 'var(--font-weight-semibold)',
                         color      : 'var(--color-text)',
+                        lineHeight  : 1.25,
                     }}
                 >
                     {label}
@@ -72,7 +75,7 @@ export default function Input({
                     placeholder={placeholder}
                     disabled={disabled}
                     required={required}
-                    className="w-full outline-none transition-colors duration-150 focus:ring-2 focus:ring-offset-0"
+                    className="w-full outline-none transition-colors duration-150 focus:ring-0 focus:ring-offset-0"
                     style={{
                         height      : 'var(--height-input)',
                         borderRadius: 'var(--radius-md)',
@@ -80,15 +83,28 @@ export default function Input({
                         border      : error
                             ? `1.5px solid var(--color-error)`
                             : 'var(--border-container)',
-                        paddingLeft : iconNode ? 'calc(var(--space-1) + 20px + 4px)' : 'var(--space-2)',
+                        paddingLeft : iconNode ? 'calc(var(--space-2) + 18px + 8px)' : 'var(--space-2)',
                         paddingRight: 'var(--space-2)',
                         fontSize    : 'var(--font-size-body)',
                         fontFamily  : 'var(--font-body)',
+                        fontWeight  : 500,
                         background  : 'var(--color-card)',
                         color       : 'var(--color-text)',
                         opacity     : disabled ? 0.5 : 1,
                         cursor      : disabled ? 'not-allowed' : 'text',
-                        '--tw-ring-color': error ? 'var(--color-error)' : 'var(--color-primary)',
+                        boxShadow   : 'none',
+                    }}
+                    onFocus={(e) => {
+                        e.currentTarget.style.borderColor = error ? 'var(--color-error)' : 'var(--color-primary)';
+                        e.currentTarget.style.boxShadow = 'var(--ring-focus)';
+                        onFocus?.(e);
+                    }}
+                    onBlur={(e) => {
+                        e.currentTarget.style.border = error
+                            ? '1.5px solid var(--color-error)'
+                            : 'var(--border-container)';
+                        e.currentTarget.style.boxShadow = 'none';
+                        onBlur?.(e);
                     }}
                     {...rest}
                 />

@@ -38,6 +38,7 @@ import EmptyState from './EmptyState';
  *   onRowClick : fn(row)
  *   pagination : object               (Laravel paginator meta)
  *   onPageChange: fn(page)
+ *   toolbar    : ReactNode             (optional filter/action strip)
  *   className  : string
  */
 export default function DataTable({
@@ -50,7 +51,12 @@ export default function DataTable({
     onRowClick,
     pagination,
     onPageChange,
+    toolbar,
     className   = '',
+    emptyMessage,
+    emptyTitle,
+    emptyDescription,
+    emptyIcon,
 }) {
     const [page, setPage] = useState(1);
 
@@ -93,87 +99,110 @@ export default function DataTable({
               internally.  The page itself stays fixed at 100vh.
             */}
             <div
-                className="flex-1 min-h-0 w-full overflow-x-auto overflow-y-auto bg-[var(--color-card)]"
+                className="flex flex-col flex-1 min-h-0 w-full overflow-hidden bg-[var(--color-card)]"
                 style={{
                     borderRadius: 'var(--radius-md)',
                     border: 'var(--border-container)',
-                    boxShadow: '0 4px 6px -6px rgba(0,0,0,0.015),0 3px 4px -4px rgba(0,0,0,0.012),0 2px 2px -2px rgba(0,0,0,0.010),0 1px 1px -1px rgba(0,0,0,0.008)',
+                    boxShadow: 'var(--shadow-card)',
                 }}
             >
-                <table className="w-full border-collapse">
-                    {/* Sticky header — stays visible while rows scroll */}
-                    <thead className="sticky top-0 z-10 bg-[var(--color-card)]">
-                        <tr
-                            className="border-b border-gray-100 dark:border-gray-700"
-                            style={{ height: 'var(--height-table-header)' }}
-                        >
-                            {columns.map((col) => (
-                                <th
-                                    key={col.key}
-                                    className="text-left font-semibold font-body text-gray-500 dark:text-gray-400 whitespace-nowrap"
-                                    style={{
-                                        fontSize   : 'var(--font-size-small)',
-                                        paddingLeft: 'var(--space-2)',
-                                        paddingRight: 'var(--space-2)',
-                                        width      : col.width,
-                                    }}
-                                >
-                                    {col.label}
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
+                {toolbar && (
+                    <div
+                        className="shrink-0"
+                        style={{
+                            padding     : 'var(--space-2)',
+                            borderBottom: 'var(--border-container)',
+                            background  : 'var(--color-card)',
+                        }}
+                    >
+                        {toolbar}
+                    </div>
+                )}
 
-                    <tbody>
-                        {loading ? (
-                            <tr>
-                                <td colSpan={columns.length} className="py-12 text-center">
-                                    <LoadingSpinner size="md" />
-                                </td>
+                <div className="flex-1 min-h-0 w-full overflow-x-auto overflow-y-auto">
+                    <table className="w-full border-collapse">
+                        {/* Sticky header — stays visible while rows scroll */}
+                        <thead className="sticky top-0 z-10 bg-[var(--color-card)]">
+                            <tr
+                                style={{
+                                    height      : 'var(--height-table-header)',
+                                    borderBottom: '1px solid var(--color-border-soft)',
+                                }}
+                            >
+                                {columns.map((col) => (
+                                    <th
+                                        key={col.key}
+                                        className="text-left font-semibold font-body whitespace-nowrap"
+                                        style={{
+                                            fontSize     : '12px',
+                                            paddingLeft  : 'var(--space-2)',
+                                            paddingRight : 'var(--space-2)',
+                                            width        : col.width,
+                                            color        : 'var(--color-text-muted)',
+                                            textTransform: 'uppercase',
+                                            letterSpacing : 0,
+                                        }}
+                                    >
+                                        {col.label}
+                                    </th>
+                                ))}
                             </tr>
-                        ) : paginated.length === 0 ? (
-                            <tr>
-                                <td colSpan={columns.length} className="py-12 text-center">
-                                    {typeof empty === 'string'
-                                        ? <EmptyState title={empty} />
-                                        : empty
-                                    }
-                                </td>
-                            </tr>
-                        ) : (
-                            paginated.map((row) => (
-                                <tr
-                                    key={row[keyField] ?? JSON.stringify(row)}
-                                    onClick={onRowClick ? () => onRowClick(row) : undefined}
-                                    className={[
-                                        'border-b border-gray-50 dark:border-gray-700/50',
-                                        'last:border-b-0',
-                                        'font-body text-[var(--color-text)]',
-                                        'transition-colors duration-100',
-                                        onRowClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/30' : '',
-                                    ].join(' ')}
-                                    style={{ height: 'var(--height-table-row)' }}
-                                >
-                                    {columns.map((col) => (
-                                        <td
-                                            key={col.key}
-                                            style={{
-                                                fontSize    : 'var(--font-size-small)',
-                                                paddingLeft : 'var(--space-2)',
-                                                paddingRight: 'var(--space-2)',
-                                            }}
-                                        >
-                                            {col.render
-                                                ? col.render(row)
-                                                : row[col.key] ?? '—'
-                                            }
-                                        </td>
-                                    ))}
+                        </thead>
+
+                        <tbody>
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={columns.length} className="py-12 text-center">
+                                        <LoadingSpinner size="md" />
+                                    </td>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                            ) : paginated.length === 0 ? (
+                                <tr>
+                                    <td colSpan={columns.length} className="py-12 text-center">
+                                        {typeof empty === 'string'
+                                            ? <EmptyState title={emptyTitle ?? emptyMessage ?? empty} description={emptyDescription} icon={emptyIcon} />
+                                            : empty
+                                        }
+                                    </td>
+                                </tr>
+                            ) : (
+                                paginated.map((row) => (
+                                    <tr
+                                        key={row[keyField] ?? JSON.stringify(row)}
+                                        onClick={onRowClick ? () => onRowClick(row) : undefined}
+                                        className={[
+                                            'last:border-b-0',
+                                            'font-body text-[var(--color-text)]',
+                                            'transition-colors duration-100',
+                                            onRowClick ? 'cursor-pointer hover:bg-black/[0.025] dark:hover:bg-white/[0.04]' : '',
+                                        ].join(' ')}
+                                        style={{
+                                            height      : 'var(--height-table-row)',
+                                            borderBottom: '1px solid var(--color-border-soft)',
+                                        }}
+                                    >
+                                        {columns.map((col) => (
+                                            <td
+                                                key={col.key}
+                                                style={{
+                                                    fontSize    : 'var(--font-size-small)',
+                                                    paddingLeft : 'var(--space-2)',
+                                                    paddingRight: 'var(--space-2)',
+                                                    color       : 'var(--color-text)',
+                                                }}
+                                            >
+                                                {col.render
+                                                    ? col.render(row)
+                                                    : row[col.key] ?? '—'
+                                                }
+                                            </td>
+                                        ))}
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             {/* Pagination — always below the scrollable table, never inside it */}
@@ -183,7 +212,7 @@ export default function DataTable({
                     style={{ paddingLeft: 'var(--space-1)', paddingRight: 'var(--space-1)' }}
                 >
                     <p
-                        className="font-body text-gray-400"
+                        className="font-body text-[var(--color-text-muted)]"
                         style={{ fontSize: 'var(--font-size-small)' }}
                     >
                         {isServerPaginated
@@ -195,7 +224,7 @@ export default function DataTable({
                         <button
                             disabled={currentPage === 1}
                             onClick={() => handlePageChange(currentPage - 1)}
-                            className="w-8 h-8 flex items-center justify-center text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            className="w-8 h-8 flex items-center justify-center text-[var(--color-text-muted)] hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                             style={{ borderRadius: 'var(--radius-md)' }}
                         >
                             <ChevronLeft size={16} />
@@ -209,7 +238,7 @@ export default function DataTable({
                         <button
                             disabled={currentPage === totalPages}
                             onClick={() => handlePageChange(currentPage + 1)}
-                            className="w-8 h-8 flex items-center justify-center text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            className="w-8 h-8 flex items-center justify-center text-[var(--color-text-muted)] hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                             style={{ borderRadius: 'var(--radius-md)' }}
                         >
                             <ChevronRight size={16} />

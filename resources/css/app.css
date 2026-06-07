@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600&family=Inter:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
 /* ============================================================
@@ -12,10 +12,10 @@
     --color-primary-dark:   #2E6F00;
 
     /* --- Neutrals --- */
-    --color-bg:             #f8f8f8;
+    --color-bg:             #F7F8FA;
     --color-card:           #FFFFFF;
-    --color-text:           #0F172A;
-    --color-text-muted:     #6B7280;   /* labels, captions, secondary text */
+    --color-text:           #0B1220;
+    --color-text-muted:     #667085;   /* labels, captions, secondary text */
 
     /* --- Status --- */
     --color-success:        #22C55E;
@@ -29,11 +29,14 @@
     /* --- Typography --- */
     --font-heading:         'Manrope', sans-serif;
     --font-body:            'Inter', sans-serif;
-    --font-size-heading:    20px;
-    --font-size-body:       16px;
+    --font-size-heading:    22px;
+    --font-size-body:       14px;
     --font-size-small:      13px;
     --font-weight-normal:   400;
     --font-weight-semibold: 600;
+    --font-weight-bold:     700;
+    --line-height-tight:    1.2;
+    --line-height-body:     1.45;
 
     /* --- Spacing (8px grid) --- */
     --space-1:  8px;
@@ -44,8 +47,8 @@
     --space-6:  48px;
 
     /* --- Page & Card spacing tokens --- */
-    --space-page:    var(--space-3);   /* 24px — outer page edge on all sides */
-    --space-card:    var(--space-2);   /* 16px — card internal padding        */
+    --space-page:    clamp(16px, 1.7vw, 28px); /* responsive outer page edge */
+    --space-card:    20px;             /* premium surface internal padding    */
     --space-section: var(--space-2);   /* 16px — vertical gap between sections */
 
     /* --- Sidebar inner padding (sides only) ---
@@ -61,26 +64,27 @@
 
     /* --- 4-Layer Card Shadow (always black, always layered) --- */
     --shadow-card:
-        0 4px  6px -6px rgba(0, 0, 0, 0.015),
-        0 3px  4px -4px rgba(0, 0, 0, 0.012),
-        0 2px  2px -2px rgba(0, 0, 0, 0.010),
-        0 1px  1px -1px rgba(0, 0, 0, 0.008);
+        0 18px 48px -44px rgba(15, 23, 42, 0.34),
+        0 8px  18px -18px rgba(15, 23, 42, 0.16),
+        0 1px  2px  rgba(15, 23, 42, 0.04);
 
     /* --- Container Border ---
        Single token used by Card, DataTable, Input, Select, Sidebar border-right,
        and the account-row border-top. Change once → all containers update.
     */
-    --border-container: 1.5px solid #E5E7EB;
-    --color-border:     #E5E7EB;
+    --border-container: 1px solid #DDE3EA;
+    --color-border:     #DDE3EA;
+    --color-border-soft:#EEF2F6;
+    --ring-focus:       0 0 0 3px color-mix(in srgb, var(--color-primary) 16%, transparent);
 
     /* --- Hover surface tint --- */
     --color-hover: rgba(0, 0, 0, 0.04);
 
     /* --- Component Dimensions --- */
     --height-btn:              40px;
-    --height-btn-sm:           32px;
+    --height-btn-sm:           34px;
     --height-input:            40px;
-    --height-table-row:        48px;
+    --height-table-row:        52px;
     --height-table-header:     44px;
     --width-sidebar:           240px;
     --width-sidebar-collapsed: 64px;
@@ -110,9 +114,11 @@
     --color-info:           #60A5FA;
     --color-accent:         #7DD3FC;
 
-    --border-container: 1.5px solid #2a2a2a;
+    --border-container: 1px solid #2a2a2a;
     --color-border:     #2a2a2a;
+    --color-border-soft:#202020;
     --color-hover:      rgba(255, 255, 255, 0.05);
+    --ring-focus:       0 0 0 3px color-mix(in srgb, var(--color-primary) 24%, transparent);
 }
 
 /* ============================================================
@@ -128,6 +134,7 @@
 html {
     font-family: var(--font-body);
     font-size: var(--font-size-body);
+    line-height: var(--line-height-body);
     font-weight: var(--font-weight-normal);
     color: var(--color-text);
     background-color: var(--color-bg);
@@ -143,9 +150,14 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
-    font-weight: var(--font-weight-semibold);
+    font-weight: var(--font-weight-bold);
     font-size: var(--font-size-heading);
+    line-height: var(--line-height-tight);
     color: var(--color-text);
+}
+
+button, input, select, textarea {
+    line-height: var(--line-height-body);
 }
 
 /* ============================================================

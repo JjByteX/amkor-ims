@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
-import { Plus, Eye, Filter, ArrowLeft } from 'lucide-react';
+import { Plus, Eye, ArrowLeft } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
 import DataTable from '../../Components/Shared/DataTable';
+import FilterStrip, { FilterField } from '../../Components/Shared/FilterStrip';
+import PageStack from '../../Components/Shared/PageStack';
 import Button from '../../Components/UI/Button';
 import Select from '../../Components/UI/Select';
+import Input from '../../Components/UI/Input';
 import Badge from '../../Components/UI/Badge';
 import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
 
@@ -102,7 +105,7 @@ export default function CashbondReloads({ reloads, portals, filters, approvalSta
 
     return (
         <AppShell>
-            <div className="flex flex-col" style={{ gap: 'var(--space-3)' }}>
+            <PageStack>
 
                 {flash?.message && (
                     <div className="rounded font-body" style={{
@@ -129,50 +132,40 @@ export default function CashbondReloads({ reloads, portals, filters, approvalSta
                     )}
                 />
 
-                {/* Filters */}
-                <div style={{ background: 'var(--color-card)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-2) var(--space-3)', boxShadow: 'var(--shadow-card)' }}>
-                    <div className="flex flex-wrap items-end" style={{ gap: 'var(--space-2)' }}>
-                        <div className="min-w-[180px]">
-                            <Select
-                                label="Portal"
-                                options={portalOptions}
-                                value={filters.portal_id ?? ''}
-                                onChange={(e) => applyFilter({ portal_id: e.target.value, page: 1 })}
-                            />
-                        </div>
-                        <div className="min-w-[180px]">
-                            <Select
-                                label="Approval Status"
-                                options={approvalOptions}
-                                value={filters.approval_status ?? ''}
-                                onChange={(e) => applyFilter({ approval_status: e.target.value, page: 1 })}
-                            />
-                        </div>
-                        <div className="min-w-[160px]">
-                            <label className="font-body text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-small)', display: 'block', marginBottom: 4 }}>Month</label>
-                            <input
-                                type="month"
-                                value={month}
-                                onChange={(e) => setMonth(e.target.value)}
-                                onBlur={() => applyFilter({ month })}
-                                style={{
-                                    height: 40, borderRadius: 'var(--radius-md)', border: '1px solid #d1d5db',
-                                    padding: '0 12px', fontFamily: 'var(--font-body)', fontSize: 'var(--font-size-small)',
-                                    background: 'var(--color-bg)', color: 'var(--color-text)', width: '100%',
-                                }}
-                            />
-                        </div>
-                        <Button variant="secondary" icon={Filter} onClick={() => applyFilter()}>Apply</Button>
-                    </div>
-                </div>
-
                 <DataTable
                     columns={columns}
                     rows={reloads.data}
                     pagination={reloads}
                     onPageChange={(page) => applyFilter({ page })}
+                    toolbar={
+                        <FilterStrip>
+                            <FilterField width={190}>
+                                <Select
+                                    options={portalOptions}
+                                    value={filters.portal_id ?? ''}
+                                    onChange={(e) => applyFilter({ portal_id: e.target.value, page: 1 })}
+                                />
+                            </FilterField>
+                            <FilterField width={190}>
+                                <Select
+                                    options={approvalOptions}
+                                    value={filters.approval_status ?? ''}
+                                    onChange={(e) => applyFilter({ approval_status: e.target.value, page: 1 })}
+                                />
+                            </FilterField>
+                            <FilterField width={160}>
+                                <Input
+                                    type="month"
+                                    value={month}
+                                    onChange={(e) => setMonth(e.target.value)}
+                                    onBlur={() => applyFilter({ month })}
+                                />
+                            </FilterField>
+                            <Button variant="secondary" onClick={() => applyFilter()}>Apply</Button>
+                        </FilterStrip>
+                    }
                 />
-            </div>
+            </PageStack>
         </AppShell>
     );
 }

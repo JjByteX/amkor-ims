@@ -3,7 +3,8 @@ import { Archive, Check, CheckCheck, Trash2 } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
 import DataTable from '../../Components/Shared/DataTable';
-import Card from '../../Components/UI/Card';
+import FilterStrip, { FilterField } from '../../Components/Shared/FilterStrip';
+import PageStack from '../../Components/Shared/PageStack';
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
 import Select from '../../Components/UI/Select';
@@ -61,7 +62,7 @@ export default function NotificationsIndex({ notifications, filters, unreadCount
 
     return (
         <AppShell>
-            <div className="flex min-h-0 flex-1 flex-col" style={{ gap: 'var(--space-section)' }}>
+            <PageStack>
                 <PageHeader
                     title="Notifications"
                     subtitle={`${unreadCount} unread`}
@@ -72,27 +73,28 @@ export default function NotificationsIndex({ notifications, filters, unreadCount
                     }
                 />
 
-                <Card compact>
-                    <div className="max-w-xs">
-                        <Select
-                            value={filters.status ?? ''}
-                            onChange={(e) => apply({ status: e.target.value })}
-                            options={[
-                                { value: '', label: 'Inbox' },
-                                { value: 'unread', label: 'Unread' },
-                                { value: 'archived', label: 'Archived' },
-                            ]}
-                        />
-                    </div>
-                </Card>
-
                 <DataTable
                     rows={notifications.data ?? []}
                     columns={columns}
                     pagination={notifications}
                     onPageChange={(page) => apply({ page })}
+                    toolbar={
+                        <FilterStrip>
+                            <FilterField width={180}>
+                                <Select
+                                    value={filters.status ?? ''}
+                                    onChange={(e) => apply({ status: e.target.value })}
+                                    options={[
+                                        { value: '', label: 'Inbox' },
+                                        { value: 'unread', label: 'Unread' },
+                                        { value: 'archived', label: 'Archived' },
+                                    ]}
+                                />
+                            </FilterField>
+                        </FilterStrip>
+                    }
                 />
-            </div>
+            </PageStack>
         </AppShell>
     );
 }

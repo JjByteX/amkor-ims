@@ -4,7 +4,10 @@ import { CalendarDays, Eye, Plus, Search, TrendingUp, Users } from 'lucide-react
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
 import DataTable from '../../Components/Shared/DataTable';
-import Card from '../../Components/UI/Card';
+import FilterStrip, { FilterField } from '../../Components/Shared/FilterStrip';
+import PageStack from '../../Components/Shared/PageStack';
+import StatCard from '../../Components/Shared/StatCard';
+import StatGrid from '../../Components/Shared/StatGrid';
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
 import Input from '../../Components/UI/Input';
@@ -13,22 +16,6 @@ import Select from '../../Components/UI/Select';
 const money = (v) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(Number(v ?? 0));
 const date = (v) => v ? new Date(v).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '-';
 const badge = { inquiry: 'neutral', quoted: 'info', confirmed: 'success', cancelled: 'error' };
-
-function Stat({ icon: Icon, label, value }) {
-    return (
-        <Card compact>
-            <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center bg-[var(--color-bg)]" style={{ borderRadius: 'var(--radius-md)' }}>
-                    <Icon size={18} className="text-[var(--color-primary)]" />
-                </div>
-                <div>
-                    <div className="font-body text-gray-400" style={{ fontSize: 'var(--font-size-small)' }}>{label}</div>
-                    <div className="font-heading font-semibold text-[var(--color-text)]">{value}</div>
-                </div>
-            </div>
-        </Card>
-    );
-}
 
 export default function ReservationIndex({ bookings, summary, filters, statuses, agentCodes, canWrite }) {
     const [search, setSearch] = useState(filters.search ?? '');
@@ -80,37 +67,44 @@ export default function ReservationIndex({ bookings, summary, filters, statuses,
 
     return (
         <AppShell>
-            <div className="flex min-h-0 flex-1 flex-col" style={{ gap: 'var(--space-section)' }}>
+            <PageStack>
                 <PageHeader
                     title="Reservation & Booking"
                     subtitle={`${bookings.total ?? 0} booking${bookings.total === 1 ? '' : 's'}`}
                     actions={canWrite && <Button icon={Plus} onClick={() => router.get(route('reservation.create'))}>New Booking</Button>}
                 />
 
-                <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
-                    <Stat icon={Users} label="Records" value={summary.total} />
-                    <Stat icon={CalendarDays} label="Confirmed" value={summary.confirmed} />
-                    <Stat icon={TrendingUp} label="Gross Sales" value={money(summary.gross)} />
-                    <Stat icon={TrendingUp} label="Income" value={money(summary.income)} />
-                </div>
-
-                <Card compact>
-                    <div className="grid gap-3" style={{ gridTemplateColumns: 'minmax(220px, 1fr) repeat(3, minmax(140px, 180px)) auto' }}>
-                        <Input icon={Search} value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && apply()} placeholder="Booking, client, destination..." />
-                        <Select value={filters.status ?? ''} onChange={(e) => apply({ status: e.target.value })} placeholder="All statuses" options={[{ value: '', label: 'All statuses' }, ...Object.entries(statuses).map(([value, label]) => ({ value, label }))]} />
-                        <Select value={filters.agent ?? ''} onChange={(e) => apply({ agent: e.target.value })} placeholder="All agents" options={[{ value: '', label: 'All agents' }, ...agentCodes.map((code) => ({ value: code, label: code }))]} />
-                        <Input type="month" value={filters.month ?? ''} onChange={(e) => apply({ month: e.target.value })} />
-                        <Button variant="secondary" onClick={() => apply()}>Apply</Button>
-                    </div>
-                </Card>
+                <StatGrid>
+                    <StatCard icon={Users} label="Records" value={summary.total} />
+                    <StatCard icon={CalendarDays} label="Confirmed" value={summary.confirmed} tone="success" />
+                    <StatCard icon={TrendingUp} label="Gross Sales" value={money(summary.gross)} />
+                    <StatCard icon={TrendingUp} label="Income" value={money(summary.income)} tone="primary" />
+                </StatGrid>
 
                 <DataTable
                     rows={bookings.data ?? []}
                     columns={columns}
                     pagination={bookings}
                     onPageChange={(page) => apply({ page })}
+                    toolbar={
+                        <FilterStrip>
+                            <FilterField grow>
+                                <Input icon={Search} value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && apply()} placeholder="Booking, client, destination..." />
+                            </FilterField>
+                            <FilterField>
+                                <Select value={filters.status ?? ''} onChange={(e) => apply({ status: e.target.value })} placeholder="All statuses" options={[{ value: '', label: 'All statuses' }, ...Object.entries(statuses).map(([value, label]) => ({ value, label }))]} />
+                            </FilterField>
+                            <FilterField>
+                                <Select value={filters.agent ?? ''} onChange={(e) => apply({ agent: e.target.value })} placeholder="All agents" options={[{ value: '', label: 'All agents' }, ...agentCodes.map((code) => ({ value: code, label: code }))]} />
+                            </FilterField>
+                            <FilterField width={150}>
+                                <Input type="month" value={filters.month ?? ''} onChange={(e) => apply({ month: e.target.value })} />
+                            </FilterField>
+                            <Button variant="secondary" onClick={() => apply()}>Apply</Button>
+                        </FilterStrip>
+                    }
                 />
-            </div>
+            </PageStack>
         </AppShell>
     );
 }

@@ -67,9 +67,9 @@ export default function NavItem({ href, icon, label, children, collapsed = false
                     className="flex items-center w-full"
                     style={{
                         ...itemStyle,
-                        gap        : '10px',
-                        paddingLeft: '10px',
-                        paddingRight: '10px',
+                        gap        : '12px',
+                        paddingLeft: '14px',
+                        paddingRight: '14px',
                         fontSize   : 'var(--font-size-small)',
                         fontFamily : 'var(--font-body)',
                         fontWeight : isActive ? 'var(--font-weight-semibold)' : 'var(--font-weight-normal)',
@@ -104,9 +104,9 @@ export default function NavItem({ href, icon, label, children, collapsed = false
                 className="w-full flex items-center"
                 style={{
                     ...itemStyle,
-                    gap        : '10px',
-                    paddingLeft: '10px',
-                    paddingRight: '10px',
+                        gap        : '12px',
+                        paddingLeft: '14px',
+                        paddingRight: '14px',
                     fontSize   : 'var(--font-size-small)',
                     fontFamily : 'var(--font-body)',
                     fontWeight : childActive ? 'var(--font-weight-semibold)' : 'var(--font-weight-normal)',

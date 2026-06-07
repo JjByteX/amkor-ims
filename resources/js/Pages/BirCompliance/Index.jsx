@@ -1,12 +1,16 @@
 import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
-import { Plus, Download, Search, BarChart2 } from 'lucide-react';
+import { Plus, Download, Search, BarChart2, Banknote, Files, Receipt, Percent } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
 import Card from '../../Components/UI/Card';
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
 import DataTable from '../../Components/Shared/DataTable';
+import FilterStrip, { FilterField } from '../../Components/Shared/FilterStrip';
+import PageStack from '../../Components/Shared/PageStack';
+import StatCard from '../../Components/Shared/StatCard';
+import StatGrid from '../../Components/Shared/StatGrid';
 import Select from '../../Components/UI/Select';
 import Input from '../../Components/UI/Input';
 import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
@@ -240,7 +244,7 @@ export default function BirIndex({
 
     return (
         <AppShell>
-            <div className="flex flex-col flex-1 min-h-0" style={{ gap: 'var(--space-section)' }}>
+            <PageStack>
 
                 {flash?.message && (
                     <div className="rounded font-body" style={{
@@ -278,68 +282,16 @@ export default function BirIndex({
                     }
                 />
 
-                {/* Summary strip */}
                 {totals && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'var(--space-2)' }}>
-                        {[
-                            { label: 'Total Records',    value: totals.total_count,   color: 'var(--color-text)',    isCount: true },
-                            { label: 'Gross Amount',     value: totals.total_gross,   color: 'var(--color-text)' },
-                            { label: 'VATAble Sales',    value: totals.total_vatable, color: 'var(--color-text)' },
-                            { label: 'VAT Amount (12%)', value: totals.total_vat,     color: 'var(--color-warning)' },
-                            { label: 'Withholding Tax',  value: totals.total_wht,     color: 'var(--color-warning)' },
-                            { label: 'Net Amount Due',   value: totals.total_net,     color: 'var(--color-success)' },
-                        ].map((item) => (
-                            <Card key={item.label}>
-                                <div className="font-body text-gray-400" style={{ fontSize: 'var(--font-size-small)' }}>
-                                    {item.label}
-                                </div>
-                                <div className="font-heading font-semibold" style={{ fontSize: 'var(--font-size-heading)', color: item.color, marginTop: 4 }}>
-                                    {item.isCount
-                                        ? (item.value ?? 0)
-                                        : <CurrencyDisplay amount={item.value ?? 0} currency="PHP" />
-                                    }
-                                </div>
-                            </Card>
-                        ))}
-                    </div>
+                    <StatGrid>
+                        <StatCard icon={Files} label="Total Records" value={totals.total_count ?? 0} />
+                        <StatCard icon={Banknote} label="Gross Amount" value={<CurrencyDisplay amount={totals.total_gross ?? 0} currency="PHP" />} />
+                        <StatCard icon={Receipt} label="VATAble Sales" value={<CurrencyDisplay amount={totals.total_vatable ?? 0} currency="PHP" />} />
+                        <StatCard icon={Percent} label="VAT Amount" value={<CurrencyDisplay amount={totals.total_vat ?? 0} currency="PHP" />} tone="warning" />
+                        <StatCard icon={Percent} label="Withholding Tax" value={<CurrencyDisplay amount={totals.total_wht ?? 0} currency="PHP" />} tone="warning" />
+                        <StatCard icon={Banknote} label="Net Amount Due" value={<CurrencyDisplay amount={totals.total_net ?? 0} currency="PHP" />} tone="success" />
+                    </StatGrid>
                 )}
-
-                {/* Filters — no card, no labels, search first, dropdowns fire immediately */}
-                <div className="flex flex-wrap items-center" style={{ gap: 'var(--space-2)' }}>
-                    <div className="flex-1 min-w-[200px]">
-                        <Input
-                            placeholder="Client, TIN, document #…"
-                            value={searchInput}
-                            onChange={(e) => setSearchInput(e.target.value)}
-                            onKeyDown={handleSearchKey}
-                            icon={Search}
-                        />
-                    </div>
-                    <div className="min-w-[100px]">
-                        <Select
-                            options={years.map((y) => ({ value: y, label: y }))}
-                            value={filters.year ?? currentYear}
-                            onChange={(e) => applyFilter({ year: e.target.value, page: 1 })}
-                        />
-                    </div>
-                    <div className="min-w-[140px]">
-                        <Select
-                            options={[{ value: '', label: 'All Months' }, ...months.map((m, i) => ({ value: i + 1, label: m }))]}
-                            value={filters.month ?? ''}
-                            onChange={(e) => applyFilter({ month: e.target.value || undefined, page: 1 })}
-                        />
-                    </div>
-                    <div className="min-w-[160px]">
-                        <Select
-                            options={[{ value: '', label: 'All Types' }, ...Object.entries(documentTypes).map(([v, l]) => ({ value: v, label: `${v} — ${l}` }))]}
-                            value={filters.document_type ?? ''}
-                            onChange={(e) => applyFilter({ document_type: e.target.value || undefined, page: 1 })}
-                        />
-                    </div>
-                    {hasActiveFilters && (
-                        <Button variant="ghost" onClick={clearFilters}>Clear</Button>
-                    )}
-                </div>
 
                 {/* Monthly summary */}
                 <MonthlyCard summary={monthlySummary} months={months} documentTypes={documentTypes} />
@@ -352,8 +304,45 @@ export default function BirIndex({
                     onPageChange={(page) =>
                         router.get(route('bir.index'), { ...filters, search: searchInput, page }, { preserveState: true })
                     }
+                    toolbar={
+                        <FilterStrip>
+                            <FilterField grow>
+                                <Input
+                                    placeholder="Client, TIN, document #..."
+                                    value={searchInput}
+                                    onChange={(e) => setSearchInput(e.target.value)}
+                                    onKeyDown={handleSearchKey}
+                                    icon={Search}
+                                />
+                            </FilterField>
+                            <FilterField width={110}>
+                                <Select
+                                    options={years.map((y) => ({ value: y, label: y }))}
+                                    value={filters.year ?? currentYear}
+                                    onChange={(e) => applyFilter({ year: e.target.value, page: 1 })}
+                                />
+                            </FilterField>
+                            <FilterField width={150}>
+                                <Select
+                                    options={[{ value: '', label: 'All Months' }, ...months.map((m, i) => ({ value: i + 1, label: m }))]}
+                                    value={filters.month ?? ''}
+                                    onChange={(e) => applyFilter({ month: e.target.value || undefined, page: 1 })}
+                                />
+                            </FilterField>
+                            <FilterField width={180}>
+                                <Select
+                                    options={[{ value: '', label: 'All Types' }, ...Object.entries(documentTypes).map(([v, l]) => ({ value: v, label: `${v} - ${l}` }))]}
+                                    value={filters.document_type ?? ''}
+                                    onChange={(e) => applyFilter({ document_type: e.target.value || undefined, page: 1 })}
+                                />
+                            </FilterField>
+                            {hasActiveFilters && (
+                                <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                            )}
+                        </FilterStrip>
+                    }
                 />
-            </div>
+            </PageStack>
         </AppShell>
     );
 }

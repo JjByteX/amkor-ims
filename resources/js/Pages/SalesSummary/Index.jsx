@@ -4,6 +4,10 @@ import { Download, Save, Search, Target, TrendingUp } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
 import DataTable from '../../Components/Shared/DataTable';
+import FilterStrip, { FilterField } from '../../Components/Shared/FilterStrip';
+import PageStack from '../../Components/Shared/PageStack';
+import StatCard from '../../Components/Shared/StatCard';
+import StatGrid from '../../Components/Shared/StatGrid';
 import Card from '../../Components/UI/Card';
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
@@ -12,22 +16,6 @@ import Select from '../../Components/UI/Select';
 
 const money = (v) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(Number(v ?? 0));
 const date = (v) => v ? new Date(v).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '-';
-
-function Stat({ icon: Icon, label, value }) {
-    return (
-        <Card compact>
-            <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center bg-[var(--color-bg)]" style={{ borderRadius: 'var(--radius-md)' }}>
-                    <Icon size={18} className="text-[var(--color-primary)]" />
-                </div>
-                <div>
-                    <div className="text-gray-400" style={{ fontSize: 'var(--font-size-small)' }}>{label}</div>
-                    <div className="font-heading font-semibold text-[var(--color-text)]">{value}</div>
-                </div>
-            </div>
-        </Card>
-    );
-}
 
 export default function SalesSummaryIndex({ rows, totals, departments, targets, filters, departmentOptions, branches, canSetTargets, canExport }) {
     const [agent, setAgent] = useState(filters.agent_code ?? '');
@@ -65,36 +53,47 @@ export default function SalesSummaryIndex({ rows, totals, departments, targets, 
 
     return (
         <AppShell>
-            <div className="flex min-h-0 flex-1 flex-col" style={{ gap: 'var(--space-section)' }}>
+            <PageStack>
                 <PageHeader
                     title="Sales Summary"
                     subtitle="Aggregated operational sales across departments"
                     actions={canExport && <Button icon={Download} onClick={() => router.visit(route('sales.export', filters))}>Export</Button>}
                 />
 
-                <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
-                    <Stat icon={Search} label="Records" value={totals.records} />
-                    <Stat icon={TrendingUp} label="Gross Sales" value={money(totals.gross_sales)} />
-                    <Stat icon={TrendingUp} label="Net Payable" value={money(totals.net_payable)} />
-                    <Stat icon={TrendingUp} label="Income" value={money(totals.income)} />
-                </div>
-
-                <Card compact>
-                    <div className="grid gap-3 lg:grid-cols-[180px_220px_180px_160px_auto]">
-                        <Input type="month" value={monthValue} onChange={(e) => {
-                            const [year, month] = e.target.value.split('-');
-                            apply({ year, month });
-                        }} />
-                        <Select value={filters.department ?? ''} onChange={(e) => apply({ department: e.target.value })} options={[{ value: '', label: 'All departments' }, ...Object.entries(departmentOptions).map(([value, label]) => ({ value, label }))]} />
-                        <Select value={filters.branch_id ?? ''} onChange={(e) => apply({ branch_id: e.target.value })} options={[{ value: '', label: 'All branches' }, ...branches.map((branch) => ({ value: branch.id, label: branch.name }))]} />
-                        <Input value={agent} onChange={(e) => setAgent(e.target.value)} placeholder="Agent code" />
-                        <Button variant="secondary" onClick={() => apply()}>Apply</Button>
-                    </div>
-                </Card>
+                <StatGrid>
+                    <StatCard icon={Search} label="Records" value={totals.records} />
+                    <StatCard icon={TrendingUp} label="Gross Sales" value={money(totals.gross_sales)} />
+                    <StatCard icon={TrendingUp} label="Net Payable" value={money(totals.net_payable)} tone="warning" />
+                    <StatCard icon={TrendingUp} label="Income" value={money(totals.income)} tone="primary" />
+                </StatGrid>
 
                 <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
                     <div className="flex min-h-[420px] flex-col">
-                        <DataTable rows={rows ?? []} columns={columns} pageSize={20} />
+                        <DataTable
+                            rows={rows ?? []}
+                            columns={columns}
+                            pageSize={20}
+                            toolbar={
+                                <FilterStrip>
+                                    <FilterField width={160}>
+                                        <Input type="month" value={monthValue} onChange={(e) => {
+                                            const [year, month] = e.target.value.split('-');
+                                            apply({ year, month });
+                                        }} />
+                                    </FilterField>
+                                    <FilterField width={220}>
+                                        <Select value={filters.department ?? ''} onChange={(e) => apply({ department: e.target.value })} options={[{ value: '', label: 'All departments' }, ...Object.entries(departmentOptions).map(([value, label]) => ({ value, label }))]} />
+                                    </FilterField>
+                                    <FilterField width={190}>
+                                        <Select value={filters.branch_id ?? ''} onChange={(e) => apply({ branch_id: e.target.value })} options={[{ value: '', label: 'All branches' }, ...branches.map((branch) => ({ value: branch.id, label: branch.name }))]} />
+                                    </FilterField>
+                                    <FilterField width={160}>
+                                        <Input value={agent} onChange={(e) => setAgent(e.target.value)} placeholder="Agent code" />
+                                    </FilterField>
+                                    <Button variant="secondary" onClick={() => apply()}>Apply</Button>
+                                </FilterStrip>
+                            }
+                        />
                     </div>
 
                     <div className="flex flex-col gap-4">
@@ -139,7 +138,7 @@ export default function SalesSummaryIndex({ rows, totals, departments, targets, 
                         )}
                     </div>
                 </div>
-            </div>
+            </PageStack>
         </AppShell>
     );
 }

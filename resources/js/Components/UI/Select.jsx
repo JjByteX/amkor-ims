@@ -14,6 +14,8 @@ export default function Select({
     id,
     required    = false,
     className   = '',
+    onFocus,
+    onBlur,
     ...rest
 }) {
     const selectId = id ?? (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
@@ -32,6 +34,7 @@ export default function Select({
                         fontFamily : 'var(--font-body)',
                         fontWeight : 'var(--font-weight-semibold)',
                         color      : 'var(--color-text)',
+                        lineHeight  : 1.25,
                     }}
                 >
                     {label}
@@ -48,20 +51,33 @@ export default function Select({
                     onChange={onChange}
                     disabled={disabled}
                     required={required}
-                    className="w-full appearance-none outline-none transition-colors duration-150 focus:ring-2 focus:ring-offset-0 cursor-pointer"
+                    className="w-full appearance-none outline-none transition-colors duration-150 focus:ring-0 focus:ring-offset-0 cursor-pointer"
                     style={{
                         height       : 'var(--height-input)',
                         borderRadius : 'var(--radius-md)',
-                        border       : `1px solid ${error ? 'var(--color-error)' : '#D1D5DB'}`,
+                        border       : error ? '1.5px solid var(--color-error)' : 'var(--border-container)',
                         paddingLeft  : 'var(--space-2)',
                         paddingRight : 'calc(var(--space-2) + 20px)',
                         fontSize     : 'var(--font-size-body)',
                         fontFamily   : 'var(--font-body)',
+                        fontWeight   : 500,
                         background   : 'var(--color-card)',
                         color        : 'var(--color-text)',
                         opacity      : disabled ? 0.5 : 1,
                         cursor       : disabled ? 'not-allowed' : 'pointer',
-                        '--tw-ring-color': error ? 'var(--color-error)' : 'var(--color-primary)',
+                        boxShadow    : 'none',
+                    }}
+                    onFocus={(e) => {
+                        e.currentTarget.style.borderColor = error ? 'var(--color-error)' : 'var(--color-primary)';
+                        e.currentTarget.style.boxShadow = 'var(--ring-focus)';
+                        onFocus?.(e);
+                    }}
+                    onBlur={(e) => {
+                        e.currentTarget.style.border = error
+                            ? '1.5px solid var(--color-error)'
+                            : 'var(--border-container)';
+                        e.currentTarget.style.boxShadow = 'none';
+                        onBlur?.(e);
                     }}
                     {...rest}
                 >
@@ -74,7 +90,7 @@ export default function Select({
                 </select>
 
                 <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center"
-                    style={{ paddingRight: 'var(--space-1)', color: '#9CA3AF' }}>
+                    style={{ paddingRight: 'var(--space-1)', color: 'var(--color-text-muted)' }}>
                     <ChevronDown size={16} />
                 </span>
             </div>

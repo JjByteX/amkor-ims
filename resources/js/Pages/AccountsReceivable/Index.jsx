@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
-import { Plus, Search, Filter, Eye, Trash2 } from 'lucide-react';
+import { Plus, Search, Eye, Trash2, Banknote, Receipt, WalletCards } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
 import DataTable from '../../Components/Shared/DataTable';
+import FilterStrip, { FilterField } from '../../Components/Shared/FilterStrip';
+import PageStack from '../../Components/Shared/PageStack';
+import StatCard from '../../Components/Shared/StatCard';
+import StatGrid from '../../Components/Shared/StatGrid';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
 import Badge from '../../Components/UI/Badge';
-import Card from '../../Components/UI/Card';
 import ConfirmDialog from '../../Components/Shared/ConfirmDialog';
 import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
 
@@ -177,7 +180,7 @@ export default function ARIndex({
 
     return (
         <AppShell>
-            <div className="flex flex-col flex-1 min-h-0" style={{ gap: "var(--space-section)" }}>
+            <PageStack>
 
                 {flash?.message && (
                     <div
@@ -204,74 +207,54 @@ export default function ARIndex({
                     )}
                 />
 
-                {/* Summary cards */}
                 {summary && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--space-2)' }}>
-                        {[
-                            { label: 'Total Collectible (PHP)', value: summary.total_collectible_php, currency: 'PHP' },
-                            { label: 'Total Received (PHP)',    value: summary.total_received_php,    currency: 'PHP' },
-                            { label: 'Outstanding Balance (PHP)', value: summary.total_balance_php,   currency: 'PHP', highlight: true },
-                            { label: 'Total Collectible (USD)', value: summary.total_collectible_usd, currency: 'USD' },
-                            { label: 'Outstanding Balance (USD)', value: summary.total_balance_usd,   currency: 'USD', highlight: parseFloat(summary.total_balance_usd) > 0 },
-                        ].map((s) => (
-                            <Card key={s.label}>
-                                <div className="font-body text-gray-400" style={{ fontSize: 'var(--font-size-small)' }}>
-                                    {s.label}
-                                </div>
-                                <div
-                                    className="font-heading font-semibold"
-                                    style={{
-                                        fontSize  : 'var(--font-size-heading)',
-                                        color     : s.highlight && parseFloat(s.value) > 0 ? 'var(--color-error)' : 'var(--color-text)',
-                                        marginTop : 4,
-                                    }}
-                                >
-                                    <CurrencyDisplay amount={s.value ?? 0} currency={s.currency} />
-                                </div>
-                            </Card>
-                        ))}
-                    </div>
+                    <StatGrid>
+                        <StatCard icon={Receipt} label="Collectible PHP" value={<CurrencyDisplay amount={summary.total_collectible_php ?? 0} currency="PHP" />} />
+                        <StatCard icon={Banknote} label="Received PHP" value={<CurrencyDisplay amount={summary.total_received_php ?? 0} currency="PHP" />} tone="success" />
+                        <StatCard icon={WalletCards} label="Balance PHP" value={<CurrencyDisplay amount={summary.total_balance_php ?? 0} currency="PHP" />} tone={parseFloat(summary.total_balance_php) > 0 ? 'error' : 'success'} />
+                        <StatCard icon={Receipt} label="Collectible USD" value={<CurrencyDisplay amount={summary.total_collectible_usd ?? 0} currency="USD" />} />
+                        <StatCard icon={WalletCards} label="Balance USD" value={<CurrencyDisplay amount={summary.total_balance_usd ?? 0} currency="USD" />} tone={parseFloat(summary.total_balance_usd) > 0 ? 'error' : 'success'} />
+                    </StatGrid>
                 )}
 
-                {/* Filters */}
-                <div className="flex flex-wrap items-center" style={{ gap: 'var(--space-2)' }}>
-                    <div className="flex-1 min-w-[200px]">
-                        <Input
-                            placeholder="Customer, particulars, OR#, AR#..."
-                            value={searchInput}
-                            onChange={(e) => setSearchInput(e.target.value)}
-                            onKeyDown={handleSearchKey}
-                            icon={Search}
-                        />
-                    </div>
-                    <div className="min-w-[160px]">
-                        <Select
-                            options={deptOptions}
-                            value={filters.dept ?? ''}
-                            onChange={(e) => applyFilter({ dept: e.target.value, page: 1 })}
-                        />
-                    </div>
-                    <div className="min-w-[160px]">
-                        <Select
-                            options={statusOptions}
-                            value={filters.status ?? ''}
-                            onChange={(e) => applyFilter({ status: e.target.value, page: 1 })}
-                        />
-                    </div>
-                    {hasActiveFilters && (
-                        <Button variant="ghost" onClick={clearFilters}>Clear</Button>
-                    )}
-                </div>
-
-                {/* Table */}
                 <DataTable
                     columns={columns}
                     rows={collectibles.data}
                     pagination={collectibles}
                     onPageChange={(page) => applyFilter({ page })}
+                    toolbar={
+                        <FilterStrip>
+                            <FilterField grow>
+                                <Input
+                                    placeholder="Customer, particulars, OR#, AR#..."
+                                    value={searchInput}
+                                    onChange={(e) => setSearchInput(e.target.value)}
+                                    onKeyDown={handleSearchKey}
+                                    icon={Search}
+                                />
+                            </FilterField>
+                            <FilterField>
+                                <Select
+                                    options={deptOptions}
+                                    value={filters.dept ?? ''}
+                                    onChange={(e) => applyFilter({ dept: e.target.value, page: 1 })}
+                                />
+                            </FilterField>
+                            <FilterField>
+                                <Select
+                                    options={statusOptions}
+                                    value={filters.status ?? ''}
+                                    onChange={(e) => applyFilter({ status: e.target.value, page: 1 })}
+                                />
+                            </FilterField>
+                            {hasActiveFilters && (
+                                <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                            )}
+                        </FilterStrip>
+                    }
                 />
 
-            </div>
+            </PageStack>
 
             <ConfirmDialog
                 open={!!deleteTarget}

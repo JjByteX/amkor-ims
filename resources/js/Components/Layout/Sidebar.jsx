@@ -360,7 +360,7 @@ export default function Sidebar() {
                                     className="px-2 pb-1 pt-3 font-body font-semibold uppercase"
                                     style={{
                                         color        : 'var(--color-text-muted)',
-                                        fontSize     : '10px',
+                                        fontSize     : '11px',
                                         lineHeight   : 1.2,
                                         letterSpacing: 0,
                                     }}
@@ -441,7 +441,8 @@ export default function Sidebar() {
                             gap          : 'var(--space-1)',
                             padding      : '6px var(--space-1)',
                             borderRadius : 'var(--radius-md)',
-                            minHeight    : '40px',
+                            minHeight    : '44px',
+                            border       : '1px solid transparent',
                         }}
                     >
                         {/* Avatar */}
@@ -513,8 +514,8 @@ export default function Sidebar() {
                         bottom       : collapsed ? '106px' : '68px',
                         borderRadius : 'var(--radius-lg)',
                         border       : 'var(--border-container)',
-                        boxShadow    : '0 -2px 8px rgba(0,0,0,0.08), var(--shadow-card)',
-                        padding      : '4px',
+                        boxShadow    : '0 18px 48px -28px rgba(15,23,42,0.32), var(--shadow-card)',
+                        padding      : '6px',
                     }}
                 >
                     {/* Dark mode toggle */}
@@ -522,12 +523,12 @@ export default function Sidebar() {
                         onClick={() => { setDark((d) => !d); setMenuOpen(false); }}
                         className={[
                             'w-full flex items-center gap-3',
-                            'h-9 px-3',
+                            'h-10 px-3',
                             'font-body text-[var(--color-text)]',
                             'hover:bg-black/5 dark:hover:bg-white/6',
                             'transition-colors duration-0',
                         ].join(' ')}
-                        style={{ fontSize: '13px', borderRadius: 'var(--radius-md)' }}
+                        style={{ fontSize: '13px', borderRadius: 'var(--radius-md)', fontWeight: 500 }}
                     >
                         {dark
                             ? <Sun  size={15} className="shrink-0 text-gray-400" />
@@ -544,12 +545,12 @@ export default function Sidebar() {
                         onClick={handleLogout}
                         className={[
                             'w-full flex items-center gap-3',
-                            'h-9 px-3',
+                            'h-10 px-3',
                             'font-body text-[var(--color-error)]',
                             'hover:bg-red-50 dark:hover:bg-red-900/15',
                             'transition-colors duration-0',
                         ].join(' ')}
-                        style={{ fontSize: '13px', borderRadius: 'var(--radius-md)' }}
+                        style={{ fontSize: '13px', borderRadius: 'var(--radius-md)', fontWeight: 500 }}
                     >
                         <LogOut size={15} className="shrink-0" />
                         <span>Sign out</span>

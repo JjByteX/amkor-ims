@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
-import { Plus, Search, Eye, Trash2 } from 'lucide-react';
+import { Plus, Search, Eye, Trash2, Banknote, Receipt, WalletCards, Files } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
 import DataTable from '../../Components/Shared/DataTable';
+import FilterStrip, { FilterField } from '../../Components/Shared/FilterStrip';
+import PageStack from '../../Components/Shared/PageStack';
+import StatCard from '../../Components/Shared/StatCard';
+import StatGrid from '../../Components/Shared/StatGrid';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
 import Badge from '../../Components/UI/Badge';
-import Card from '../../Components/UI/Card';
 import ConfirmDialog from '../../Components/Shared/ConfirmDialog';
 import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
 
@@ -26,26 +29,22 @@ const APPROVAL_VARIANT = {
     released: 'neutral',
 };
 
-function SummaryCard({ label, php, usd, jpy }) {
+function MultiCurrencyValue({ php, usd, jpy }) {
+    const extras = [];
+    if (parseFloat(usd) > 0) extras.push(<CurrencyDisplay key="usd" amount={usd} currency="USD" />);
+    if (parseFloat(jpy) > 0) extras.push(<CurrencyDisplay key="jpy" amount={jpy} currency="JPY" />);
+
     return (
-        <Card>
-            <p style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)', opacity: 0.6 }}>
-                {label}
-            </p>
-            <p className="font-heading" style={{ fontSize: 'var(--font-size-body)', color: 'var(--color-text)', marginTop: 4 }}>
-                <CurrencyDisplay amount={php} currency="PHP" />
-            </p>
-            {parseFloat(usd) > 0 && (
-                <p style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)', opacity: 0.7, marginTop: 2 }}>
-                    <CurrencyDisplay amount={usd} currency="USD" />
-                </p>
+        <span>
+            <CurrencyDisplay amount={php} currency="PHP" />
+            {extras.length > 0 && (
+                <span className="block font-body" style={{ marginTop: 4, fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>
+                    {extras.map((extra, index) => (
+                        <span key={index}>{index > 0 ? ' / ' : ''}{extra}</span>
+                    ))}
+                </span>
             )}
-            {parseFloat(jpy) > 0 && (
-                <p style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)', opacity: 0.7, marginTop: 2 }}>
-                    <CurrencyDisplay amount={jpy} currency="JPY" />
-                </p>
-            )}
-        </Card>
+        </span>
     );
 }
 
@@ -201,7 +200,7 @@ export default function APIndex({
 
     return (
         <AppShell>
-            <div className="flex flex-col flex-1 min-h-0" style={{ gap: "var(--space-section)" }}>
+            <PageStack>
 
                 <PageHeader
                     title="Accounts Payable"
@@ -232,85 +231,78 @@ export default function APIndex({
                     </div>
                 )}
 
-                {/* Summary cards */}
                 {summary && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-2)' }}>
-                        <SummaryCard
+                    <StatGrid>
+                        <StatCard
+                            icon={Receipt}
                             label="Total Invoice"
-                            php={summary.total_invoice_php ?? 0}
-                            usd={summary.total_invoice_usd ?? 0}
-                            jpy={summary.total_invoice_jpy ?? 0}
+                            value={<MultiCurrencyValue php={summary.total_invoice_php ?? 0} usd={summary.total_invoice_usd ?? 0} jpy={summary.total_invoice_jpy ?? 0} />}
                         />
-                        <SummaryCard
+                        <StatCard
+                            icon={Banknote}
                             label="Total Paid"
-                            php={summary.total_paid_php ?? 0}
-                            usd={summary.total_paid_usd ?? 0}
-                            jpy={summary.total_paid_jpy ?? 0}
+                            value={<MultiCurrencyValue php={summary.total_paid_php ?? 0} usd={summary.total_paid_usd ?? 0} jpy={summary.total_paid_jpy ?? 0} />}
+                            tone="success"
                         />
-                        <SummaryCard
+                        <StatCard
+                            icon={WalletCards}
                             label="Total Balance"
-                            php={summary.total_balance_php ?? 0}
-                            usd={summary.total_balance_usd ?? 0}
-                            jpy={summary.total_balance_jpy ?? 0}
+                            value={<MultiCurrencyValue php={summary.total_balance_php ?? 0} usd={summary.total_balance_usd ?? 0} jpy={summary.total_balance_jpy ?? 0} />}
+                            tone="warning"
                         />
-                        <Card>
-                            <p style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)', opacity: 0.6 }}>Total Records</p>
-                            <p className="font-heading" style={{ fontSize: 'var(--font-size-heading)', color: 'var(--color-text)', marginTop: 4 }}>
-                                {summary.total_count ?? 0}
-                            </p>
-                        </Card>
-                    </div>
+                        <StatCard icon={Files} label="Total Records" value={summary.total_count ?? 0} />
+                    </StatGrid>
                 )}
-
-                {/* Filters */}
-                <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', alignItems: 'center' }}>
-                    <div style={{ flex: '1 1 220px' }}>
-                        <Input
-                            value={searchInput}
-                            onChange={(e) => setSearchInput(e.target.value)}
-                            onKeyDown={handleSearchKey}
-                            icon={<Search size={16} />}
-                            placeholder="Supplier, invoice#, ACR..."
-                        />
-                    </div>
-                    <div style={{ flex: '0 0 140px' }}>
-                        <Select
-                            value={filters.status ?? ''}
-                            onChange={(e) => applyFilter({ status: e.target.value || undefined })}
-                            options={[
-                                { value: '', label: 'All Statuses' },
-                                ...Object.entries(statuses).map(([v, l]) => ({ value: v, label: l })),
-                            ]}
-                        />
-                    </div>
-                    <div style={{ flex: '0 0 120px' }}>
-                        <Select
-                            value={filters.currency ?? ''}
-                            onChange={(e) => applyFilter({ currency: e.target.value || undefined })}
-                            options={[
-                                { value: '', label: 'All Currencies' },
-                                ...Object.entries(currencies).map(([v, l]) => ({ value: v, label: l })),
-                            ]}
-                        />
-                    </div>
-                    <div style={{ flex: '0 0 140px' }}>
-                        <Input
-                            type="month"
-                            value={filters.month ?? ''}
-                            onChange={(e) => applyFilter({ month: e.target.value || undefined })}
-                        />
-                    </div>
-                    <Button variant="ghost" size="sm" onClick={clearFilters}>Clear</Button>
-                </div>
 
                 <DataTable
                     columns={columns}
                     rows={payables.data ?? []}
                     pagination={payables}
                     onPageChange={(page) => applyFilter({ page })}
+                    toolbar={
+                        <FilterStrip>
+                            <FilterField grow>
+                                <Input
+                                    value={searchInput}
+                                    onChange={(e) => setSearchInput(e.target.value)}
+                                    onKeyDown={handleSearchKey}
+                                    icon={Search}
+                                    placeholder="Supplier, invoice#, ACR..."
+                                />
+                            </FilterField>
+                            <FilterField width={150}>
+                                <Select
+                                    value={filters.status ?? ''}
+                                    onChange={(e) => applyFilter({ status: e.target.value || undefined })}
+                                    options={[
+                                        { value: '', label: 'All Statuses' },
+                                        ...Object.entries(statuses).map(([v, l]) => ({ value: v, label: l })),
+                                    ]}
+                                />
+                            </FilterField>
+                            <FilterField width={140}>
+                                <Select
+                                    value={filters.currency ?? ''}
+                                    onChange={(e) => applyFilter({ currency: e.target.value || undefined })}
+                                    options={[
+                                        { value: '', label: 'All Currencies' },
+                                        ...Object.entries(currencies).map(([v, l]) => ({ value: v, label: l })),
+                                    ]}
+                                />
+                            </FilterField>
+                            <FilterField width={150}>
+                                <Input
+                                    type="month"
+                                    value={filters.month ?? ''}
+                                    onChange={(e) => applyFilter({ month: e.target.value || undefined })}
+                                />
+                            </FilterField>
+                            <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                        </FilterStrip>
+                    }
                 />
 
-            </div>
+            </PageStack>
 
             <ConfirmDialog
                 open={!!deleteTarget}

@@ -78,20 +78,21 @@ export default function Modal({
                 ].join(' ')}
                 style={{
                     borderRadius: 'var(--radius-lg)',
-                    boxShadow: '0 4px 6px -6px rgba(0,0,0,0.015),0 3px 4px -4px rgba(0,0,0,0.012),0 2px 2px -2px rgba(0,0,0,0.010),0 1px 1px -1px rgba(0,0,0,0.008)',
+                    border      : 'var(--border-container)',
+                    boxShadow   : '0 24px 80px -32px rgba(15,23,42,0.45), var(--shadow-card)',
                 }}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700 shrink-0">
+                <div className="flex items-center justify-between px-6 py-4 shrink-0" style={{ borderBottom: 'var(--border-container)' }}>
                     <h2
-                        className="font-heading font-semibold text-[var(--color-text)]"
-                        style={{ fontSize: 'var(--font-size-heading)' }}
+                        className="font-heading font-bold text-[var(--color-text)]"
+                        style={{ fontSize: 'var(--font-size-heading)', lineHeight: 'var(--line-height-tight)' }}
                     >
                         {title}
                     </h2>
                     <button
                         onClick={onClose}
-                        className="p-1 text-gray-400 hover:text-[var(--color-text)] hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
                         style={{ borderRadius: 'var(--radius-md)' }}
                         aria-label="Close modal"
                     >
@@ -106,7 +107,7 @@ export default function Modal({
 
                 {/* Footer */}
                 {footer && (
-                    <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100 dark:border-gray-700 shrink-0">
+                    <div className="flex items-center justify-end gap-2 px-6 py-4 shrink-0" style={{ borderTop: 'var(--border-container)' }}>
                         {footer}
                     </div>
                 )}

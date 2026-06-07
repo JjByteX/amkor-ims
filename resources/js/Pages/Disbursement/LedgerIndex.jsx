@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
-import { Plus, Search, Edit2 } from 'lucide-react';
+import { Plus, Search, Edit2, Banknote, Files, Download } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
 import DataTable from '../../Components/Shared/DataTable';
+import FilterStrip, { FilterField } from '../../Components/Shared/FilterStrip';
+import PageStack from '../../Components/Shared/PageStack';
+import StatCard from '../../Components/Shared/StatCard';
+import StatGrid from '../../Components/Shared/StatGrid';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
 import Badge from '../../Components/UI/Badge';
-import Card from '../../Components/UI/Card';
 import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
 
 const CATEGORY_VARIANT = {
@@ -132,7 +135,7 @@ export default function LedgerIndex({
 
     return (
         <AppShell>
-            <div className="flex flex-col flex-1 min-h-0" style={{ gap: "var(--space-section)" }}>
+            <PageStack>
 
                 <PageHeader
                     title="Disbursement Ledger"
@@ -173,69 +176,53 @@ export default function LedgerIndex({
                     </div>
                 )}
 
-                {/* Summary cards */}
                 {summary && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-2)' }}>
-                        <Card>
-                            <p style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)', opacity: 0.6 }}>Total Disbursed</p>
-                            <p className="font-heading" style={{ fontSize: 'var(--font-size-heading)', color: 'var(--color-text)', marginTop: 4 }}>
-                                <CurrencyDisplay amount={summary.total_amount ?? 0} currency="PHP" />
-                            </p>
-                        </Card>
-                        <Card>
-                            <p style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)', opacity: 0.6 }}>Total Entries</p>
-                            <p className="font-heading" style={{ fontSize: 'var(--font-size-heading)', color: 'var(--color-text)', marginTop: 4 }}>
-                                {summary.total_count ?? 0}
-                            </p>
-                        </Card>
-                        <Card>
-                            <p style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)', opacity: 0.6 }}>Access file export</p>
-                            <p style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)', opacity: 0.5, marginTop: 4 }}>
-                                Full export in Phase 9
-                            </p>
-                        </Card>
-                    </div>
+                    <StatGrid>
+                        <StatCard icon={Banknote} label="Total Disbursed" value={<CurrencyDisplay amount={summary.total_amount ?? 0} currency="PHP" />} />
+                        <StatCard icon={Files} label="Total Entries" value={summary.total_count ?? 0} />
+                        <StatCard icon={Download} label="Access File Export" value="Phase 9" sub="Full export workflow" />
+                    </StatGrid>
                 )}
-
-                {/* Filters */}
-                <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', alignItems: 'center' }}>
-                    <div style={{ flex: '1 1 220px' }}>
-                        <Input
-                            value={searchInput}
-                            onChange={(e) => setSearchInput(e.target.value)}
-                            onKeyDown={handleSearchKey}
-                            icon={<Search size={16} />}
-                            placeholder="Payee, description, reference..."
-                        />
-                    </div>
-                    <div style={{ flex: '0 0 180px' }}>
-                        <Select
-                            value={filters.category ?? ''}
-                            onChange={(e) => applyFilter({ category: e.target.value || undefined })}
-                            options={[
-                                { value: '', label: 'All Categories' },
-                                ...Object.entries(categories).map(([v, l]) => ({ value: v, label: l })),
-                            ]}
-                        />
-                    </div>
-                    <div style={{ flex: '0 0 140px' }}>
-                        <Input
-                            type="month"
-                            value={filters.month ?? ''}
-                            onChange={(e) => applyFilter({ month: e.target.value || undefined })}
-                        />
-                    </div>
-                    <Button variant="ghost" size="sm" onClick={clearFilters}>Clear</Button>
-                </div>
 
                 <DataTable
                     columns={columns}
                     rows={entries.data ?? []}
                     pagination={entries}
                     onPageChange={(page) => applyFilter({ page })}
+                    toolbar={
+                        <FilterStrip>
+                            <FilterField grow>
+                                <Input
+                                    value={searchInput}
+                                    onChange={(e) => setSearchInput(e.target.value)}
+                                    onKeyDown={handleSearchKey}
+                                    icon={Search}
+                                    placeholder="Payee, description, reference..."
+                                />
+                            </FilterField>
+                            <FilterField width={190}>
+                                <Select
+                                    value={filters.category ?? ''}
+                                    onChange={(e) => applyFilter({ category: e.target.value || undefined })}
+                                    options={[
+                                        { value: '', label: 'All Categories' },
+                                        ...Object.entries(categories).map(([v, l]) => ({ value: v, label: l })),
+                                    ]}
+                                />
+                            </FilterField>
+                            <FilterField width={150}>
+                                <Input
+                                    type="month"
+                                    value={filters.month ?? ''}
+                                    onChange={(e) => applyFilter({ month: e.target.value || undefined })}
+                                />
+                            </FilterField>
+                            <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                        </FilterStrip>
+                    }
                 />
 
-            </div>
+            </PageStack>
         </AppShell>
     );
 }

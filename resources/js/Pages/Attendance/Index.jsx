@@ -7,6 +7,10 @@ import {
 } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
+import FilterStrip, { FilterField } from '../../Components/Shared/FilterStrip';
+import PageStack from '../../Components/Shared/PageStack';
+import SharedStatCard from '../../Components/Shared/StatCard';
+import StatGrid from '../../Components/Shared/StatGrid';
 import Card from '../../Components/UI/Card';
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
@@ -49,34 +53,6 @@ const STATUS_VARIANT = {
     holiday:   'neutral',
     rest_day:  'neutral',
 };
-
-// ── Stat card ─────────────────────────────────────────────────────────────────
-
-function StatCard({ icon: Icon, label, value, color = 'var(--color-text)' }) {
-    return (
-        <Card>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                <div style={{
-                    width: 40, height: 40,
-                    borderRadius: 'var(--radius-md)',
-                    background: 'var(--color-bg)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0,
-                }}>
-                    <Icon size={18} style={{ color }} />
-                </div>
-                <div>
-                    <div className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)', opacity: 0.55 }}>
-                        {label}
-                    </div>
-                    <div className="font-heading font-semibold" style={{ fontSize: 'var(--font-size-heading)', color }}>
-                        {value}
-                    </div>
-                </div>
-            </div>
-        </Card>
-    );
-}
 
 // ── Clock widget (today's card) ───────────────────────────────────────────────
 
@@ -350,7 +326,7 @@ export default function AttendanceIndex({
 
     return (
         <AppShell>
-            <div className="flex flex-col flex-1 min-h-0" style={{ gap: 'var(--space-section)' }}>
+            <PageStack>
 
                 {/* Flash */}
                 {flash?.message && (
@@ -393,70 +369,15 @@ export default function AttendanceIndex({
                     canManage={canManage}
                 />
 
-                {/* Stats */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 'var(--space-2)' }}>
-                    <StatCard icon={CheckCircle}  label="Present"   value={stats.total_present}   color="var(--color-success)" />
-                    <StatCard icon={XCircle}      label="Absent"    value={stats.total_absent}    color="var(--color-error)" />
-                    <StatCard icon={MinusCircle}  label="Half Day"  value={stats.total_half_day}  color="var(--color-warning)" />
-                    <StatCard icon={Users}        label="On Leave"  value={stats.total_on_leave}  color="var(--color-info)" />
-                    <StatCard icon={Clock}        label="Late"      value={stats.total_late}       color="var(--color-warning)" />
-                    <StatCard icon={AlertTriangle} label="Undertime" value={stats.total_undertime}  color="var(--color-warning)" />
-                </div>
+                <StatGrid min="150px">
+                    <SharedStatCard icon={CheckCircle} label="Present" value={stats.total_present} tone="success" />
+                    <SharedStatCard icon={XCircle} label="Absent" value={stats.total_absent} tone="error" />
+                    <SharedStatCard icon={MinusCircle} label="Half Day" value={stats.total_half_day} tone="warning" />
+                    <SharedStatCard icon={Users} label="On Leave" value={stats.total_on_leave} tone="info" />
+                    <SharedStatCard icon={Clock} label="Late" value={stats.total_late} tone="warning" />
+                    <SharedStatCard icon={AlertTriangle} label="Undertime" value={stats.total_undertime} tone="warning" />
+                </StatGrid>
 
-                {/* Month navigation + filters */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 'var(--space-2)' }}>
-                    {/* Month nav */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)', flex: '0 0 auto' }}>
-                        <Button variant="ghost" size="sm" icon={ChevronLeft} onClick={() => goMonth(-1)} />
-                        <span className="font-body font-semibold" style={{ fontSize: 'var(--font-size-small)', minWidth: 120, textAlign: 'center', color: 'var(--color-text)' }}>
-                            {MONTHS[month - 1]} {year}
-                        </span>
-                        <Button variant="ghost" size="sm" icon={ChevronRight} onClick={() => goMonth(1)} />
-                    </div>
-
-                    {/* Search */}
-                    <div style={{ flex: 1, minWidth: 180 }}>
-                        <Input
-                            placeholder="Search employee…"
-                            value={searchInput}
-                            onChange={(e) => setSearchInput(e.target.value)}
-                            onKeyDown={handleSearchKey}
-                            icon={Search}
-                        />
-                    </div>
-
-                    {/* Status filter */}
-                    <div style={{ minWidth: 160 }}>
-                        <Select
-                            options={[
-                                { value: '', label: 'All Statuses' },
-                                ...Object.entries(statuses).map(([v, l]) => ({ value: v, label: l })),
-                            ]}
-                            value={filters.status ?? ''}
-                            onChange={(e) => applyFilter({ status: e.target.value || undefined, page: 1 })}
-                        />
-                    </div>
-
-                    {/* Branch filter */}
-                    {branches?.length > 1 && (
-                        <div style={{ minWidth: 160 }}>
-                            <Select
-                                options={[
-                                    { value: '', label: 'All Branches' },
-                                    ...branches.map((b) => ({ value: b.id, label: b.name })),
-                                ]}
-                                value={filters.branchId ?? ''}
-                                onChange={(e) => applyFilter({ branch_id: e.target.value || undefined, page: 1 })}
-                            />
-                        </div>
-                    )}
-
-                    {hasActiveFilters && (
-                        <Button variant="ghost" onClick={clearFilters}>Clear</Button>
-                    )}
-                </div>
-
-                {/* Table */}
                 <DataTable
                     columns={columns}
                     rows={records.data ?? []}
@@ -464,8 +385,53 @@ export default function AttendanceIndex({
                     onPageChange={(page) =>
                         router.get(route('attendance.index'), { ...filters, search: searchInput, page }, { preserveState: true })
                     }
+                    toolbar={
+                        <FilterStrip>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)', flex: '0 0 auto' }}>
+                                <Button variant="ghost" size="sm" icon={ChevronLeft} onClick={() => goMonth(-1)} />
+                                <span className="font-body font-semibold" style={{ fontSize: 'var(--font-size-small)', minWidth: 120, textAlign: 'center', color: 'var(--color-text)' }}>
+                                    {MONTHS[month - 1]} {year}
+                                </span>
+                                <Button variant="ghost" size="sm" icon={ChevronRight} onClick={() => goMonth(1)} />
+                            </div>
+                            <FilterField grow>
+                                <Input
+                                    placeholder="Search employee..."
+                                    value={searchInput}
+                                    onChange={(e) => setSearchInput(e.target.value)}
+                                    onKeyDown={handleSearchKey}
+                                    icon={Search}
+                                />
+                            </FilterField>
+                            <FilterField>
+                                <Select
+                                    options={[
+                                        { value: '', label: 'All Statuses' },
+                                        ...Object.entries(statuses).map(([v, l]) => ({ value: v, label: l })),
+                                    ]}
+                                    value={filters.status ?? ''}
+                                    onChange={(e) => applyFilter({ status: e.target.value || undefined, page: 1 })}
+                                />
+                            </FilterField>
+                            {branches?.length > 1 && (
+                                <FilterField>
+                                    <Select
+                                        options={[
+                                            { value: '', label: 'All Branches' },
+                                            ...branches.map((b) => ({ value: b.id, label: b.name })),
+                                        ]}
+                                        value={filters.branchId ?? ''}
+                                        onChange={(e) => applyFilter({ branch_id: e.target.value || undefined, page: 1 })}
+                                    />
+                                </FilterField>
+                            )}
+                            {hasActiveFilters && (
+                                <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                            )}
+                        </FilterStrip>
+                    }
                 />
-            </div>
+            </PageStack>
         </AppShell>
     );
 }
