@@ -36,7 +36,7 @@ class OrmocEscalationMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: '[Amkor IMS] International Booking Escalation — ' . $this->booking->client_name,
+            subject: '[Amkor IMS] International Booking Escalation — '.$this->booking->client_name,
         );
     }
 

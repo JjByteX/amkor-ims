@@ -36,14 +36,14 @@ class AccountsReceivableController extends Controller
 
     public function index(Request $request): Response
     {
-        $user   = $request->user();
-        $role   = $user?->getRoleNames()->first();
+        $user = $request->user();
+        $role = $user?->getRoleNames()->first();
 
         $search = $request->get('search');
-        $dept   = $request->get('department');
+        $dept = $request->get('department');
         $status = $request->get('status');
-        $agent  = $request->get('agent');
-        $month  = $request->get('month');
+        $agent = $request->get('agent');
+        $month = $request->get('month');
 
         $query = Collectible::with(['branch', 'createdBy'])
             ->latest('date');
@@ -56,12 +56,12 @@ class AccountsReceivableController extends Controller
         }
 
         $query->search($search)
-              ->forDepartment($dept)
-              ->forAgent($agent)
-              ->forStatus($status);
+            ->forDepartment($dept)
+            ->forAgent($agent)
+            ->forStatus($status);
 
         if ($month) {
-            [$y, $m] = explode('-', $month . '-01');
+            [$y, $m] = explode('-', $month.'-01');
             $query->forMonth((int) $y, (int) $m);
         }
 
@@ -88,14 +88,14 @@ class AccountsReceivableController extends Controller
         ')->first();
 
         return Inertia::render('AccountsReceivable/Index', [
-            'collectibles'      => $collectibles,
-            'summary'           => $summary,
-            'filters'           => compact('search', 'dept', 'status', 'agent', 'month'),
-            'departments'       => Collectible::DEPARTMENTS,
-            'statuses'          => Collectible::STATUSES,
-            'approvalStatuses'  => Collectible::APPROVAL_STATUSES,
-            'canWrite'          => $this->canOriginate($request),
-            'canApprove'        => $this->canApprove($request),
+            'collectibles' => $collectibles,
+            'summary' => $summary,
+            'filters' => compact('search', 'dept', 'status', 'agent', 'month'),
+            'departments' => Collectible::DEPARTMENTS,
+            'statuses' => Collectible::STATUSES,
+            'approvalStatuses' => Collectible::APPROVAL_STATUSES,
+            'canWrite' => $this->canOriginate($request),
+            'canApprove' => $this->canApprove($request),
         ]);
     }
 
@@ -109,16 +109,16 @@ class AccountsReceivableController extends Controller
 
         // Pre-select department based on role
         $defaultDept = match ($role) {
-            'resa_officer'               => 'resa',
+            'resa_officer' => 'resa',
             'visa_documentation_officer' => 'visa',
-            'ormoc_branch_officer'       => 'ormoc',
-            default                      => null,
+            'ormoc_branch_officer' => 'ormoc',
+            default => null,
         };
 
         return Inertia::render('AccountsReceivable/Create', [
-            'departments'  => Collectible::DEPARTMENTS,
-            'statuses'     => Collectible::STATUSES,
-            'defaultDept'  => $defaultDept,
+            'departments' => Collectible::DEPARTMENTS,
+            'statuses' => Collectible::STATUSES,
+            'defaultDept' => $defaultDept,
         ]);
     }
 
@@ -131,11 +131,11 @@ class AccountsReceivableController extends Controller
         $data = $request->validated();
         $data['created_by'] = $request->user()->id;
         $data['updated_by'] = $request->user()->id;
-        $data['branch_id']  = $request->user()->branch_id;
+        $data['branch_id'] = $request->user()->branch_id;
 
         // Compute balances before saving
-        $data['balance_php'] = max(0, (float)($data['collectible_amount_php'] ?? 0) - (float)($data['payment_received_php'] ?? 0));
-        $data['balance_usd'] = max(0, (float)($data['collectible_amount_usd'] ?? 0) - (float)($data['payment_received_usd'] ?? 0));
+        $data['balance_php'] = max(0, (float) ($data['collectible_amount_php'] ?? 0) - (float) ($data['payment_received_php'] ?? 0));
+        $data['balance_usd'] = max(0, (float) ($data['collectible_amount_usd'] ?? 0) - (float) ($data['payment_received_usd'] ?? 0));
 
         // Auto-status
         if ($data['balance_php'] <= 0 && $data['balance_usd'] <= 0) {
@@ -166,13 +166,13 @@ class AccountsReceivableController extends Controller
         $ar->load(['branch', 'createdBy', 'updatedBy', 'cooApprover', 'gsmApprover']);
 
         return Inertia::render('AccountsReceivable/Show', [
-            'collectible'      => $ar,
-            'departments'      => Collectible::DEPARTMENTS,
-            'statuses'         => Collectible::STATUSES,
+            'collectible' => $ar,
+            'departments' => Collectible::DEPARTMENTS,
+            'statuses' => Collectible::STATUSES,
             'approvalStatuses' => Collectible::APPROVAL_STATUSES,
-            'canWrite'         => $this->canOriginate($request),
-            'canApprove'       => $this->canApprove($request),
-            'canAudit'         => $role === 'admin_auditor' || $role === 'general_manager',
+            'canWrite' => $this->canOriginate($request),
+            'canApprove' => $this->canApprove($request),
+            'canAudit' => $role === 'admin_auditor' || $role === 'general_manager',
         ]);
     }
 
@@ -189,9 +189,9 @@ class AccountsReceivableController extends Controller
         }
 
         return Inertia::render('AccountsReceivable/Edit', [
-            'collectible'  => $ar,
-            'departments'  => Collectible::DEPARTMENTS,
-            'statuses'     => Collectible::STATUSES,
+            'collectible' => $ar,
+            'departments' => Collectible::DEPARTMENTS,
+            'statuses' => Collectible::STATUSES,
         ]);
     }
 
@@ -209,8 +209,8 @@ class AccountsReceivableController extends Controller
         $data['updated_by'] = $request->user()->id;
 
         // Recompute balances
-        $data['balance_php'] = max(0, (float)($data['collectible_amount_php'] ?? $ar->collectible_amount_php) - (float)($data['payment_received_php'] ?? $ar->payment_received_php));
-        $data['balance_usd'] = max(0, (float)($data['collectible_amount_usd'] ?? $ar->collectible_amount_usd) - (float)($data['payment_received_usd'] ?? $ar->payment_received_usd));
+        $data['balance_php'] = max(0, (float) ($data['collectible_amount_php'] ?? $ar->collectible_amount_php) - (float) ($data['payment_received_php'] ?? $ar->payment_received_php));
+        $data['balance_usd'] = max(0, (float) ($data['collectible_amount_usd'] ?? $ar->collectible_amount_usd) - (float) ($data['payment_received_usd'] ?? $ar->payment_received_usd));
 
         $dueDateStr = $data['due_date'] ?? $ar->due_date?->toDateString();
         if ($data['balance_php'] <= 0 && $data['balance_usd'] <= 0) {
@@ -263,10 +263,10 @@ class AccountsReceivableController extends Controller
         $newApprovalStatus = $ar->approved_by_gsm_at ? 'approved' : 'coo_approved';
 
         $ar->update([
-            'approved_by_coo'    => $request->user()->id,
+            'approved_by_coo' => $request->user()->id,
             'approved_by_coo_at' => now(),
-            'approval_status'    => $newApprovalStatus,
-            'updated_by'         => $request->user()->id,
+            'approval_status' => $newApprovalStatus,
+            'updated_by' => $request->user()->id,
         ]);
 
         $msg = $newApprovalStatus === 'approved'
@@ -293,10 +293,10 @@ class AccountsReceivableController extends Controller
         $newApprovalStatus = $ar->approved_by_coo_at ? 'approved' : 'gsm_approved';
 
         $ar->update([
-            'approved_by_gsm'    => $request->user()->id,
+            'approved_by_gsm' => $request->user()->id,
             'approved_by_gsm_at' => now(),
-            'approval_status'    => $newApprovalStatus,
-            'updated_by'         => $request->user()->id,
+            'approval_status' => $newApprovalStatus,
+            'updated_by' => $request->user()->id,
         ]);
 
         $msg = $newApprovalStatus === 'approved'
@@ -319,15 +319,19 @@ class AccountsReceivableController extends Controller
         $request->validate([
             'payment_received_php' => ['nullable', 'numeric', 'min:0'],
             'payment_received_usd' => ['nullable', 'numeric', 'min:0'],
-            'or_number'            => ['nullable', 'string', 'max:100'],
-            'ar_number'            => ['nullable', 'string', 'max:100'],
+            'or_number' => ['nullable', 'string', 'max:100'],
+            'ar_number' => ['nullable', 'string', 'max:100'],
         ]);
 
         $ar->payment_received_php = $request->payment_received_php ?? $ar->payment_received_php;
         $ar->payment_received_usd = $request->payment_received_usd ?? $ar->payment_received_usd;
 
-        if ($request->or_number) $ar->or_number = $request->or_number;
-        if ($request->ar_number) $ar->ar_number = $request->ar_number;
+        if ($request->or_number) {
+            $ar->or_number = $request->or_number;
+        }
+        if ($request->ar_number) {
+            $ar->ar_number = $request->ar_number;
+        }
 
         $ar->recalculate();
         $ar->updated_by = $request->user()->id;
@@ -343,15 +347,17 @@ class AccountsReceivableController extends Controller
         $this->requireFullyApproved($ar);
         $role = $request->user()?->getRoleNames()->first();
 
-        if (! in_array($role, ['accounting_officer', 'general_manager'], true)) abort(403);
+        if (! in_array($role, ['accounting_officer', 'general_manager'], true)) {
+            abort(403);
+        }
         if ($ar->endorsed_to_disbursement) {
             return back()->with('flash', ['type' => 'warning', 'message' => 'Already endorsed to Disbursement.']);
         }
 
         $ar->update([
-            'endorsed_to_disbursement'    => true,
+            'endorsed_to_disbursement' => true,
             'endorsed_to_disbursement_at' => now(),
-            'updated_by'                  => $request->user()->id,
+            'updated_by' => $request->user()->id,
         ]);
 
         return back()->with('flash', ['type' => 'success', 'message' => 'Endorsed to Disbursement.']);
@@ -362,7 +368,9 @@ class AccountsReceivableController extends Controller
         $this->requireFullyApproved($ar);
         $role = $request->user()?->getRoleNames()->first();
 
-        if (! in_array($role, ['accounting_officer', 'admin_auditor', 'general_manager'], true)) abort(403);
+        if (! in_array($role, ['accounting_officer', 'admin_auditor', 'general_manager'], true)) {
+            abort(403);
+        }
         if ($ar->refund_processed) {
             return back()->with('flash', ['type' => 'warning', 'message' => 'Refund already processed.']);
         }
@@ -370,10 +378,10 @@ class AccountsReceivableController extends Controller
         $request->validate(['audit_remarks' => ['nullable', 'string']]);
 
         $ar->update([
-            'refund_processed'    => true,
+            'refund_processed' => true,
             'refund_processed_at' => now(),
-            'audit_remarks'       => $request->audit_remarks ?? $ar->audit_remarks,
-            'updated_by'          => $request->user()->id,
+            'audit_remarks' => $request->audit_remarks ?? $ar->audit_remarks,
+            'updated_by' => $request->user()->id,
         ]);
 
         return back()->with('flash', ['type' => 'success', 'message' => 'Refund marked as processed.']);
@@ -384,15 +392,17 @@ class AccountsReceivableController extends Controller
         $this->requireFullyApproved($ar);
         $role = $request->user()?->getRoleNames()->first();
 
-        if (! in_array($role, ['accounting_officer', 'general_manager'], true)) abort(403);
+        if (! in_array($role, ['accounting_officer', 'general_manager'], true)) {
+            abort(403);
+        }
         if ($ar->documents_endorsed) {
             return back()->with('flash', ['type' => 'warning', 'message' => 'Documents already endorsed.']);
         }
 
         $ar->update([
-            'documents_endorsed'    => true,
+            'documents_endorsed' => true,
             'documents_endorsed_at' => now(),
-            'updated_by'            => $request->user()->id,
+            'updated_by' => $request->user()->id,
         ]);
 
         return back()->with('flash', ['type' => 'success', 'message' => 'Documents endorsed to Audit.']);

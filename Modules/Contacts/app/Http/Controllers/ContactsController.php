@@ -7,8 +7,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use Modules\Contacts\Models\Contact;
 use Modules\Contacts\Http\Requests\StoreContactRequest;
+use Modules\Contacts\Models\Contact;
 
 class ContactsController extends Controller
 {
@@ -27,7 +27,7 @@ class ContactsController extends Controller
 
     public function index(Request $request): Response
     {
-        $type   = $request->get('type', 'corporate');
+        $type = $request->get('type', 'corporate');
         $search = $request->get('search');
         $active = $request->get('active', 'all'); // all | active | inactive
 
@@ -45,14 +45,14 @@ class ContactsController extends Controller
         $contacts = $query->paginate(20)->withQueryString();
 
         return Inertia::render('Contacts/Index', [
-            'contacts'    => $contacts,
-            'filters'     => [
-                'type'   => $type,
+            'contacts' => $contacts,
+            'filters' => [
+                'type' => $type,
                 'search' => $search,
                 'active' => $active,
             ],
-            'canWrite'    => $this->canWrite($request),
-            'typeCounts'  => $this->typeCounts(),
+            'canWrite' => $this->canWrite($request),
+            'typeCounts' => $this->typeCounts(),
         ]);
     }
 
@@ -63,9 +63,9 @@ class ContactsController extends Controller
         $this->requireWriteAccess($request);
 
         return Inertia::render('Contacts/Form', [
-            'contact'   => null,
-            'types'     => Contact::TYPES,
-            'currencies'=> Contact::CURRENCIES,
+            'contact' => null,
+            'types' => Contact::TYPES,
+            'currencies' => Contact::CURRENCIES,
             'defaultType' => $request->get('type', 'corporate'),
         ]);
     }
@@ -79,9 +79,9 @@ class ContactsController extends Controller
         $data = $request->validated();
         $data['created_by'] = $request->user()->id;
         $data['updated_by'] = $request->user()->id;
-        $data['branch_id']  = $request->user()->branch_id ?? null;
-        $data['currency']   = $data['currency'] ?? 'PHP';
-        $data['is_active']  = $data['is_active'] ?? true;
+        $data['branch_id'] = $request->user()->branch_id ?? null;
+        $data['currency'] = $data['currency'] ?? 'PHP';
+        $data['is_active'] = $data['is_active'] ?? true;
 
         Contact::create($data);
 
@@ -95,7 +95,7 @@ class ContactsController extends Controller
     public function show(Request $request, Contact $contact): Response
     {
         return Inertia::render('Contacts/Show', [
-            'contact'  => $contact->load(['branch', 'createdBy', 'updatedBy']),
+            'contact' => $contact->load(['branch', 'createdBy', 'updatedBy']),
             'canWrite' => $this->canWrite($request),
         ]);
     }
@@ -107,10 +107,10 @@ class ContactsController extends Controller
         $this->requireWriteAccess($request);
 
         return Inertia::render('Contacts/Form', [
-            'contact'    => $contact,
-            'types'      => Contact::TYPES,
+            'contact' => $contact,
+            'types' => Contact::TYPES,
             'currencies' => Contact::CURRENCIES,
-            'defaultType'=> $contact->type,
+            'defaultType' => $contact->type,
         ]);
     }
 
@@ -149,6 +149,7 @@ class ContactsController extends Controller
     private function canWrite(Request $request): bool
     {
         $role = $request->user()?->role ?? '';
+
         return in_array($role, self::WRITE_ROLES, true);
     }
 

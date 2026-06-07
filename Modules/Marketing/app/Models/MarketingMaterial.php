@@ -2,12 +2,13 @@
 
 namespace Modules\Marketing\Models;
 
+use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class MarketingMaterial extends Model
 {
@@ -24,68 +25,68 @@ class MarketingMaterial extends Model
     ];
 
     protected $casts = [
-        'publish_date'  => 'date',
-        'reviewed_at'   => 'datetime',
-        'approved_at'   => 'datetime',
-        'published_at'  => 'datetime',
+        'publish_date' => 'date',
+        'reviewed_at' => 'datetime',
+        'approved_at' => 'datetime',
+        'published_at' => 'datetime',
     ];
 
     // ── Constants ─────────────────────────────────────────────────────────────
 
     public const MATERIAL_TYPES = [
-        'poster'            => 'Poster',
-        'itinerary'         => 'Itinerary',
-        'social_media'      => 'Social Media Post',
-        'email_blast'       => 'Email Blast',
-        'event_collateral'  => 'Event Collateral',
-        'office_material'   => 'Office Material',
-        'tv_ad'             => 'TV Ad',
-        'other'             => 'Other',
+        'poster' => 'Poster',
+        'itinerary' => 'Itinerary',
+        'social_media' => 'Social Media Post',
+        'email_blast' => 'Email Blast',
+        'event_collateral' => 'Event Collateral',
+        'office_material' => 'Office Material',
+        'tv_ad' => 'TV Ad',
+        'other' => 'Other',
     ];
 
     public const STATUSES = [
-        'draft'     => 'Draft',
+        'draft' => 'Draft',
         'submitted' => 'Submitted for Review',
-        'approved'  => 'Approved',
+        'approved' => 'Approved',
         'published' => 'Published',
-        'archived'  => 'Archived',
+        'archived' => 'Archived',
     ];
 
     public const PLATFORMS = [
-        'facebook'  => 'Facebook',
-        'tiktok'    => 'TikTok',
+        'facebook' => 'Facebook',
+        'tiktok' => 'TikTok',
         'instagram' => 'Instagram',
-        'email'     => 'Email',
-        'print'     => 'Print',
-        'office'    => 'Office / Display',
-        'other'     => 'Other',
+        'email' => 'Email',
+        'print' => 'Print',
+        'office' => 'Office / Display',
+        'other' => 'Other',
     ];
 
     // ── Relationships ─────────────────────────────────────────────────────────
 
     public function createdBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'created_by');
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function submittedBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'submitted_by');
+        return $this->belongsTo(User::class, 'submitted_by');
     }
 
     public function approvedBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'approved_by');
+        return $this->belongsTo(User::class, 'approved_by');
     }
 
     public function publishedBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'published_by');
+        return $this->belongsTo(User::class, 'published_by');
     }
 
     public function updatedBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'updated_by');
+        return $this->belongsTo(User::class, 'updated_by');
     }
 
     public function expenses(): HasMany
@@ -102,11 +103,14 @@ class MarketingMaterial extends Model
 
     public function scopeSearch(Builder $query, ?string $term): Builder
     {
-        if (! $term) return $query;
+        if (! $term) {
+            return $query;
+        }
+
         return $query->where(function ($q) use ($term) {
-            $q->where('title',       'ilike', "%{$term}%")
-              ->orWhere('description','ilike', "%{$term}%")
-              ->orWhere('caption',    'ilike', "%{$term}%");
+            $q->where('title', 'ilike', "%{$term}%")
+                ->orWhere('description', 'ilike', "%{$term}%")
+                ->orWhere('caption', 'ilike', "%{$term}%");
         });
     }
 

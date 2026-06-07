@@ -6,12 +6,22 @@ use App\Models\User;
 use Illuminate\Support\Facades\Notification;
 use Modules\Notifications\Notifications\ExternalNoticeNotification;
 use Modules\Notifications\Notifications\WorkflowNotification;
+use Spatie\Permission\Models\Role;
 
 class NotificationDispatcher
 {
     public function notifyRoles(array $roles, string $title, string $message, ?string $url = null, string $level = 'info', bool $sendMail = false): void
     {
-        $users = User::role($roles)->active()->get();
+        $existingRoles = Role::query()
+            ->whereIn('name', $roles)
+            ->pluck('name')
+            ->all();
+
+        if ($existingRoles === []) {
+            return;
+        }
+
+        $users = User::role($existingRoles)->active()->get();
 
         if ($users->isEmpty()) {
             return;

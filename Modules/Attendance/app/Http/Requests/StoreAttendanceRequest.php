@@ -17,21 +17,21 @@ class StoreAttendanceRequest extends FormRequest
         $recordId = $this->route('attendance')?->id;
 
         return [
-            'employee_id'     => ['required', 'integer', 'exists:users,id'],
-            'user_id'         => ['nullable', 'integer', 'exists:users,id'],
-            'work_date'       => [
+            'employee_id' => ['required', 'integer', 'exists:users,id'],
+            'user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'work_date' => [
                 'required',
                 'date',
                 // Unique per employee per day — ignore current record on update
-                "unique:attendance_records,work_date," . ($recordId ?? 'NULL') . ",id,employee_id," . $this->input('employee_id') . ",deleted_at,NULL",
+                'unique:attendance_records,work_date,'.($recordId ?? 'NULL').',id,employee_id,'.$this->input('employee_id').',deleted_at,NULL',
             ],
-            'time_in'         => ['nullable', 'date_format:H:i'],
-            'time_out'        => ['nullable', 'date_format:H:i', 'after:time_in'],
-            'status'          => ['required', 'string', 'in:' . implode(',', array_keys(AttendanceRecord::STATUSES))],
-            'leave_type'      => ['nullable', 'string', 'in:' . implode(',', array_keys(AttendanceRecord::LEAVE_TYPES))],
-            'branch_id'       => ['nullable', 'integer', 'exists:branches,id'],
+            'time_in' => ['nullable', 'date_format:H:i'],
+            'time_out' => ['nullable', 'date_format:H:i', 'after:time_in'],
+            'status' => ['required', 'string', 'in:'.implode(',', array_keys(AttendanceRecord::STATUSES))],
+            'leave_type' => ['nullable', 'string', 'in:'.implode(',', array_keys(AttendanceRecord::LEAVE_TYPES))],
+            'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
             'override_reason' => ['nullable', 'string', 'max:500'],
-            'remarks'         => ['nullable', 'string', 'max:500'],
+            'remarks' => ['nullable', 'string', 'max:500'],
         ];
     }
 
@@ -39,7 +39,7 @@ class StoreAttendanceRequest extends FormRequest
     {
         return [
             'work_date.unique' => 'An attendance record for this employee on that date already exists.',
-            'time_out.after'   => 'Time out must be after time in.',
+            'time_out.after' => 'Time out must be after time in.',
         ];
     }
 

@@ -22,9 +22,9 @@ return new class extends Migration
 
             // ── Supplier ──────────────────────────────────────────────────────
             $table->foreignId('contact_id')
-                  ->nullable()
-                  ->constrained('contacts')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('contacts')
+                ->nullOnDelete();
             $table->string('supplier_name', 255);
 
             // ── Primary currency of the invoice ───────────────────────────────
@@ -57,19 +57,19 @@ return new class extends Migration
             // pending|checked|approved|released
             $table->string('approval_status', 30)->default('pending');
             $table->foreignId('checked_by')
-                  ->nullable()
-                  ->constrained('users')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
             $table->timestamp('checked_at')->nullable();
             $table->foreignId('approved_by')
-                  ->nullable()
-                  ->constrained('users')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
             $table->timestamp('approved_at')->nullable();
             $table->foreignId('released_by')
-                  ->nullable()
-                  ->constrained('users')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
             $table->timestamp('released_at')->nullable();
 
             // ── Payment method ────────────────────────────────────────────────
@@ -92,17 +92,17 @@ return new class extends Migration
 
             // ── Branch & audit trail ──────────────────────────────────────────
             $table->foreignId('branch_id')
-                  ->nullable()
-                  ->constrained('branches')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('branches')
+                ->nullOnDelete();
             $table->foreignId('created_by')
-                  ->nullable()
-                  ->constrained('users')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
             $table->foreignId('updated_by')
-                  ->nullable()
-                  ->constrained('users')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
 
             $table->timestamps();
             $table->softDeletes();
@@ -111,8 +111,8 @@ return new class extends Migration
         // Add FK to vouchers after that table is created (migration order)
         Schema::table('payables', function (Blueprint $table) {
             $table->foreign('voucher_id')
-                  ->references('id')->on('vouchers')
-                  ->nullOnDelete();
+                ->references('id')->on('vouchers')
+                ->nullOnDelete();
         });
     }
 

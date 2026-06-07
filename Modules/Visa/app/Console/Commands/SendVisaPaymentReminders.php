@@ -27,6 +27,7 @@ use Modules\Visa\Models\VisaApplication;
 class SendVisaPaymentReminders extends Command
 {
     protected $signature = 'visa:send-payment-reminders';
+
     protected $description = 'Queue payment reminder emails to Disbursement Officers for visa applications due tomorrow.';
 
     public function handle(): int
@@ -40,6 +41,7 @@ class SendVisaPaymentReminders extends Command
 
         if ($applications->isEmpty()) {
             $this->info('No visa payment reminders to send today.');
+
             return self::SUCCESS;
         }
 
@@ -50,6 +52,7 @@ class SendVisaPaymentReminders extends Command
 
         if ($disbursementOfficers->isEmpty()) {
             $this->warn('No active Disbursement Officers found. Check seeded users.');
+
             return self::FAILURE;
         }
 
@@ -65,7 +68,7 @@ class SendVisaPaymentReminders extends Command
             }
 
             $application->update([
-                'payment_request_sent'    => true,
+                'payment_request_sent' => true,
                 'payment_request_sent_at' => now(),
             ]);
 

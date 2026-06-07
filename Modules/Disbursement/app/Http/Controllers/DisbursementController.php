@@ -7,8 +7,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use Modules\Disbursement\Http\Requests\StoreVoucherRequest;
 use Modules\Disbursement\Http\Requests\StoreDisbursementEntryRequest;
+use Modules\Disbursement\Http\Requests\StoreVoucherRequest;
 use Modules\Disbursement\Models\DisbursementEntry;
 use Modules\Disbursement\Models\Voucher;
 
@@ -49,10 +49,10 @@ class DisbursementController extends Controller
             abort(403);
         }
 
-        $search   = $request->get('search');
-        $type     = $request->get('type');
+        $search = $request->get('search');
+        $type = $request->get('type');
         $approval = $request->get('approval_status');
-        $month    = $request->get('month');
+        $month = $request->get('month');
 
         $query = Voucher::with(['branch', 'createdBy', 'checker', 'approver'])
             ->latest('date');
@@ -63,11 +63,11 @@ class DisbursementController extends Controller
         }
 
         $query->search($search)
-              ->forType($type)
-              ->forApprovalStatus($approval);
+            ->forType($type)
+            ->forApprovalStatus($approval);
 
         if ($month) {
-            [$y, $m] = explode('-', $month . '-01');
+            [$y, $m] = explode('-', $month.'-01');
             $query->forMonth((int) $y, (int) $m);
         }
 
@@ -82,14 +82,14 @@ class DisbursementController extends Controller
             ')->first();
 
         return Inertia::render('Disbursement/VouchersIndex', [
-            'vouchers'         => $vouchers,
-            'summary'          => $summary,
-            'filters'          => compact('search', 'type', 'approval', 'month'),
-            'types'            => Voucher::TYPES,
+            'vouchers' => $vouchers,
+            'summary' => $summary,
+            'filters' => compact('search', 'type', 'approval', 'month'),
+            'types' => Voucher::TYPES,
             'approvalStatuses' => Voucher::APPROVAL_STATUSES,
-            'canWrite'         => $this->canPrepare($request),
-            'canCheck'         => $this->canCheck($request),
-            'canApprove'       => $this->canApprove($request),
+            'canWrite' => $this->canPrepare($request),
+            'canCheck' => $this->canCheck($request),
+            'canApprove' => $this->canApprove($request),
         ]);
     }
 
@@ -98,8 +98,8 @@ class DisbursementController extends Controller
         $this->requirePreparer($request);
 
         return Inertia::render('Disbursement/VoucherCreate', [
-            'types'     => Voucher::TYPES,
-            'currencies'=> Voucher::CURRENCIES,
+            'types' => Voucher::TYPES,
+            'currencies' => Voucher::CURRENCIES,
         ]);
     }
 
@@ -111,7 +111,7 @@ class DisbursementController extends Controller
         $data['voucher_no'] = Voucher::nextNumber($data['type']);
         $data['created_by'] = $request->user()->id;
         $data['updated_by'] = $request->user()->id;
-        $data['branch_id']  = $request->user()->branch_id;
+        $data['branch_id'] = $request->user()->branch_id;
 
         $voucher = Voucher::create($data);
 
@@ -134,13 +134,13 @@ class DisbursementController extends Controller
         $voucher->load(['branch', 'createdBy', 'updatedBy', 'checker', 'approver', 'releaser', 'disbursementEntries']);
 
         return Inertia::render('Disbursement/VoucherShow', [
-            'voucher'          => $voucher,
-            'types'            => Voucher::TYPES,
+            'voucher' => $voucher,
+            'types' => Voucher::TYPES,
             'approvalStatuses' => Voucher::APPROVAL_STATUSES,
-            'currencies'       => Voucher::CURRENCIES,
-            'canWrite'         => $this->canPrepare($request),
-            'canCheck'         => $this->canCheck($request),
-            'canApprove'       => $this->canApprove($request),
+            'currencies' => Voucher::CURRENCIES,
+            'canWrite' => $this->canPrepare($request),
+            'canCheck' => $this->canCheck($request),
+            'canApprove' => $this->canApprove($request),
         ]);
     }
 
@@ -154,8 +154,8 @@ class DisbursementController extends Controller
         }
 
         return Inertia::render('Disbursement/VoucherEdit', [
-            'voucher'    => $voucher,
-            'types'      => Voucher::TYPES,
+            'voucher' => $voucher,
+            'types' => Voucher::TYPES,
             'currencies' => Voucher::CURRENCIES,
         ]);
     }
@@ -208,10 +208,10 @@ class DisbursementController extends Controller
         }
 
         $voucher->update([
-            'checked_by'      => $request->user()->id,
-            'checked_at'      => now(),
+            'checked_by' => $request->user()->id,
+            'checked_at' => now(),
             'approval_status' => 'checked',
-            'updated_by'      => $request->user()->id,
+            'updated_by' => $request->user()->id,
         ]);
 
         return back()->with('flash', ['type' => 'success', 'message' => 'Voucher checked. Awaiting JRT approval.']);
@@ -234,27 +234,27 @@ class DisbursementController extends Controller
         }
 
         $voucher->update([
-            'approved_by'     => $request->user()->id,
-            'approved_at'     => now(),
+            'approved_by' => $request->user()->id,
+            'approved_at' => now(),
             'approval_status' => 'approved',
-            'updated_by'      => $request->user()->id,
+            'updated_by' => $request->user()->id,
         ]);
 
         // Auto-create disbursement entry upon approval
         DisbursementEntry::create([
-            'date'         => $voucher->date,
-            'category'     => $voucher->type, // 'cash' or 'check'
+            'date' => $voucher->date,
+            'category' => $voucher->type, // 'cash' or 'check'
             'reference_no' => $voucher->voucher_no,
-            'voucher_id'   => $voucher->id,
-            'payee'        => $voucher->payee,
-            'description'  => $voucher->details,
+            'voucher_id' => $voucher->id,
+            'payee' => $voucher->payee,
+            'description' => $voucher->details,
             'account_code' => $voucher->account_code,
-            'currency'     => $voucher->currency,
-            'amount'       => $voucher->amount,
-            'fund_type'    => $voucher->type === 'check' ? 'cash_on_bank' : 'cash_on_hand',
-            'branch_id'    => $voucher->branch_id,
-            'created_by'   => $request->user()->id,
-            'updated_by'   => $request->user()->id,
+            'currency' => $voucher->currency,
+            'amount' => $voucher->amount,
+            'fund_type' => $voucher->type === 'check' ? 'cash_on_bank' : 'cash_on_hand',
+            'branch_id' => $voucher->branch_id,
+            'created_by' => $request->user()->id,
+            'updated_by' => $request->user()->id,
         ]);
 
         return back()->with('flash', ['type' => 'success', 'message' => 'Voucher approved. Disbursement entry created.']);
@@ -273,10 +273,10 @@ class DisbursementController extends Controller
         }
 
         $voucher->update([
-            'released_by'     => $request->user()->id,
-            'released_at'     => now(),
+            'released_by' => $request->user()->id,
+            'released_at' => now(),
             'approval_status' => 'released',
-            'updated_by'      => $request->user()->id,
+            'updated_by' => $request->user()->id,
         ]);
 
         return back()->with('flash', ['type' => 'success', 'message' => 'Voucher released.']);
@@ -288,12 +288,12 @@ class DisbursementController extends Controller
     {
         // PDF generation stub — full PDF implementation in Phase 9 via DomPDF
         $voucher->update([
-            'pdf_generated'    => true,
+            'pdf_generated' => true,
             'pdf_generated_at' => now(),
         ]);
 
         return back()->with('flash', [
-            'type'    => 'info',
+            'type' => 'info',
             'message' => "PDF for {$voucher->voucher_no} will be generated in Phase 9 (Document Generation module).",
         ]);
     }
@@ -310,10 +310,10 @@ class DisbursementController extends Controller
             abort(403);
         }
 
-        $search   = $request->get('search');
+        $search = $request->get('search');
         $category = $request->get('category');
-        $branch   = $request->get('branch_id');
-        $month    = $request->get('month');
+        $branch = $request->get('branch_id');
+        $month = $request->get('month');
 
         $query = DisbursementEntry::with(['voucher', 'branch', 'createdBy'])
             ->latest('date');
@@ -328,7 +328,7 @@ class DisbursementController extends Controller
         $query->search($search)->forCategory($category);
 
         if ($month) {
-            [$y, $m] = explode('-', $month . '-01');
+            [$y, $m] = explode('-', $month.'-01');
             $query->forMonth((int) $y, (int) $m);
         }
 
@@ -341,12 +341,12 @@ class DisbursementController extends Controller
             ')->first();
 
         return Inertia::render('Disbursement/LedgerIndex', [
-            'entries'    => $entries,
-            'summary'    => $summary,
-            'filters'    => compact('search', 'category', 'branch', 'month'),
+            'entries' => $entries,
+            'summary' => $summary,
+            'filters' => compact('search', 'category', 'branch', 'month'),
             'categories' => DisbursementEntry::CATEGORIES,
-            'fundTypes'  => DisbursementEntry::FUND_TYPES,
-            'canWrite'   => $this->canPrepare($request),
+            'fundTypes' => DisbursementEntry::FUND_TYPES,
+            'canWrite' => $this->canPrepare($request),
         ]);
     }
 
@@ -356,7 +356,7 @@ class DisbursementController extends Controller
 
         return Inertia::render('Disbursement/LedgerCreate', [
             'categories' => DisbursementEntry::CATEGORIES,
-            'fundTypes'  => DisbursementEntry::FUND_TYPES,
+            'fundTypes' => DisbursementEntry::FUND_TYPES,
             'currencies' => DisbursementEntry::CURRENCIES,
         ]);
     }
@@ -368,7 +368,7 @@ class DisbursementController extends Controller
         $data = $request->validated();
         $data['created_by'] = $request->user()->id;
         $data['updated_by'] = $request->user()->id;
-        $data['branch_id']  = $request->user()->branch_id;
+        $data['branch_id'] = $request->user()->branch_id;
 
         $entry = DisbursementEntry::create($data);
 
@@ -382,9 +382,9 @@ class DisbursementController extends Controller
         $this->requirePreparer($request);
 
         return Inertia::render('Disbursement/LedgerEdit', [
-            'entry'      => $entry,
+            'entry' => $entry,
             'categories' => DisbursementEntry::CATEGORIES,
-            'fundTypes'  => DisbursementEntry::FUND_TYPES,
+            'fundTypes' => DisbursementEntry::FUND_TYPES,
             'currencies' => DisbursementEntry::CURRENCIES,
         ]);
     }
@@ -424,7 +424,7 @@ class DisbursementController extends Controller
     {
         // Full export in Phase 9; stub records the period
         return back()->with('flash', [
-            'type'    => 'info',
+            'type' => 'info',
             'message' => 'Access file export will be fully implemented in Phase 9 (Document Generation module). Reminder has been noted.',
         ]);
     }

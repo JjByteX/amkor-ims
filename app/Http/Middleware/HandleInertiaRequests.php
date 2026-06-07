@@ -34,15 +34,15 @@ class HandleInertiaRequests extends Middleware
 
             'auth' => [
                 'user' => $user ? [
-                    'id'                    => $user->id,
-                    'name'                  => $user->name,
-                    'email'                 => $user->email,
-                    'role'                  => $user->getRoleNames()->first(),
-                    'branch_id'             => $user->branch_id,
-                    'branch_name'           => $user->branch?->name,
-                    'branch_code'           => $user->branch?->code,
-                    'must_change_password'  => $user->must_change_password,
-                    'permissions'           => $user->getAllPermissions()->pluck('name'),
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->getRoleNames()->first(),
+                    'branch_id' => $user->branch_id,
+                    'branch_name' => $user->branch?->name,
+                    'branch_code' => $user->branch?->code,
+                    'must_change_password' => $user->must_change_password,
+                    'permissions' => $user->getAllPermissions()->pluck('name'),
                 ] : null,
                 'unread_notifications' => $user
                     ? $user->unreadNotifications()->whereNull('archived_at')->count()
@@ -57,10 +57,10 @@ class HandleInertiaRequests extends Middleware
             // Flash messages — used by Toast component
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
-                'error'   => fn () => $request->session()->get('error'),
+                'error' => fn () => $request->session()->get('error'),
                 'warning' => fn () => $request->session()->get('warning'),
-                'info'    => fn () => $request->session()->get('info'),
-                'type'    => fn () => $request->session()->get('flash.type'),
+                'info' => fn () => $request->session()->get('info'),
+                'type' => fn () => $request->session()->get('flash.type'),
                 'message' => fn () => $request->session()->get('flash.message'),
             ],
         ];

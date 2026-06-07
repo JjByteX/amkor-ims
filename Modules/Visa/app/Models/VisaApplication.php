@@ -43,28 +43,28 @@ class VisaApplication extends Model
     ];
 
     protected $casts = [
-        'date'                    => 'date',
-        'payment_date'            => 'date',
-        'payment_due_date'        => 'date',
-        'payment_request_sent'    => 'boolean',
+        'date' => 'date',
+        'payment_date' => 'date',
+        'payment_due_date' => 'date',
+        'payment_request_sent' => 'boolean',
         'payment_request_sent_at' => 'datetime',
-        'or_received_at'          => 'datetime',
-        'or_endorsed_at'          => 'datetime',
-        'selling_price'           => 'decimal:2',
-        'net_payable'             => 'decimal:2',
-        'income'                  => 'decimal:2',
+        'or_received_at' => 'datetime',
+        'or_endorsed_at' => 'datetime',
+        'selling_price' => 'decimal:2',
+        'net_payable' => 'decimal:2',
+        'income' => 'decimal:2',
     ];
 
     // ─── Constants ────────────────────────────────────────────────────────────
 
     public const STATUSES = [
-        'pending'    => 'Pending',
+        'pending' => 'Pending',
         'on_process' => 'On Process',
-        'completed'  => 'Completed',
-        'approved'   => 'Approved',
-        'denied'     => 'Denied',
-        'forfeited'  => 'Forfeited',
-        'refunded'   => 'Refunded',
+        'completed' => 'Completed',
+        'approved' => 'Approved',
+        'denied' => 'Denied',
+        'forfeited' => 'Forfeited',
+        'refunded' => 'Refunded',
     ];
 
     // Full 45-type list from requirements 4.2
@@ -119,12 +119,12 @@ class VisaApplication extends Model
     ];
 
     public const PAYMENT_MODES = [
-        'cash'      => 'Cash',
-        'bdo'       => 'BDO Deposit',
-        'bpi'       => 'BPI Deposit',
+        'cash' => 'Cash',
+        'bdo' => 'BDO Deposit',
+        'bpi' => 'BPI Deposit',
         'metrobank' => 'Metrobank Deposit',
-        'card'      => 'Credit / Debit Card',
-        'check'     => 'Check',
+        'card' => 'Credit / Debit Card',
+        'check' => 'Check',
     ];
 
     // Visa agent codes (seeded in Phase 1)
@@ -156,13 +156,19 @@ class VisaApplication extends Model
 
     public function scopeForAgent($query, ?string $code)
     {
-        if (! $code) return $query;
+        if (! $code) {
+            return $query;
+        }
+
         return $query->where('agent_code', $code);
     }
 
     public function scopeForBranch($query, ?int $branchId)
     {
-        if (! $branchId) return $query;
+        if (! $branchId) {
+            return $query;
+        }
+
         return $query->where('branch_id', $branchId);
     }
 
@@ -178,14 +184,17 @@ class VisaApplication extends Model
 
     public function scopeSearch($query, ?string $term)
     {
-        if (! $term) return $query;
+        if (! $term) {
+            return $query;
+        }
+
         return $query->where(function ($q) use ($term) {
             $q->where('customer_name', 'ilike', "%{$term}%")
-              ->orWhere('agency',       'ilike', "%{$term}%")
-              ->orWhere('visa_type',    'ilike', "%{$term}%")
-              ->orWhere('ar_number',    'ilike', "%{$term}%")
-              ->orWhere('si_number',    'ilike', "%{$term}%")
-              ->orWhere('agent_code',   'ilike', "%{$term}%");
+                ->orWhere('agency', 'ilike', "%{$term}%")
+                ->orWhere('visa_type', 'ilike', "%{$term}%")
+                ->orWhere('ar_number', 'ilike', "%{$term}%")
+                ->orWhere('si_number', 'ilike', "%{$term}%")
+                ->orWhere('agent_code', 'ilike', "%{$term}%");
         });
     }
 

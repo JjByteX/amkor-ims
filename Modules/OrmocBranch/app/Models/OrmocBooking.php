@@ -64,44 +64,44 @@ class OrmocBooking extends Model
     ];
 
     protected $casts = [
-        'date'                         => 'date',
-        'travel_date'                  => 'date',
-        'date_of_payment'              => 'date',
-        'passport_expiry'              => 'date',
-        'escalated_at'                 => 'datetime',
-        'po_sent_to_mariposa_at'       => 'datetime',
-        'forwarded_to_accounting_at'   => 'datetime',
-        'cc_surcharge_applied'         => 'boolean',
-        'passport_expiry_flagged'      => 'boolean',
-        'escalated_to_head_office'     => 'boolean',
-        'po_sent_to_mariposa'          => 'boolean',
-        'forwarded_to_accounting'      => 'boolean',
-        'selling_price'                => 'decimal:2',
-        'net_payable'                  => 'decimal:2',
-        'income'                       => 'decimal:2',
-        'excess'                       => 'decimal:2',
-        'insurance_nett'               => 'decimal:2',
-        'acr'                          => 'decimal:2',
+        'date' => 'date',
+        'travel_date' => 'date',
+        'date_of_payment' => 'date',
+        'passport_expiry' => 'date',
+        'escalated_at' => 'datetime',
+        'po_sent_to_mariposa_at' => 'datetime',
+        'forwarded_to_accounting_at' => 'datetime',
+        'cc_surcharge_applied' => 'boolean',
+        'passport_expiry_flagged' => 'boolean',
+        'escalated_to_head_office' => 'boolean',
+        'po_sent_to_mariposa' => 'boolean',
+        'forwarded_to_accounting' => 'boolean',
+        'selling_price' => 'decimal:2',
+        'net_payable' => 'decimal:2',
+        'income' => 'decimal:2',
+        'excess' => 'decimal:2',
+        'insurance_nett' => 'decimal:2',
+        'acr' => 'decimal:2',
     ];
 
     // ─── Constants ────────────────────────────────────────────────────────────
 
     public const STATUSES = [
-        'inquiry'   => 'Inquiry',
-        'quoted'    => 'Quoted',
+        'inquiry' => 'Inquiry',
+        'quoted' => 'Quoted',
         'confirmed' => 'Confirmed',
         'cancelled' => 'Cancelled',
     ];
 
     public const BOOKING_TYPES = [
-        'domestic'      => 'Domestic',
+        'domestic' => 'Domestic',
         'international' => 'International',
     ];
 
     public const PAYMENT_MODES = [
-        'cash'          => 'Cash',
+        'cash' => 'Cash',
         'bank_transfer' => 'Bank Transfer / Deposit',
-        'credit_card'   => 'Credit Card (+5%)',
+        'credit_card' => 'Credit Card (+5%)',
     ];
 
     // Ormoc agent codes — from project-brief.md
@@ -139,13 +139,19 @@ class OrmocBooking extends Model
 
     public function scopeForAgent($query, ?string $code)
     {
-        if (! $code) return $query;
+        if (! $code) {
+            return $query;
+        }
+
         return $query->where('agent_code', $code);
     }
 
     public function scopeForBranch($query, ?int $branchId)
     {
-        if (! $branchId) return $query;
+        if (! $branchId) {
+            return $query;
+        }
+
         return $query->where('branch_id', $branchId);
     }
 
@@ -161,14 +167,17 @@ class OrmocBooking extends Model
 
     public function scopeSearch($query, ?string $term)
     {
-        if (! $term) return $query;
+        if (! $term) {
+            return $query;
+        }
+
         return $query->where(function ($q) use ($term) {
-            $q->where('client_name',   'ilike', "%{$term}%")
-              ->orWhere('destination', 'ilike', "%{$term}%")
-              ->orWhere('po_number',   'ilike', "%{$term}%")
-              ->orWhere('ar_number',   'ilike', "%{$term}%")
-              ->orWhere('si_number',   'ilike', "%{$term}%")
-              ->orWhere('agent_code',  'ilike', "%{$term}%");
+            $q->where('client_name', 'ilike', "%{$term}%")
+                ->orWhere('destination', 'ilike', "%{$term}%")
+                ->orWhere('po_number', 'ilike', "%{$term}%")
+                ->orWhere('ar_number', 'ilike', "%{$term}%")
+                ->orWhere('si_number', 'ilike', "%{$term}%")
+                ->orWhere('agent_code', 'ilike', "%{$term}%");
         });
     }
 
@@ -185,6 +194,7 @@ class OrmocBooking extends Model
         }
 
         $threshold = $this->travel_date->addMonths(self::PASSPORT_THRESHOLD_MONTHS);
+
         return $this->passport_expiry->lessThan($threshold);
     }
 

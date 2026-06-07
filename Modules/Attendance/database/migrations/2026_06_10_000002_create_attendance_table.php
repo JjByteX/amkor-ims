@@ -21,7 +21,7 @@ return new class extends Migration
             // employee_id is a soft reference (no FK) to avoid cross-module import.
             $table->unsignedBigInteger('employee_id');          // references employees.id (no FK — cross-module)
             $table->foreignId('user_id')->nullable()            // system login reference
-                  ->constrained('users')->nullOnDelete();
+                ->constrained('users')->nullOnDelete();
 
             // ── When ──────────────────────────────────────────────────────────
             $table->date('work_date');

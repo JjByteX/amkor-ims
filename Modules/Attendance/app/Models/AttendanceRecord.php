@@ -2,12 +2,14 @@
 
 namespace Modules\Attendance\Models;
 
+use App\Models\Branch;
+use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Builder;
-use Carbon\Carbon;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class AttendanceRecord extends Model
 {
@@ -39,43 +41,45 @@ class AttendanceRecord extends Model
     ];
 
     protected $casts = [
-        'work_date'    => 'date',
-        'time_in_at'   => 'datetime',
-        'time_out_at'  => 'datetime',
-        'hr_override'  => 'boolean',
+        'work_date' => 'date',
+        'time_in_at' => 'datetime',
+        'time_out_at' => 'datetime',
+        'hr_override' => 'boolean',
     ];
 
     // ── Constants ─────────────────────────────────────────────────────────────
 
-    public const STANDARD_START  = '08:00:00';   // 8:00 AM — base for late calculation
-    public const STANDARD_END    = '17:00:00';   // 5:00 PM — base for undertime calculation
-    public const STANDARD_HOURS  = 8;            // hours per workday
+    public const STANDARD_START = '08:00:00';   // 8:00 AM — base for late calculation
+
+    public const STANDARD_END = '17:00:00';   // 5:00 PM — base for undertime calculation
+
+    public const STANDARD_HOURS = 8;            // hours per workday
 
     public const STATUSES = [
-        'present'          => 'Present',
-        'absent'           => 'Absent',
-        'half_day'         => 'Half Day',
-        'on_leave'         => 'On Leave',
-        'holiday'          => 'Holiday',
-        'rest_day'         => 'Rest Day',
+        'present' => 'Present',
+        'absent' => 'Absent',
+        'half_day' => 'Half Day',
+        'on_leave' => 'On Leave',
+        'holiday' => 'Holiday',
+        'rest_day' => 'Rest Day',
     ];
 
     public const LEAVE_TYPES = [
-        'SIL'               => 'Service Incentive Leave',
-        'VL'                => 'Vacation Leave',
-        'SL'                => 'Sick Leave',
-        'EL'                => 'Emergency Leave',
+        'SIL' => 'Service Incentive Leave',
+        'VL' => 'Vacation Leave',
+        'SL' => 'Sick Leave',
+        'EL' => 'Emergency Leave',
         'official_business' => 'Official Business',
-        'offsetting'        => 'Offsetting',
-        'other'             => 'Other',
+        'offsetting' => 'Offsetting',
+        'other' => 'Other',
     ];
 
     public const STATUS_COLORS = [
-        'present'  => 'success',
-        'absent'   => 'error',
+        'present' => 'success',
+        'absent' => 'error',
         'half_day' => 'warning',
         'on_leave' => 'info',
-        'holiday'  => 'neutral',
+        'holiday' => 'neutral',
         'rest_day' => 'neutral',
     ];
 
@@ -83,17 +87,17 @@ class AttendanceRecord extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class);
+        return $this->belongsTo(User::class);
     }
 
     public function branch(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Branch::class);
+        return $this->belongsTo(Branch::class);
     }
 
     public function recordedBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'recorded_by');
+        return $this->belongsTo(User::class, 'recorded_by');
     }
 
     // ── Accessors ─────────────────────────────────────────────────────────────
@@ -106,6 +110,7 @@ class AttendanceRecord extends Model
         }
         $h = intdiv($this->minutes_worked, 60);
         $m = $this->minutes_worked % 60;
+
         return $m > 0 ? "{$h}h {$m}m" : "{$h}h";
     }
 
@@ -124,7 +129,8 @@ class AttendanceRecord extends Model
     public static function computeLateMinutes(string $timeIn): int
     {
         $standard = Carbon::today()->setTimeFromTimeString(self::STANDARD_START);
-        $actual   = Carbon::today()->setTimeFromTimeString($timeIn);
+        $actual = Carbon::today()->setTimeFromTimeString($timeIn);
+
         return max(0, (int) $standard->diffInMinutes($actual, false));
     }
 
@@ -135,7 +141,8 @@ class AttendanceRecord extends Model
     public static function computeUndertimeMinutes(string $timeOut): int
     {
         $standard = Carbon::today()->setTimeFromTimeString(self::STANDARD_END);
-        $actual   = Carbon::today()->setTimeFromTimeString($timeOut);
+        $actual = Carbon::today()->setTimeFromTimeString($timeOut);
+
         return max(0, (int) $actual->diffInMinutes($standard, false));
     }
 
@@ -144,11 +151,12 @@ class AttendanceRecord extends Model
      */
     public static function computeMinutesWorked(string $timeIn, string $timeOut): int
     {
-        $in  = Carbon::today()->setTimeFromTimeString($timeIn);
+        $in = Carbon::today()->setTimeFromTimeString($timeIn);
         $out = Carbon::today()->setTimeFromTimeString($timeOut);
         if ($out->lessThanOrEqualTo($in)) {
             return 0;
         }
+
         return (int) $in->diffInMinutes($out);
     }
 
@@ -164,6 +172,7 @@ class AttendanceRecord extends Model
         if (! $branchId) {
             return $query;
         }
+
         return $query->where('branch_id', $branchId);
     }
 
@@ -182,6 +191,7 @@ class AttendanceRecord extends Model
         if (! $status) {
             return $query;
         }
+
         return $query->where('status', $status);
     }
 
@@ -193,6 +203,7 @@ class AttendanceRecord extends Model
         if ($to) {
             $query->where('work_date', '<=', $to);
         }
+
         return $query;
     }
 }

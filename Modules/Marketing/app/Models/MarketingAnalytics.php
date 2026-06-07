@@ -2,10 +2,11 @@
 
 namespace Modules\Marketing\Models;
 
+use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Builder;
 
 class MarketingAnalytics extends Model
 {
@@ -21,7 +22,7 @@ class MarketingAnalytics extends Model
 
     protected $casts = [
         'recorded_date' => 'date',
-        'spend'         => 'decimal:2',
+        'spend' => 'decimal:2',
     ];
 
     public function material(): BelongsTo
@@ -31,7 +32,7 @@ class MarketingAnalytics extends Model
 
     public function createdBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'created_by');
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function scopeForMaterial(Builder $query, ?int $materialId): Builder

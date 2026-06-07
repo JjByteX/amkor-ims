@@ -38,22 +38,22 @@ class CashbondReload extends Model
     ];
 
     protected $casts = [
-        'amount'                => 'decimal:2',
-        'request_date'          => 'date',
-        'deposit_date'          => 'date',
-        'checked_at'            => 'datetime',
-        'approved_at'           => 'datetime',
-        'released_at'           => 'datetime',
-        'supplier_notified'     => 'boolean',
-        'supplier_notified_at'  => 'datetime',
-        'balance_updated'       => 'boolean',
+        'amount' => 'decimal:2',
+        'request_date' => 'date',
+        'deposit_date' => 'date',
+        'checked_at' => 'datetime',
+        'approved_at' => 'datetime',
+        'released_at' => 'datetime',
+        'supplier_notified' => 'boolean',
+        'supplier_notified_at' => 'datetime',
+        'balance_updated' => 'boolean',
     ];
 
     // ─── Constants ──────────────────────────────────────────────────────────
 
     public const APPROVAL_STATUSES = [
-        'pending'  => 'Pending',
-        'checked'  => 'Checked',
+        'pending' => 'Pending',
+        'checked' => 'Checked',
         'approved' => 'Approved',
         'released' => 'Released',
     ];
@@ -101,6 +101,7 @@ class CashbondReload extends Model
     {
         $year = now()->year;
         $last = static::whereYear('created_at', $year)->max('id') ?? 0;
+
         return sprintf('CBR-%d-%05d', $year, $last + 1);
     }
 
@@ -108,13 +109,19 @@ class CashbondReload extends Model
 
     public function scopeForPortal($query, ?int $portalId)
     {
-        if (! $portalId) return $query;
+        if (! $portalId) {
+            return $query;
+        }
+
         return $query->where('portal_id', $portalId);
     }
 
     public function scopeForApprovalStatus($query, ?string $status)
     {
-        if (! $status) return $query;
+        if (! $status) {
+            return $query;
+        }
+
         return $query->where('approval_status', $status);
     }
 }

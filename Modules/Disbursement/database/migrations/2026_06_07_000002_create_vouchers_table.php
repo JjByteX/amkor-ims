@@ -46,19 +46,19 @@ return new class extends Migration
             // ── Approval chain: pending|checked|approved|released ─────────────
             $table->string('approval_status', 30)->default('pending');
             $table->foreignId('checked_by')
-                  ->nullable()
-                  ->constrained('users')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
             $table->timestamp('checked_at')->nullable();
             $table->foreignId('approved_by')
-                  ->nullable()
-                  ->constrained('users')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
             $table->timestamp('approved_at')->nullable();
             $table->foreignId('released_by')
-                  ->nullable()
-                  ->constrained('users')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
             $table->timestamp('released_at')->nullable();
 
             // ── PDF generation stub ───────────────────────────────────────────
@@ -69,17 +69,17 @@ return new class extends Migration
 
             // ── Branch & audit trail ──────────────────────────────────────────
             $table->foreignId('branch_id')
-                  ->nullable()
-                  ->constrained('branches')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('branches')
+                ->nullOnDelete();
             $table->foreignId('created_by')
-                  ->nullable()
-                  ->constrained('users')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
             $table->foreignId('updated_by')
-                  ->nullable()
-                  ->constrained('users')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
 
             $table->timestamps();
             $table->softDeletes();

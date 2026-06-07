@@ -39,11 +39,11 @@ return new class extends Migration
 
             // ── Financials ──────────────────────────────────────────────────
             $table->decimal('selling_price', 12, 2)->nullable();
-            $table->decimal('net_payable',   12, 2)->nullable();
-            $table->decimal('income',        12, 2)->nullable();
-            $table->decimal('excess',        12, 2)->nullable();
-            $table->decimal('insurance_nett',12, 2)->nullable();
-            $table->decimal('acr',           12, 2)->nullable();
+            $table->decimal('net_payable', 12, 2)->nullable();
+            $table->decimal('income', 12, 2)->nullable();
+            $table->decimal('excess', 12, 2)->nullable();
+            $table->decimal('insurance_nett', 12, 2)->nullable();
+            $table->decimal('acr', 12, 2)->nullable();
 
             // ── Payment ─────────────────────────────────────────────────────
             // cash|bank_transfer|credit_card
@@ -53,10 +53,10 @@ return new class extends Migration
             $table->date('date_of_payment')->nullable();
 
             // ── References ──────────────────────────────────────────────────
-            $table->string('po_number',  100)->nullable();
-            $table->string('si_number',  100)->nullable();
-            $table->string('or_number',  100)->nullable();
-            $table->string('ar_number',  100)->nullable();
+            $table->string('po_number', 100)->nullable();
+            $table->string('si_number', 100)->nullable();
+            $table->string('or_number', 100)->nullable();
+            $table->string('ar_number', 100)->nullable();
             $table->string('soa_number', 100)->nullable();
 
             // ── Document tracking ───────────────────────────────────────────
@@ -77,9 +77,9 @@ return new class extends Migration
             $table->boolean('escalated_to_head_office')->default(false);
             $table->timestamp('escalated_at')->nullable();
             $table->foreignId('escalated_by')
-                  ->nullable()
-                  ->constrained('users')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
 
             // ── PO to Mariposa ──────────────────────────────────────────────
             $table->boolean('po_sent_to_mariposa')->default(false);
@@ -94,19 +94,19 @@ return new class extends Migration
 
             // ── Relations ───────────────────────────────────────────────────
             $table->foreignId('branch_id')
-                  ->nullable()
-                  ->constrained('branches')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('branches')
+                ->nullOnDelete();
 
             $table->foreignId('created_by')
-                  ->nullable()
-                  ->constrained('users')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
 
             $table->foreignId('updated_by')
-                  ->nullable()
-                  ->constrained('users')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
 
             $table->timestamps();
             $table->softDeletes();

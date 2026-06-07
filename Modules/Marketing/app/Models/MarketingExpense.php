@@ -2,11 +2,12 @@
 
 namespace Modules\Marketing\Models;
 
+use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class MarketingExpense extends Model
 {
@@ -22,30 +23,30 @@ class MarketingExpense extends Model
     ];
 
     protected $casts = [
-        'amount'       => 'decimal:2',
+        'amount' => 'decimal:2',
         'expense_date' => 'date',
-        'approved_at'  => 'datetime',
+        'approved_at' => 'datetime',
     ];
 
     // ── Constants ─────────────────────────────────────────────────────────────
 
     public const CATEGORIES = [
-        'paid_ads'     => 'Paid Ads',
-        'events'       => 'Events',
-        'printing'     => 'Printing',
-        'production'   => 'Production',
-        'email_blast'  => 'Email Blast',
-        'photography'  => 'Photography',
+        'paid_ads' => 'Paid Ads',
+        'events' => 'Events',
+        'printing' => 'Printing',
+        'production' => 'Production',
+        'email_blast' => 'Email Blast',
+        'photography' => 'Photography',
         'social_media' => 'Social Media',
-        'other'        => 'Other',
+        'other' => 'Other',
     ];
 
     public const CURRENCIES = ['PHP', 'USD'];
 
     public const STATUSES = [
-        'draft'     => 'Draft',
+        'draft' => 'Draft',
         'submitted' => 'Submitted',
-        'approved'  => 'Approved',
+        'approved' => 'Approved',
     ];
 
     // ── Relationships ─────────────────────────────────────────────────────────
@@ -57,28 +58,31 @@ class MarketingExpense extends Model
 
     public function createdBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'created_by');
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function approvedBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'approved_by');
+        return $this->belongsTo(User::class, 'approved_by');
     }
 
     public function updatedBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'updated_by');
+        return $this->belongsTo(User::class, 'updated_by');
     }
 
     // ── Scopes ────────────────────────────────────────────────────────────────
 
     public function scopeSearch(Builder $query, ?string $term): Builder
     {
-        if (! $term) return $query;
+        if (! $term) {
+            return $query;
+        }
+
         return $query->where(function ($q) use ($term) {
             $q->where('campaign_name', 'ilike', "%{$term}%")
-              ->orWhere('vendor',      'ilike', "%{$term}%")
-              ->orWhere('remarks',     'ilike', "%{$term}%");
+                ->orWhere('vendor', 'ilike', "%{$term}%")
+                ->orWhere('remarks', 'ilike', "%{$term}%");
         });
     }
 
@@ -94,8 +98,13 @@ class MarketingExpense extends Model
 
     public function scopeForPeriod(Builder $query, ?int $month, ?int $year): Builder
     {
-        if ($year)  $query->where('period_year', $year);
-        if ($month) $query->where('period_month', $month);
+        if ($year) {
+            $query->where('period_year', $year);
+        }
+        if ($month) {
+            $query->where('period_month', $month);
+        }
+
         return $query;
     }
 

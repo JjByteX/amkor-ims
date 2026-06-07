@@ -51,26 +51,26 @@ class BirTransaction extends Model
     ];
 
     protected $casts = [
-        'transaction_date'          => 'date',
-        'due_date'                  => 'date',
-        'gross_amount'              => 'decimal:2',
-        'vatable_sales'             => 'decimal:2',
-        'vat_exempt_sales'          => 'decimal:2',
-        'vat_zero_rated_sales'      => 'decimal:2',
-        'vat_amount'                => 'decimal:2',
+        'transaction_date' => 'date',
+        'due_date' => 'date',
+        'gross_amount' => 'decimal:2',
+        'vatable_sales' => 'decimal:2',
+        'vat_exempt_sales' => 'decimal:2',
+        'vat_zero_rated_sales' => 'decimal:2',
+        'vat_amount' => 'decimal:2',
         'total_sales_vat_inclusive' => 'decimal:2',
-        'sc_pwd_discount'           => 'decimal:2',
-        'withholding_tax'           => 'decimal:2',
-        'net_amount_due'            => 'decimal:2',
-        'pdf_generated'             => 'boolean',
-        'pdf_generated_at'          => 'datetime',
+        'sc_pwd_discount' => 'decimal:2',
+        'withholding_tax' => 'decimal:2',
+        'net_amount_due' => 'decimal:2',
+        'pdf_generated' => 'boolean',
+        'pdf_generated_at' => 'datetime',
     ];
 
     // ─── Constants ──────────────────────────────────────────────────────────
 
     public const DOCUMENT_TYPES = [
-        'AR'  => 'Acknowledgement Receipt',
-        'SI'  => 'Service Invoice',
+        'AR' => 'Acknowledgement Receipt',
+        'SI' => 'Service Invoice',
         'SOA' => 'Statement of Account',
     ];
 
@@ -84,20 +84,20 @@ class BirTransaction extends Model
     public const WHT_RATE = 0.02;
 
     public const SOURCE_TYPES = [
-        'booking'     => 'Reservation / Booking',
-        'visa'        => 'Visa & Documentation',
-        'ormoc'       => 'Ormoc Branch',
+        'booking' => 'Reservation / Booking',
+        'visa' => 'Visa & Documentation',
+        'ormoc' => 'Ormoc Branch',
         'collectible' => 'Accounts Receivable',
-        'manual'      => 'Manual Entry',
+        'manual' => 'Manual Entry',
     ];
 
     public const PAYMENT_MODES = [
-        'cash'      => 'Cash',
-        'bdo'       => 'BDO',
-        'bpi'       => 'BPI',
+        'cash' => 'Cash',
+        'bdo' => 'BDO',
+        'bpi' => 'BPI',
         'metrobank' => 'Metrobank',
-        'card'      => 'Credit/Debit Card',
-        'check'     => 'Check',
+        'card' => 'Credit/Debit Card',
+        'check' => 'Check',
     ];
 
     // ─── Relationships ───────────────────────────────────────────────────────
@@ -121,36 +121,51 @@ class BirTransaction extends Model
 
     public function scopeForYear($query, ?int $year)
     {
-        if (! $year) return $query;
+        if (! $year) {
+            return $query;
+        }
+
         return $query->where('year', $year);
     }
 
     public function scopeForMonth($query, ?int $month)
     {
-        if (! $month) return $query;
+        if (! $month) {
+            return $query;
+        }
+
         return $query->where('month', $month);
     }
 
     public function scopeForDocumentType($query, ?string $type)
     {
-        if (! $type) return $query;
+        if (! $type) {
+            return $query;
+        }
+
         return $query->where('document_type', $type);
     }
 
     public function scopeForBranch($query, ?int $branchId)
     {
-        if (! $branchId) return $query;
+        if (! $branchId) {
+            return $query;
+        }
+
         return $query->where('branch_id', $branchId);
     }
 
     public function scopeSearch($query, ?string $term)
     {
-        if (! $term) return $query;
+        if (! $term) {
+            return $query;
+        }
+
         return $query->where(function ($q) use ($term) {
-            $q->where('client_name',     'ilike', "%{$term}%")
-              ->orWhere('tin',           'ilike', "%{$term}%")
-              ->orWhere('document_number', 'ilike', "%{$term}%")
-              ->orWhere('particulars',   'ilike', "%{$term}%");
+            $q->where('client_name', 'ilike', "%{$term}%")
+                ->orWhere('tin', 'ilike', "%{$term}%")
+                ->orWhere('document_number', 'ilike', "%{$term}%")
+                ->orWhere('particulars', 'ilike', "%{$term}%");
         });
     }
 
@@ -167,44 +182,44 @@ class BirTransaction extends Model
      */
     public static function computeVatBreakdown(
         float $grossAmount,
-        bool  $vatExempt  = false,
-        bool  $vatZeroRated = false,
+        bool $vatExempt = false,
+        bool $vatZeroRated = false,
         float $scPwdDiscount = 0,
         float $withholdingTax = 0
     ): array {
         if ($vatExempt) {
-            $vatableSales        = 0;
-            $vatExemptSales      = $grossAmount;
-            $vatZeroRatedSales   = 0;
-            $vatAmount           = 0;
-            $totalVatInclusive   = $grossAmount;
+            $vatableSales = 0;
+            $vatExemptSales = $grossAmount;
+            $vatZeroRatedSales = 0;
+            $vatAmount = 0;
+            $totalVatInclusive = $grossAmount;
         } elseif ($vatZeroRated) {
-            $vatableSales        = 0;
-            $vatExemptSales      = 0;
-            $vatZeroRatedSales   = $grossAmount;
-            $vatAmount           = 0;
-            $totalVatInclusive   = $grossAmount;
+            $vatableSales = 0;
+            $vatExemptSales = 0;
+            $vatZeroRatedSales = $grossAmount;
+            $vatAmount = 0;
+            $totalVatInclusive = $grossAmount;
         } else {
             // Standard: gross is VAT-inclusive. Divide out the 12% VAT.
-            $vatableSales        = round($grossAmount / (1 + self::VAT_RATE), 2);
-            $vatExemptSales      = 0;
-            $vatZeroRatedSales   = 0;
-            $vatAmount           = round($grossAmount - $vatableSales, 2);
-            $totalVatInclusive   = $grossAmount;
+            $vatableSales = round($grossAmount / (1 + self::VAT_RATE), 2);
+            $vatExemptSales = 0;
+            $vatZeroRatedSales = 0;
+            $vatAmount = round($grossAmount - $vatableSales, 2);
+            $totalVatInclusive = $grossAmount;
         }
 
         $totalAfterDiscount = $totalVatInclusive - $scPwdDiscount;
-        $netAmountDue       = $totalAfterDiscount - $withholdingTax;
+        $netAmountDue = $totalAfterDiscount - $withholdingTax;
 
         return [
-            'vatable_sales'             => $vatableSales,
-            'vat_exempt_sales'          => $vatExemptSales,
-            'vat_zero_rated_sales'      => $vatZeroRatedSales,
-            'vat_amount'                => $vatAmount,
+            'vatable_sales' => $vatableSales,
+            'vat_exempt_sales' => $vatExemptSales,
+            'vat_zero_rated_sales' => $vatZeroRatedSales,
+            'vat_amount' => $vatAmount,
             'total_sales_vat_inclusive' => $totalVatInclusive,
-            'sc_pwd_discount'           => $scPwdDiscount,
-            'withholding_tax'           => $withholdingTax,
-            'net_amount_due'            => max(0, $netAmountDue),
+            'sc_pwd_discount' => $scPwdDiscount,
+            'withholding_tax' => $withholdingTax,
+            'net_amount_due' => max(0, $netAmountDue),
         ];
     }
 
@@ -215,8 +230,9 @@ class BirTransaction extends Model
     {
         $year = now()->year;
         $last = static::where('document_type', $type)
-                       ->whereYear('created_at', $year)
-                       ->max('id') ?? 0;
+            ->whereYear('created_at', $year)
+            ->max('id') ?? 0;
+
         return sprintf('%s-%d-%05d', $type, $year, $last + 1);
     }
 
@@ -227,35 +243,42 @@ class BirTransaction extends Model
     public static function amountInWords(float $amount): string
     {
         $ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine',
-                 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen',
-                 'Seventeen', 'Eighteen', 'Nineteen'];
+            'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen',
+            'Seventeen', 'Eighteen', 'Nineteen'];
         $tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
 
         $convertGroup = function (int $n) use ($ones, $tens): string {
-            if ($n === 0) return '';
-            if ($n < 20) return $ones[$n];
-            if ($n < 100) return $tens[(int)($n / 10)] . ($n % 10 ? ' ' . $ones[$n % 10] : '');
-            return $ones[(int)($n / 100)] . ' Hundred' . ($n % 100 ? ' ' . ($n < 120 ? $ones[$n % 100] : $tens[(int)(($n % 100) / 10)] . (($n % 10) ? ' ' . $ones[$n % 10] : '')) : '');
+            if ($n === 0) {
+                return '';
+            }
+            if ($n < 20) {
+                return $ones[$n];
+            }
+            if ($n < 100) {
+                return $tens[(int) ($n / 10)].($n % 10 ? ' '.$ones[$n % 10] : '');
+            }
+
+            return $ones[(int) ($n / 100)].' Hundred'.($n % 100 ? ' '.($n < 120 ? $ones[$n % 100] : $tens[(int) (($n % 100) / 10)].(($n % 10) ? ' '.$ones[$n % 10] : '')) : '');
         };
 
         [$pesos, $centavos] = explode('.', number_format($amount, 2, '.', ''));
-        $pesos = (int)str_replace(',', '', $pesos);
+        $pesos = (int) str_replace(',', '', $pesos);
 
         $words = '';
         if ($pesos >= 1_000_000) {
-            $words .= $convertGroup((int)($pesos / 1_000_000)) . ' Million ';
+            $words .= $convertGroup((int) ($pesos / 1_000_000)).' Million ';
             $pesos %= 1_000_000;
         }
         if ($pesos >= 1_000) {
-            $words .= $convertGroup((int)($pesos / 1_000)) . ' Thousand ';
+            $words .= $convertGroup((int) ($pesos / 1_000)).' Thousand ';
             $pesos %= 1_000;
         }
         $words .= $convertGroup($pesos);
-        $words = trim($words) . ' Pesos';
+        $words = trim($words).' Pesos';
 
-        $centavos = (int)$centavos;
+        $centavos = (int) $centavos;
         $words .= $centavos > 0
-            ? ' and ' . $convertGroup($centavos) . ' Centavos'
+            ? ' and '.$convertGroup($centavos).' Centavos'
             : ' Only';
 
         return $words;

@@ -47,28 +47,28 @@ class Voucher extends Model
     ];
 
     protected $casts = [
-        'date'              => 'date',
-        'check_date'        => 'date',
-        'amount'            => 'decimal:2',
-        'amount_usd'        => 'decimal:2',
-        'amount_jpy'        => 'decimal:2',
-        'checked_at'        => 'datetime',
-        'approved_at'       => 'datetime',
-        'released_at'       => 'datetime',
-        'pdf_generated'     => 'boolean',
-        'pdf_generated_at'  => 'datetime',
+        'date' => 'date',
+        'check_date' => 'date',
+        'amount' => 'decimal:2',
+        'amount_usd' => 'decimal:2',
+        'amount_jpy' => 'decimal:2',
+        'checked_at' => 'datetime',
+        'approved_at' => 'datetime',
+        'released_at' => 'datetime',
+        'pdf_generated' => 'boolean',
+        'pdf_generated_at' => 'datetime',
     ];
 
     // ─── Constants ─────────────────────────────────────────────────────────
 
     public const TYPES = [
-        'cash'  => 'Cash Voucher',
+        'cash' => 'Cash Voucher',
         'check' => 'Check Voucher',
     ];
 
     public const APPROVAL_STATUSES = [
-        'pending'  => 'Pending',
-        'checked'  => 'Checked',
+        'pending' => 'Pending',
+        'checked' => 'Checked',
         'approved' => 'Approved',
         'released' => 'Released',
     ];
@@ -120,29 +120,41 @@ class Voucher extends Model
 
     public function scopeSearch($query, ?string $term)
     {
-        if (! $term) return $query;
+        if (! $term) {
+            return $query;
+        }
+
         return $query->where(function ($q) use ($term) {
             $q->where('voucher_no', 'ilike', "%{$term}%")
-              ->orWhere('payee',    'ilike', "%{$term}%")
-              ->orWhere('details',  'ilike', "%{$term}%");
+                ->orWhere('payee', 'ilike', "%{$term}%")
+                ->orWhere('details', 'ilike', "%{$term}%");
         });
     }
 
     public function scopeForType($query, ?string $type)
     {
-        if (! $type) return $query;
+        if (! $type) {
+            return $query;
+        }
+
         return $query->where('type', $type);
     }
 
     public function scopeForApprovalStatus($query, ?string $status)
     {
-        if (! $status) return $query;
+        if (! $status) {
+            return $query;
+        }
+
         return $query->where('approval_status', $status);
     }
 
     public function scopeForBranch($query, ?int $branchId)
     {
-        if (! $branchId) return $query;
+        if (! $branchId) {
+            return $query;
+        }
+
         return $query->where('branch_id', $branchId);
     }
 
@@ -165,10 +177,11 @@ class Voucher extends Model
     public static function nextNumber(string $type): string
     {
         $prefix = $type === 'check' ? 'CHV' : 'CV';
-        $year   = now()->year;
-        $last   = static::where('type', $type)
-                        ->whereYear('created_at', $year)
-                        ->max('id') ?? 0;
+        $year = now()->year;
+        $last = static::where('type', $type)
+            ->whereYear('created_at', $year)
+            ->max('id') ?? 0;
+
         return sprintf('%s-%d-%05d', $prefix, $year, $last + 1);
     }
 }

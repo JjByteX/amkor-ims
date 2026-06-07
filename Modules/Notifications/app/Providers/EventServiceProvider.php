@@ -3,6 +3,10 @@
 namespace Modules\Notifications\Providers;
 
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
+use Modules\Notifications\Listeners\SendReservationBookingConfirmedNotification;
+use Modules\Notifications\Listeners\SendReservationForwardedToAccountingNotification;
+use Modules\Reservation\Events\ReservationBookingConfirmed;
+use Modules\Reservation\Events\ReservationForwardedToAccounting;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -12,11 +16,11 @@ class EventServiceProvider extends ServiceProvider
      * @var array<string, array<int, string>>
      */
     protected $listen = [
-        \Modules\Reservation\Events\ReservationBookingConfirmed::class => [
-            \Modules\Notifications\Listeners\SendReservationBookingConfirmedNotification::class,
+        ReservationBookingConfirmed::class => [
+            SendReservationBookingConfirmedNotification::class,
         ],
-        \Modules\Reservation\Events\ReservationForwardedToAccounting::class => [
-            \Modules\Notifications\Listeners\SendReservationForwardedToAccountingNotification::class,
+        ReservationForwardedToAccounting::class => [
+            SendReservationForwardedToAccountingNotification::class,
         ],
     ];
 

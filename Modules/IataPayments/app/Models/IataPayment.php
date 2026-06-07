@@ -46,30 +46,30 @@ class IataPayment extends Model
     ];
 
     protected $casts = [
-        'amount'                    => 'decimal:2',
-        'billing_date'              => 'date',
-        'due_date'                  => 'date',
-        'payment_date'              => 'date',
-        'checked_at'                => 'datetime',
-        'approved_at'               => 'datetime',
-        'released_at'               => 'datetime',
-        'deposit_slip_attached'     => 'boolean',
-        'deposit_slip_attached_at'  => 'datetime',
-        'operator_notified'         => 'boolean',
-        'operator_notified_at'      => 'datetime',
+        'amount' => 'decimal:2',
+        'billing_date' => 'date',
+        'due_date' => 'date',
+        'payment_date' => 'date',
+        'checked_at' => 'datetime',
+        'approved_at' => 'datetime',
+        'released_at' => 'datetime',
+        'deposit_slip_attached' => 'boolean',
+        'deposit_slip_attached_at' => 'datetime',
+        'operator_notified' => 'boolean',
+        'operator_notified_at' => 'datetime',
     ];
 
     // ─── Constants ──────────────────────────────────────────────────────────
 
     public const STATUSES = [
         'pending' => 'Pending',
-        'paid'    => 'Paid',
+        'paid' => 'Paid',
         'overdue' => 'Overdue',
     ];
 
     public const APPROVAL_STATUSES = [
-        'pending'  => 'Pending',
-        'checked'  => 'Checked',
+        'pending' => 'Pending',
+        'checked' => 'Checked',
         'approved' => 'Approved',
         'released' => 'Released',
     ];
@@ -132,6 +132,7 @@ class IataPayment extends Model
     {
         $year = now()->year;
         $last = static::whereYear('created_at', $year)->max('id') ?? 0;
+
         return sprintf('IATA-%d-%05d', $year, $last + 1);
     }
 
@@ -139,17 +140,23 @@ class IataPayment extends Model
 
     public function scopeSearch($query, ?string $term)
     {
-        if (! $term) return $query;
+        if (! $term) {
+            return $query;
+        }
+
         return $query->where(function ($q) use ($term) {
             $q->where('operator_name', 'ilike', "%{$term}%")
-              ->orWhere('payment_no', 'ilike', "%{$term}%")
-              ->orWhere('billing_reference', 'ilike', "%{$term}%");
+                ->orWhere('payment_no', 'ilike', "%{$term}%")
+                ->orWhere('billing_reference', 'ilike', "%{$term}%");
         });
     }
 
     public function scopeForStatus($query, ?string $status)
     {
-        if (! $status) return $query;
+        if (! $status) {
+            return $query;
+        }
+
         return $query->where('status', $status);
     }
 

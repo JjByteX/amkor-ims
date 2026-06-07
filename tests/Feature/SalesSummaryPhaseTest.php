@@ -48,8 +48,8 @@ class SalesSummaryPhaseTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('SalesSummary/Index')
-                ->where('totals.gross_sales', 120000.0)
-                ->where('totals.income', 30000.0)
+                ->where('totals.gross_sales', 120000)
+                ->where('totals.income', 30000)
                 ->has('targets', 1)
             );
     }

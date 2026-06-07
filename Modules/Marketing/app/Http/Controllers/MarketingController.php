@@ -7,16 +7,18 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use Modules\Marketing\Models\MarketingMaterial;
-use Modules\Marketing\Models\MarketingExpense;
 use Modules\Marketing\Models\MarketingAnalytics;
+use Modules\Marketing\Models\MarketingExpense;
+use Modules\Marketing\Models\MarketingMaterial;
 
 class MarketingController extends Controller
 {
     // ── Role constants (per Roles.md) ─────────────────────────────────────────
     private const MARKETER_ROLES = ['marketing_officer'];
+
     private const REVIEWER_ROLES = ['chief_operations_officer', 'general_manager'];
-    private const VIEW_ROLES     = ['marketing_officer', 'chief_operations_officer', 'general_manager'];
+
+    private const VIEW_ROLES = ['marketing_officer', 'chief_operations_officer', 'general_manager'];
 
     // ════════════════════════════════════════════════════════════════════════
     // MATERIALS — Index
@@ -25,12 +27,14 @@ class MarketingController extends Controller
     public function index(Request $request): Response
     {
         $role = $request->user()?->getRoleNames()->first();
-        if (! in_array($role, self::VIEW_ROLES, true)) abort(403);
+        if (! in_array($role, self::VIEW_ROLES, true)) {
+            abort(403);
+        }
 
-        $search  = $request->get('search');
-        $status  = $request->get('status');
-        $type    = $request->get('type');
-        $year    = (int) $request->get('year', now()->year);
+        $search = $request->get('search');
+        $status = $request->get('status');
+        $type = $request->get('type');
+        $year = (int) $request->get('year', now()->year);
 
         $materials = MarketingMaterial::with(['createdBy', 'approvedBy'])
             ->search($search)
@@ -48,15 +52,15 @@ class MarketingController extends Controller
         }
 
         return Inertia::render('Marketing/Index', [
-            'materials'     => $materials,
-            'summary'       => $summary,
-            'filters'       => compact('search', 'status', 'type', 'year'),
+            'materials' => $materials,
+            'summary' => $summary,
+            'filters' => compact('search', 'status', 'type', 'year'),
             'materialTypes' => MarketingMaterial::MATERIAL_TYPES,
-            'statuses'      => MarketingMaterial::STATUSES,
-            'platforms'     => MarketingMaterial::PLATFORMS,
-            'canCreate'     => $this->canCreate($request),
-            'canReview'     => $this->canReview($request),
-            'currentYear'   => now()->year,
+            'statuses' => MarketingMaterial::STATUSES,
+            'platforms' => MarketingMaterial::PLATFORMS,
+            'canCreate' => $this->canCreate($request),
+            'canReview' => $this->canReview($request),
+            'currentYear' => now()->year,
         ]);
     }
 
@@ -67,10 +71,10 @@ class MarketingController extends Controller
         $this->requireMarketer($request);
 
         return Inertia::render('Marketing/Form', [
-            'material'      => null,
+            'material' => null,
             'materialTypes' => MarketingMaterial::MATERIAL_TYPES,
-            'platforms'     => MarketingMaterial::PLATFORMS,
-            'mode'          => 'create',
+            'platforms' => MarketingMaterial::PLATFORMS,
+            'mode' => 'create',
         ]);
     }
 
@@ -81,15 +85,15 @@ class MarketingController extends Controller
         $this->requireMarketer($request);
 
         $data = $request->validate([
-            'title'         => ['required', 'string', 'max:255'],
-            'material_type' => ['required', 'in:' . implode(',', array_keys(MarketingMaterial::MATERIAL_TYPES))],
-            'description'   => ['nullable', 'string'],
-            'platform'      => ['nullable', 'string', 'max:100'],
-            'caption'       => ['nullable', 'string'],
-            'publish_date'  => ['nullable', 'date'],
+            'title' => ['required', 'string', 'max:255'],
+            'material_type' => ['required', 'in:'.implode(',', array_keys(MarketingMaterial::MATERIAL_TYPES))],
+            'description' => ['nullable', 'string'],
+            'platform' => ['nullable', 'string', 'max:100'],
+            'caption' => ['nullable', 'string'],
+            'publish_date' => ['nullable', 'date'],
         ]);
 
-        $data['status']     = 'draft';
+        $data['status'] = 'draft';
         $data['created_by'] = $request->user()->id;
         $data['updated_by'] = $request->user()->id;
 
@@ -105,7 +109,9 @@ class MarketingController extends Controller
     public function show(Request $request, MarketingMaterial $marketing): Response
     {
         $role = $request->user()?->getRoleNames()->first();
-        if (! in_array($role, self::VIEW_ROLES, true)) abort(403);
+        if (! in_array($role, self::VIEW_ROLES, true)) {
+            abort(403);
+        }
 
         $marketing->load([
             'createdBy', 'submittedBy', 'approvedBy', 'publishedBy', 'updatedBy',
@@ -115,13 +121,13 @@ class MarketingController extends Controller
         $totalSpend = $marketing->expenses->sum('amount');
 
         return Inertia::render('Marketing/Show', [
-            'material'      => $marketing,
-            'totalSpend'    => $totalSpend,
+            'material' => $marketing,
+            'totalSpend' => $totalSpend,
             'materialTypes' => MarketingMaterial::MATERIAL_TYPES,
-            'statuses'      => MarketingMaterial::STATUSES,
-            'platforms'     => MarketingMaterial::PLATFORMS,
-            'canCreate'     => $this->canCreate($request),
-            'canReview'     => $this->canReview($request),
+            'statuses' => MarketingMaterial::STATUSES,
+            'platforms' => MarketingMaterial::PLATFORMS,
+            'canCreate' => $this->canCreate($request),
+            'canReview' => $this->canReview($request),
         ]);
     }
 
@@ -137,10 +143,10 @@ class MarketingController extends Controller
         }
 
         return Inertia::render('Marketing/Form', [
-            'material'      => $marketing,
+            'material' => $marketing,
             'materialTypes' => MarketingMaterial::MATERIAL_TYPES,
-            'platforms'     => MarketingMaterial::PLATFORMS,
-            'mode'          => 'edit',
+            'platforms' => MarketingMaterial::PLATFORMS,
+            'mode' => 'edit',
         ]);
     }
 
@@ -151,12 +157,12 @@ class MarketingController extends Controller
         $this->requireMarketer($request);
 
         $data = $request->validate([
-            'title'         => ['required', 'string', 'max:255'],
-            'material_type' => ['required', 'in:' . implode(',', array_keys(MarketingMaterial::MATERIAL_TYPES))],
-            'description'   => ['nullable', 'string'],
-            'platform'      => ['nullable', 'string', 'max:100'],
-            'caption'       => ['nullable', 'string'],
-            'publish_date'  => ['nullable', 'date'],
+            'title' => ['required', 'string', 'max:255'],
+            'material_type' => ['required', 'in:'.implode(',', array_keys(MarketingMaterial::MATERIAL_TYPES))],
+            'description' => ['nullable', 'string'],
+            'platform' => ['nullable', 'string', 'max:100'],
+            'caption' => ['nullable', 'string'],
+            'publish_date' => ['nullable', 'date'],
         ]);
 
         $data['updated_by'] = $request->user()->id;
@@ -164,7 +170,7 @@ class MarketingController extends Controller
 
         return redirect()
             ->route('marketing.show', $marketing)
-            ->with('flash', ['type' => 'success', 'message' => "Material updated."]);
+            ->with('flash', ['type' => 'success', 'message' => 'Material updated.']);
     }
 
     // ── Materials — Submit for review ────────────────────────────────────────
@@ -178,14 +184,14 @@ class MarketingController extends Controller
         }
 
         $marketing->update([
-            'status'       => 'submitted',
+            'status' => 'submitted',
             'submitted_by' => $request->user()->id,
-            'updated_by'   => $request->user()->id,
+            'updated_by' => $request->user()->id,
         ]);
 
         return redirect()
             ->route('marketing.show', $marketing)
-            ->with('flash', ['type' => 'success', 'message' => "Material submitted for COO review."]);
+            ->with('flash', ['type' => 'success', 'message' => 'Material submitted for COO review.']);
     }
 
     // ── Materials — Approve (COO / JRT) ──────────────────────────────────────
@@ -199,15 +205,15 @@ class MarketingController extends Controller
         }
 
         $marketing->update([
-            'status'      => 'approved',
+            'status' => 'approved',
             'approved_by' => $request->user()->id,
             'approved_at' => now(),
-            'updated_by'  => $request->user()->id,
+            'updated_by' => $request->user()->id,
         ]);
 
         return redirect()
             ->route('marketing.show', $marketing)
-            ->with('flash', ['type' => 'success', 'message' => "Material approved."]);
+            ->with('flash', ['type' => 'success', 'message' => 'Material approved.']);
     }
 
     // ── Materials — Reject / send back to draft ───────────────────────────────
@@ -225,16 +231,16 @@ class MarketingController extends Controller
         }
 
         $marketing->update([
-            'status'         => 'draft',
+            'status' => 'draft',
             'revision_notes' => $data['revision_notes'],
-            'reviewed_by'    => $request->user()->id,
-            'reviewed_at'    => now(),
-            'updated_by'     => $request->user()->id,
+            'reviewed_by' => $request->user()->id,
+            'reviewed_at' => now(),
+            'updated_by' => $request->user()->id,
         ]);
 
         return redirect()
             ->route('marketing.show', $marketing)
-            ->with('flash', ['type' => 'warning', 'message' => "Material sent back for revision."]);
+            ->with('flash', ['type' => 'warning', 'message' => 'Material sent back for revision.']);
     }
 
     // ── Materials — Publish ───────────────────────────────────────────────────
@@ -248,15 +254,15 @@ class MarketingController extends Controller
         }
 
         $marketing->update([
-            'status'       => 'published',
+            'status' => 'published',
             'published_by' => $request->user()->id,
             'published_at' => now(),
-            'updated_by'   => $request->user()->id,
+            'updated_by' => $request->user()->id,
         ]);
 
         return redirect()
             ->route('marketing.show', $marketing)
-            ->with('flash', ['type' => 'success', 'message' => "Material marked as published."]);
+            ->with('flash', ['type' => 'success', 'message' => 'Material marked as published.']);
     }
 
     // ── Materials — Archive ───────────────────────────────────────────────────
@@ -266,13 +272,13 @@ class MarketingController extends Controller
         $this->requireMarketer($request);
 
         $marketing->update([
-            'status'     => 'archived',
+            'status' => 'archived',
             'updated_by' => $request->user()->id,
         ]);
 
         return redirect()
             ->route('marketing.index')
-            ->with('flash', ['type' => 'success', 'message' => "Material archived."]);
+            ->with('flash', ['type' => 'success', 'message' => 'Material archived.']);
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -282,13 +288,15 @@ class MarketingController extends Controller
     public function expenses(Request $request): Response
     {
         $role = $request->user()?->getRoleNames()->first();
-        if (! in_array($role, self::VIEW_ROLES, true)) abort(403);
+        if (! in_array($role, self::VIEW_ROLES, true)) {
+            abort(403);
+        }
 
-        $search   = $request->get('search');
+        $search = $request->get('search');
         $category = $request->get('category');
-        $status   = $request->get('status');
-        $year     = (int) $request->get('year', now()->year);
-        $month    = $request->get('month') ? (int) $request->get('month') : null;
+        $status = $request->get('status');
+        $year = (int) $request->get('year', now()->year);
+        $month = $request->get('month') ? (int) $request->get('month') : null;
 
         $query = MarketingExpense::with(['createdBy', 'approvedBy', 'material'])
             ->search($search)
@@ -296,7 +304,9 @@ class MarketingController extends Controller
             ->forStatus($status)
             ->forYear($year);
 
-        if ($month) $query->forPeriod($month, null);
+        if ($month) {
+            $query->forPeriod($month, null);
+        }
 
         $expenses = $query->orderByDesc('expense_date')->paginate(30)->withQueryString();
 
@@ -310,16 +320,16 @@ class MarketingController extends Controller
         $yearTotal = MarketingExpense::forYear($year)->sum('amount');
 
         return Inertia::render('Marketing/Expenses', [
-            'expenses'      => $expenses,
+            'expenses' => $expenses,
             'monthlyTotals' => $monthlyTotals,
-            'yearTotal'     => $yearTotal,
-            'filters'       => compact('search', 'category', 'status', 'year', 'month'),
-            'categories'    => MarketingExpense::CATEGORIES,
-            'statuses'      => MarketingExpense::STATUSES,
-            'currencies'    => MarketingExpense::CURRENCIES,
-            'canCreate'     => $this->canCreate($request),
-            'canApprove'    => $this->canReview($request),
-            'currentYear'   => now()->year,
+            'yearTotal' => $yearTotal,
+            'filters' => compact('search', 'category', 'status', 'year', 'month'),
+            'categories' => MarketingExpense::CATEGORIES,
+            'statuses' => MarketingExpense::STATUSES,
+            'currencies' => MarketingExpense::CURRENCIES,
+            'canCreate' => $this->canCreate($request),
+            'canApprove' => $this->canReview($request),
+            'currentYear' => now()->year,
         ]);
     }
 
@@ -331,19 +341,19 @@ class MarketingController extends Controller
 
         $data = $request->validate([
             'campaign_name' => ['required', 'string', 'max:255'],
-            'category'      => ['required', 'in:' . implode(',', array_keys(MarketingExpense::CATEGORIES))],
-            'amount'        => ['required', 'numeric', 'min:0.01'],
-            'currency'      => ['nullable', 'in:' . implode(',', MarketingExpense::CURRENCIES)],
-            'expense_date'  => ['required', 'date'],
-            'period_month'  => ['required', 'integer', 'min:1', 'max:12'],
-            'period_year'   => ['required', 'integer', 'min:2020', 'max:2099'],
-            'vendor'        => ['nullable', 'string', 'max:255'],
-            'remarks'       => ['nullable', 'string'],
-            'material_id'   => ['nullable', 'exists:marketing_materials,id'],
+            'category' => ['required', 'in:'.implode(',', array_keys(MarketingExpense::CATEGORIES))],
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'currency' => ['nullable', 'in:'.implode(',', MarketingExpense::CURRENCIES)],
+            'expense_date' => ['required', 'date'],
+            'period_month' => ['required', 'integer', 'min:1', 'max:12'],
+            'period_year' => ['required', 'integer', 'min:2020', 'max:2099'],
+            'vendor' => ['nullable', 'string', 'max:255'],
+            'remarks' => ['nullable', 'string'],
+            'material_id' => ['nullable', 'exists:marketing_materials,id'],
         ]);
 
-        $data['currency']   = $data['currency'] ?? 'PHP';
-        $data['status']     = 'draft';
+        $data['currency'] = $data['currency'] ?? 'PHP';
+        $data['status'] = 'draft';
         $data['created_by'] = $request->user()->id;
         $data['updated_by'] = $request->user()->id;
 
@@ -361,13 +371,13 @@ class MarketingController extends Controller
         $this->requireReviewer($request);
 
         $expense->update([
-            'status'      => 'approved',
+            'status' => 'approved',
             'approved_by' => $request->user()->id,
             'approved_at' => now(),
-            'updated_by'  => $request->user()->id,
+            'updated_by' => $request->user()->id,
         ]);
 
-        return back()->with('flash', ['type' => 'success', 'message' => "Expense approved."]);
+        return back()->with('flash', ['type' => 'success', 'message' => 'Expense approved.']);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -377,12 +387,14 @@ class MarketingController extends Controller
     public function analytics(Request $request): Response
     {
         $role = $request->user()?->getRoleNames()->first();
-        if (! in_array($role, self::VIEW_ROLES, true)) abort(403);
+        if (! in_array($role, self::VIEW_ROLES, true)) {
+            abort(403);
+        }
 
         $year = (int) $request->get('year', now()->year);
 
         // Aggregate analytics per platform for the year
-        $byPlatform = MarketingAnalytics::whereHas('material', fn($q) => $q->whereYear('created_at', $year))
+        $byPlatform = MarketingAnalytics::whereHas('material', fn ($q) => $q->whereYear('created_at', $year))
             ->orWhereYear('recorded_date', $year)
             ->selectRaw('platform, sum(reach) as reach, sum(impressions) as impressions, sum(engagements) as engagements, sum(clicks) as clicks, sum(spend) as spend')
             ->groupBy('platform')
@@ -406,13 +418,13 @@ class MarketingController extends Controller
             ->get();
 
         return Inertia::render('Marketing/Analytics', [
-            'byPlatform'      => $byPlatform,
+            'byPlatform' => $byPlatform,
             'materialSummary' => $materialSummary,
-            'expenseTotal'    => $expenseTotal,
-            'topCampaigns'    => $topCampaigns,
-            'year'            => $year,
-            'currentYear'     => now()->year,
-            'statuses'        => MarketingMaterial::STATUSES,
+            'expenseTotal' => $expenseTotal,
+            'topCampaigns' => $topCampaigns,
+            'year' => $year,
+            'currentYear' => now()->year,
+            'statuses' => MarketingMaterial::STATUSES,
         ]);
     }
 
@@ -430,11 +442,15 @@ class MarketingController extends Controller
 
     private function requireMarketer(Request $request): void
     {
-        if (! $this->canCreate($request)) abort(403);
+        if (! $this->canCreate($request)) {
+            abort(403);
+        }
     }
 
     private function requireReviewer(Request $request): void
     {
-        if (! $this->canReview($request)) abort(403);
+        if (! $this->canReview($request)) {
+            abort(403);
+        }
     }
 }

@@ -7,6 +7,7 @@ use Nwidart\Modules\Support\ModuleServiceProvider;
 class OrmocBranchServiceProvider extends ModuleServiceProvider
 {
     protected string $name = 'OrmocBranch';
+
     protected string $nameLower = 'ormocbranch';
 
     protected array $providers = [

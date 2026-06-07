@@ -2,19 +2,20 @@
 
 namespace Modules\Auth\Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
-use App\Models\User;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class AuthDatabaseSeeder extends Seeder
 {
     public function run(): void
     {
         // Required by Spatie — clears cached roles/permissions before seeding
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         // ── 1. Branches ───────────────────────────────────────────────────────
         $branches = [
@@ -30,9 +31,9 @@ class AuthDatabaseSeeder extends Seeder
             );
         }
 
-        $qcMain     = DB::table('branches')->where('code', 'QC_MAIN')->value('id');
+        $qcMain = DB::table('branches')->where('code', 'QC_MAIN')->value('id');
         $visaCentre = DB::table('branches')->where('code', 'VISA_CENTRE')->value('id');
-        $ormoc      = DB::table('branches')->where('code', 'ORMOC')->value('id');
+        $ormoc = DB::table('branches')->where('code', 'ORMOC')->value('id');
 
         // ── 2. Permissions ────────────────────────────────────────────────────
         // Pattern: module.action
@@ -343,8 +344,8 @@ class AuthDatabaseSeeder extends Seeder
             $user = User::updateOrCreate(
                 ['email' => $userData['email']],
                 array_merge($userData, [
-                    'password'             => $password,
-                    'is_active'            => true,
+                    'password' => $password,
+                    'is_active' => true,
                     'must_change_password' => true,
                 ])
             );

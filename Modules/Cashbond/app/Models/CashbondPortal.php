@@ -22,9 +22,9 @@ class CashbondPortal extends Model
     ];
 
     protected $casts = [
-        'current_balance'     => 'decimal:2',
+        'current_balance' => 'decimal:2',
         'maintaining_balance' => 'decimal:2',
-        'is_active'           => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     // ─── Relationships ──────────────────────────────────────────────────────
@@ -51,6 +51,7 @@ class CashbondPortal extends Model
         if ($this->maintaining_balance === null) {
             return false;
         }
+
         return $this->current_balance < $this->maintaining_balance;
     }
 
@@ -64,6 +65,6 @@ class CashbondPortal extends Model
     public function scopeBelowThreshold($query)
     {
         return $query->whereNotNull('maintaining_balance')
-                     ->whereRaw('current_balance < maintaining_balance');
+            ->whereRaw('current_balance < maintaining_balance');
     }
 }

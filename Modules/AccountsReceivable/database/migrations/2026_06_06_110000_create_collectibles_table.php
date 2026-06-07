@@ -23,9 +23,9 @@ return new class extends Migration
 
             // ── Client ──────────────────────────────────────────────────────
             $table->foreignId('contact_id')
-                  ->nullable()
-                  ->constrained('contacts')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('contacts')
+                ->nullOnDelete();
             $table->string('customer_name', 255);
             $table->string('corporate_account', 255)->nullable();
 
@@ -37,8 +37,8 @@ return new class extends Migration
             // ── Amounts (PHP & USD) ──────────────────────────────────────────
             $table->decimal('collectible_amount_php', 14, 2)->default(0);
             $table->decimal('collectible_amount_usd', 14, 2)->default(0);
-            $table->decimal('payment_received_php',   14, 2)->default(0);
-            $table->decimal('payment_received_usd',   14, 2)->default(0);
+            $table->decimal('payment_received_php', 14, 2)->default(0);
+            $table->decimal('payment_received_usd', 14, 2)->default(0);
             // balance_php and balance_usd are computed — stored for fast querying
             $table->decimal('balance_php', 14, 2)->default(0);
             $table->decimal('balance_usd', 14, 2)->default(0);
@@ -56,14 +56,14 @@ return new class extends Migration
             // pending|coo_approved|gsm_approved|approved|rejected
             $table->string('approval_status', 30)->default('pending');
             $table->foreignId('approved_by_coo')
-                  ->nullable()
-                  ->constrained('users')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
             $table->timestamp('approved_by_coo_at')->nullable();
             $table->foreignId('approved_by_gsm')
-                  ->nullable()
-                  ->constrained('users')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
             $table->timestamp('approved_by_gsm_at')->nullable();
 
             // ── Post-approval actions ────────────────────────────────────────
@@ -75,26 +75,26 @@ return new class extends Migration
             $table->timestamp('documents_endorsed_at')->nullable();
 
             // ── References ───────────────────────────────────────────────────
-            $table->string('or_number',  100)->nullable();
-            $table->string('ar_number',  100)->nullable();
-            $table->string('si_number',  100)->nullable();
+            $table->string('or_number', 100)->nullable();
+            $table->string('ar_number', 100)->nullable();
+            $table->string('si_number', 100)->nullable();
 
             $table->text('remarks')->nullable();
             $table->text('audit_remarks')->nullable();
 
             // ── Branch & audit ───────────────────────────────────────────────
             $table->foreignId('branch_id')
-                  ->nullable()
-                  ->constrained('branches')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('branches')
+                ->nullOnDelete();
             $table->foreignId('created_by')
-                  ->nullable()
-                  ->constrained('users')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
             $table->foreignId('updated_by')
-                  ->nullable()
-                  ->constrained('users')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
 
             $table->timestamps();
             $table->softDeletes();
