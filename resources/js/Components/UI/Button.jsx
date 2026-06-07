@@ -27,19 +27,21 @@ export default function Button({
     const hasContent = children !== undefined && children !== null && children !== false && children !== '';
 
     const base = [
-        'inline-flex items-center justify-center gap-2',
-        'font-semibold',
+        'inline-flex items-center justify-center',
+        'box-border',
+        'font-bold',
         'border',
         'cursor-pointer',
         'transition-colors duration-150',
         'select-none whitespace-nowrap',
+        'shrink-0',
         'focus-visible:outline-none',
         isDisabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : '',
     ].join(' ');
 
     const sizes = {
         default : hasContent ? 'px-4' : 'px-0',
-        sm      : hasContent ? 'px-3' : 'px-0',
+        sm      : hasContent ? 'px-3.5' : 'px-0',
     };
 
     const variants = {
@@ -51,7 +53,7 @@ export default function Button({
 
     const height   = size === 'sm' ? 'var(--height-btn-sm)' : 'var(--height-btn)';
     const fontSize = size === 'sm' ? 'var(--font-size-small)' : 'var(--font-size-small)';
-    const minWidth = hasContent ? undefined : height;
+    const minWidth = hasContent ? (size === 'sm' ? 72 : 88) : height;
 
     // Normalise icon: accept both a component reference and a pre-rendered element
     let iconNode = null;
@@ -82,6 +84,8 @@ export default function Button({
                 borderRadius : 'var(--radius-md)',
                 lineHeight   : 1,
                 boxShadow    : 'none',
+                gap          : '8px',
+                maxWidth     : '100%',
                 '--tw-ring-color': 'var(--color-primary)',
                 ...style,
             }}

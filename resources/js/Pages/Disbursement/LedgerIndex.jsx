@@ -145,7 +145,7 @@ export default function LedgerIndex({
                             {canWrite && (
                                 <>
                                     <Button
-                                        variant="secondary"
+                                        variant="primary"
                                         onClick={() => router.post(route('disbursement.access-file-export'))}
                                     >
                                         Export Access File

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
-import { Plus, Search, Eye, Trash2, Banknote, Files, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Plus, Search, Eye, Trash2, BanknoteArrowUp, ClipboardList, FileClock, FileWarning, CircleCheckBig } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
 import DataTable from '../../Components/Shared/DataTable';
@@ -175,11 +175,11 @@ export default function IataPaymentsIndex({ payments, summary, filters, statuses
 
                 {summary && (
                     <StatGrid>
-                        <StatCard icon={Banknote} label="Total Amount" value={<CurrencyDisplay amount={summary.total_amount ?? 0} currency="PHP" />} />
-                        <StatCard icon={Files} label="Total Records" value={summary.total_count ?? 0} />
-                        <StatCard icon={AlertTriangle} label="Pending" value={summary.pending_count ?? 0} tone="warning" />
-                        <StatCard icon={AlertTriangle} label="Overdue" value={summary.overdue_count ?? 0} tone="error" />
-                        <StatCard icon={CheckCircle2} label="Paid" value={summary.paid_count ?? 0} tone="success" />
+                        <StatCard icon={BanknoteArrowUp} label="Total Amount" value={<CurrencyDisplay amount={summary.total_amount ?? 0} currency="PHP" />} />
+                        <StatCard icon={ClipboardList} label="Total Records" value={summary.total_count ?? 0} />
+                        <StatCard icon={FileClock} label="Pending" value={summary.pending_count ?? 0} tone="warning" />
+                        <StatCard icon={FileWarning} label="Overdue" value={summary.overdue_count ?? 0} tone="error" />
+                        <StatCard icon={CircleCheckBig} label="Paid" value={summary.paid_count ?? 0} tone="success" />
                     </StatGrid>
                 )}
 

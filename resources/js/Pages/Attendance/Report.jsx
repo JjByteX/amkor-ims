@@ -174,7 +174,7 @@ export default function AttendanceReport({ summary, filters, branches, canExport
                                 Back
                             </Button>
                             {canExport && (
-                                <Button variant="secondary" icon={Download} onClick={() => {}}>
+                                <Button variant="primary" icon={Download} onClick={() => {}}>
                                     Export
                                 </Button>
                             )}

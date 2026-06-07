@@ -346,10 +346,10 @@ export default function AttendanceIndex({
                     subtitle="Timekeeping records"
                     actions={
                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
-                            <Button variant="secondary" icon={Download} onClick={() => {}}>
+                            <Button variant="primary" icon={Download} onClick={() => {}}>
                                 Export
                             </Button>
-                            <Button variant="secondary" icon={Calendar} onClick={() => router.get(route('attendance.report'))}>
+                            <Button variant="primary" icon={Calendar} onClick={() => router.get(route('attendance.report'))}>
                                 Report
                             </Button>
                             {canManage && (

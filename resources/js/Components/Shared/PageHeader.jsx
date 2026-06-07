@@ -10,7 +10,7 @@
 export default function PageHeader({ title, subtitle, actions, className = '' }) {
     return (
         <div
-            className={`flex items-start justify-between gap-4 ${className}`}
+            className={`flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-start ${className}`}
             style={{ marginBottom: 'var(--space-section)' }}
         >
             <div className="min-w-0">
@@ -28,7 +28,10 @@ export default function PageHeader({ title, subtitle, actions, className = '' })
             </div>
 
             {actions && (
-                <div className="flex items-center shrink-0" style={{ gap: 'var(--space-1)' }}>
+                <div
+                    className="flex flex-wrap items-center justify-start sm:justify-end sm:shrink-0"
+                    style={{ gap: 'var(--space-1)' }}
+                >
                     {actions}
                 </div>
             )}

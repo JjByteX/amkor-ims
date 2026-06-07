@@ -3,6 +3,8 @@
 namespace Modules\CreditCardMonitoring\Providers;
 
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
+use App\Events\DashboardSummaryRequested;
+use Modules\CreditCardMonitoring\Listeners\ContributeDashboardSummary;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -11,7 +13,11 @@ class EventServiceProvider extends ServiceProvider
      *
      * @var array<string, array<int, string>>
      */
-    protected $listen = [];
+    protected $listen = [
+        DashboardSummaryRequested::class => [
+            ContributeDashboardSummary::class,
+        ],
+    ];
 
     /**
      * Indicates if events should be discovered.

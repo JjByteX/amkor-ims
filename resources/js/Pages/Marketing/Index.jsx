@@ -198,14 +198,14 @@ export default function MarketingIndex({
                     actions={
                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
                             <Button
-                                variant="secondary"
+                                variant="primary"
                                 icon={Download}
                                 onClick={() => router.get(route('marketing.expenses'))}
                             >
                                 Expenses
                             </Button>
                             <Button
-                                variant="secondary"
+                                variant="primary"
                                 onClick={() => router.get(route('marketing.analytics'))}
                             >
                                 Analytics

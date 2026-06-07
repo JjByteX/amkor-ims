@@ -1,8 +1,36 @@
-import { usePage } from '@inertiajs/react';
-import { Bell, Building2, LayoutDashboard, ShieldCheck, UserRound } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import {
+    BanknoteArrowDown,
+    BanknoteArrowUp,
+    BellDot,
+    Building2,
+    CalendarCheck2,
+    ChartSpline,
+    CircleCheckBig,
+    ClipboardCheck,
+    ClipboardList,
+    ContactRound,
+    CreditCard,
+    FileCheck2,
+    FileClock,
+    FileWarning,
+    Gauge,
+    Landmark,
+    MapPinned,
+    Megaphone,
+    PlaneTakeoff,
+    ReceiptText,
+    Send,
+    ShieldCheck,
+    Target,
+    UserRoundCheck,
+    UsersRound,
+    WalletCards,
+    Files,
+} from 'lucide-react';
 import AppShell from '../Components/Layout/AppShell';
-import Card from '../Components/UI/Card';
 import Badge from '../Components/UI/Badge';
+import Card from '../Components/UI/Card';
 import PageHeader from '../Components/Shared/PageHeader';
 import PageStack from '../Components/Shared/PageStack';
 import StatGrid from '../Components/Shared/StatGrid';
@@ -23,99 +51,210 @@ const ROLE_LABELS = {
     marketing_officer          : 'Marketing Officer',
 };
 
-function Dashboard() {
+const ICONS = {
+    BanknoteArrowDown,
+    BanknoteArrowUp,
+    BellDot,
+    Building2,
+    CalendarCheck2,
+    ChartSpline,
+    CircleCheckBig,
+    ClipboardCheck,
+    ClipboardList,
+    ContactRound,
+    CreditCard,
+    FileCheck2,
+    FileClock,
+    FileWarning,
+    Files,
+    Gauge,
+    Landmark,
+    MapPinned,
+    Megaphone,
+    PlaneTakeoff,
+    ReceiptText,
+    Send,
+    ShieldCheck,
+    Target,
+    UserRoundCheck,
+    UsersRound,
+    WalletCards,
+};
+
+function Dashboard({ dashboardSections = [] }) {
     const { auth } = usePage().props;
-    const user      = auth?.user;
-    const roleLabel = ROLE_LABELS[user?.role] ?? user?.role ?? '';
-    const unreadNotifications = auth?.unread_notifications ?? 0;
+    const user = auth?.user;
+    const roleLabel = ROLE_LABELS[user?.role] ?? user?.role ?? 'Account';
 
     return (
         <PageStack>
             <PageHeader
                 title="Dashboard"
-                subtitle="Welcome to the Amkor Travel & Tours Internal Management System."
+                subtitle="Read-only operational overview"
             />
 
-            <StatGrid>
-                <StatCard icon={UserRound} label="Signed in as" value={user?.name ?? 'User'} sub={roleLabel} tone="primary" />
-                <StatCard icon={Building2} label="Branch" value={user?.branch_name ?? 'Unassigned'} />
-                <StatCard icon={ShieldCheck} label="Access role" value={roleLabel || 'Account'} />
-                <StatCard icon={Bell} label="Unread notices" value={unreadNotifications} tone={unreadNotifications > 0 ? 'warning' : 'success'} />
-            </StatGrid>
-
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.8fr)]">
-                <Card>
-                    <div className="flex flex-col" style={{ gap: 'var(--space-3)' }}>
-                        <div className="flex items-start gap-3">
-                            <div
-                                className="flex h-11 w-11 shrink-0 items-center justify-center text-[var(--color-primary)]"
-                                style={{
-                                    borderRadius: 'var(--radius-md)',
-                                    background: 'color-mix(in srgb, var(--color-primary) 10%, var(--color-card))',
-                                    border: '1px solid color-mix(in srgb, var(--color-primary) 16%, var(--color-border))',
-                                }}
-                            >
-                                <LayoutDashboard size={20} />
-                            </div>
-                            <div className="min-w-0">
-                                <h2 className="font-heading font-bold text-[var(--color-text)]" style={{ fontSize: 20 }}>
-                                    Hello, {user?.name ?? 'there'}
-                                </h2>
-                                <p className="font-body text-[var(--color-text-muted)]" style={{ fontSize: 'var(--font-size-small)', marginTop: 4 }}>
-                                    Your workspace is ready. Use the sidebar to move between modules and operational tools.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="grid gap-3 sm:grid-cols-2">
-                            <InfoTile label="Role" value={<Badge variant="info">{roleLabel}</Badge>} />
-                            <InfoTile label="Branch" value={<Badge variant="neutral">{user?.branch_name ?? 'Unassigned'}</Badge>} />
-                        </div>
-                    </div>
-                </Card>
-
-                <Card>
-                    <div className="flex flex-col" style={{ gap: 'var(--space-2)' }}>
-                        <h2 className="font-heading font-bold text-[var(--color-text)]" style={{ fontSize: 18 }}>
-                            Workspace Notes
-                        </h2>
-                        <p className="font-body text-[var(--color-text-muted)]" style={{ fontSize: 'var(--font-size-small)' }}>
-                            Module dashboards will become richer as each phase gets operational metrics. Current module pages already include table summaries, filters, and workflow actions.
-                        </p>
-                        <div style={{ height: 1, background: 'var(--color-border-soft)' }} />
-                        <p className="font-body text-[var(--color-text-muted)]" style={{ fontSize: 'var(--font-size-small)' }}>
-                            For best local viewing, keep the Laravel server, Vite, and Reverb terminals running together.
-                        </p>
-                    </div>
-                </Card>
+            <div className="grid gap-3 md:grid-cols-3">
+                <ContextTile label="Signed in" value={user?.name ?? 'User'} icon={UserRoundCheck} />
+                <ContextTile label="Role" value={roleLabel} icon={ShieldCheck} />
+                <ContextTile label="Branch" value={user?.branch_name ?? 'Unassigned'} icon={Building2} />
             </div>
+
+            {dashboardSections.length > 0 ? (
+                <div className="grid gap-4 xl:grid-cols-2">
+                    {dashboardSections.map((section) => (
+                        <DashboardSection key={section.key} section={section} />
+                    ))}
+                </div>
+            ) : (
+                <Card>
+                    <div className="flex items-center gap-3">
+                        <div
+                            className="flex h-10 w-10 items-center justify-center text-[var(--color-primary)]"
+                            style={{
+                                borderRadius: 'var(--radius-md)',
+                                border: '1px solid color-mix(in srgb, var(--color-primary) 14%, var(--color-border))',
+                                background: 'color-mix(in srgb, var(--color-primary) 9%, var(--color-card))',
+                            }}
+                        >
+                            <Gauge size={18} />
+                        </div>
+                        <div>
+                            <h2 className="font-heading font-bold text-[var(--color-text)]" style={{ fontSize: 18 }}>
+                                No dashboard summaries available
+                            </h2>
+                            <p className="font-body text-[var(--color-text-muted)]" style={{ fontSize: 'var(--font-size-small)', marginTop: 3 }}>
+                                Your accessible modules will appear here once records are available.
+                            </p>
+                        </div>
+                    </div>
+                </Card>
+            )}
         </PageStack>
     );
 }
 
-function InfoTile({ label, value }) {
+function ContextTile({ label, value, icon: Icon }) {
+    return (
+        <Card compact>
+            <div className="flex items-center gap-3">
+                <div
+                    className="flex h-10 w-10 shrink-0 items-center justify-center text-[var(--color-primary)]"
+                    style={{
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px solid color-mix(in srgb, var(--color-primary) 14%, var(--color-border))',
+                        background: 'color-mix(in srgb, var(--color-primary) 9%, var(--color-card))',
+                    }}
+                >
+                    <Icon size={18} />
+                </div>
+                <div className="min-w-0">
+                    <div className="font-body font-bold uppercase text-[var(--color-text-muted)]" style={{ fontSize: 11 }}>
+                        {label}
+                    </div>
+                    <div className="truncate font-heading font-bold text-[var(--color-text)]" style={{ fontSize: 18, marginTop: 4 }}>
+                        {value}
+                    </div>
+                </div>
+            </div>
+        </Card>
+    );
+}
+
+function DashboardSection({ section }) {
+    const cards = section.cards ?? [];
+    const attention = section.attention ?? [];
+
+    return (
+        <section className="flex flex-col" style={{ gap: 'var(--space-2)' }}>
+            <div>
+                <h2 className="font-heading font-bold text-[var(--color-text)]" style={{ fontSize: 18 }}>
+                    {section.label}
+                </h2>
+            </div>
+
+            {cards.length > 0 && (
+                <StatGrid min="160px">
+                    {cards.map((card, index) => {
+                        const Icon = ICONS[card.icon] ?? ClipboardList;
+                        const stat = (
+                            <StatCard
+                                icon={Icon}
+                                label={card.label}
+                                value={card.value}
+                                sub={card.sub}
+                                tone={card.tone}
+                            />
+                        );
+
+                        return card.href ? (
+                            <Link key={`${card.label}-${index}`} href={card.href} className="block no-underline">
+                                {stat}
+                            </Link>
+                        ) : (
+                            <div key={`${card.label}-${index}`}>
+                                {stat}
+                            </div>
+                        );
+                    })}
+                </StatGrid>
+            )}
+
+            {attention.length > 0 && (
+                <div
+                    className="grid gap-2"
+                    style={{
+                        paddingTop: cards.length > 0 ? 'var(--space-1)' : 0,
+                        borderTop: cards.length > 0 ? '1px solid var(--color-border-soft)' : 'none',
+                    }}
+                >
+                    {attention.slice(0, 4).map((item, index) => (
+                        <AttentionRow key={`${item.label}-${index}`} item={item} />
+                    ))}
+                </div>
+            )}
+        </section>
+    );
+}
+
+function AttentionRow({ item }) {
+    const content = (
+        <div className="flex items-center justify-between gap-3">
+            <span className="font-body font-semibold text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-small)' }}>
+                {item.label}
+            </span>
+            <Badge variant={item.tone === 'error' ? 'error' : item.tone === 'success' ? 'success' : 'warning'}>
+                {item.value}
+            </Badge>
+        </div>
+    );
+
+    if (item.href) {
+        return (
+            <Link
+                href={item.href}
+                className="block no-underline"
+                style={{
+                    padding: '10px 12px',
+                    border: '1px solid var(--color-border-soft)',
+                    borderRadius: 'var(--radius-md)',
+                    background: 'var(--color-bg)',
+                }}
+            >
+                {content}
+            </Link>
+        );
+    }
+
     return (
         <div
             style={{
-                padding: 'var(--space-2)',
-                border: 'var(--border-container)',
+                padding: '10px 12px',
+                border: '1px solid var(--color-border-soft)',
                 borderRadius: 'var(--radius-md)',
                 background: 'var(--color-bg)',
             }}
         >
-            <div
-                className="font-body font-semibold uppercase"
-                style={{
-                    fontSize: 11,
-                    color: 'var(--color-text-muted)',
-                    lineHeight: 1.2,
-                    letterSpacing: 0,
-                    marginBottom: 8,
-                }}
-            >
-                {label}
-            </div>
-            {value}
+            {content}
         </div>
     );
 }

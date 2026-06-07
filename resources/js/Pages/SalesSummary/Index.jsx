@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { router, useForm } from '@inertiajs/react';
-import { Download, Save, Search, Target, TrendingUp } from 'lucide-react';
+import { BanknoteArrowDown, BanknoteArrowUp, ChartSpline, ClipboardList, Download, Save, Search, Target } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
 import DataTable from '../../Components/Shared/DataTable';
@@ -61,10 +61,10 @@ export default function SalesSummaryIndex({ rows, totals, departments, targets, 
                 />
 
                 <StatGrid>
-                    <StatCard icon={Search} label="Records" value={totals.records} />
-                    <StatCard icon={TrendingUp} label="Gross Sales" value={money(totals.gross_sales)} />
-                    <StatCard icon={TrendingUp} label="Net Payable" value={money(totals.net_payable)} tone="warning" />
-                    <StatCard icon={TrendingUp} label="Income" value={money(totals.income)} tone="primary" />
+                    <StatCard icon={ClipboardList} label="Records" value={totals.records} />
+                    <StatCard icon={BanknoteArrowUp} label="Gross Sales" value={money(totals.gross_sales)} />
+                    <StatCard icon={BanknoteArrowDown} label="Net Payable" value={money(totals.net_payable)} tone="warning" />
+                    <StatCard icon={ChartSpline} label="Income" value={money(totals.income)} tone="primary" />
                 </StatGrid>
 
                 <div className="grid gap-4 xl:grid-cols-[1fr_340px]">

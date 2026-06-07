@@ -9,6 +9,7 @@ export default function StatCard({
     label,
     value,
     tone = 'default',
+    color,
     sub,
     className = '',
 }) {
@@ -31,7 +32,7 @@ export default function StatCard({
         }
     }
 
-    const toneColor = tones[tone] ?? tone;
+    const toneColor = color ?? tones[tone] ?? tone;
 
     return (
         <Card compact className={className} style={{ minHeight: 86 }}>
@@ -52,7 +53,7 @@ export default function StatCard({
 
                 <div className="min-w-0">
                     <div
-                        className="font-body font-semibold uppercase"
+                        className="font-body font-bold uppercase"
                         style={{
                             fontSize: 11,
                             color: 'var(--color-text-muted)',
@@ -66,7 +67,7 @@ export default function StatCard({
                         className="truncate font-heading font-bold"
                         style={{
                             marginTop: 5,
-                            fontSize: 20,
+                        fontSize: 21,
                             lineHeight: 1.1,
                             color: toneColor,
                         }}

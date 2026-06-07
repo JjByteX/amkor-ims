@@ -307,7 +307,7 @@ export default function MarketingExpenses({
                             <Button variant="ghost" icon={ArrowLeft} onClick={() => router.get(route('marketing.index'))}>
                                 Materials
                             </Button>
-                            <Button variant="secondary" icon={Download} onClick={() => {}}>
+                            <Button variant="primary" icon={Download} onClick={() => {}}>
                                 Export
                             </Button>
                             {canCreate && (

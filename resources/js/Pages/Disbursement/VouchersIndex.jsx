@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
-import { Plus, Search, Eye, Trash2, Banknote, Files, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Plus, Search, Eye, Trash2, BanknoteArrowUp, ClipboardList, FileClock, CircleCheckBig } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
 import DataTable from '../../Components/Shared/DataTable';
@@ -180,10 +180,10 @@ export default function VouchersIndex({
 
                 {summary && (
                     <StatGrid>
-                        <StatCard icon={Banknote} label="Total Amount" value={<CurrencyDisplay amount={summary.total_amount ?? 0} currency="PHP" />} />
-                        <StatCard icon={Files} label="Total Vouchers" value={summary.total_count ?? 0} />
-                        <StatCard icon={AlertTriangle} label="Pending" value={summary.pending_count ?? 0} tone="warning" />
-                        <StatCard icon={CheckCircle2} label="Approved" value={summary.approved_count ?? 0} tone="success" />
+                        <StatCard icon={BanknoteArrowUp} label="Total Amount" value={<CurrencyDisplay amount={summary.total_amount ?? 0} currency="PHP" />} />
+                        <StatCard icon={ClipboardList} label="Total Vouchers" value={summary.total_count ?? 0} />
+                        <StatCard icon={FileClock} label="Pending" value={summary.pending_count ?? 0} tone="warning" />
+                        <StatCard icon={CircleCheckBig} label="Approved" value={summary.approved_count ?? 0} tone="success" />
                     </StatGrid>
                 )}
 

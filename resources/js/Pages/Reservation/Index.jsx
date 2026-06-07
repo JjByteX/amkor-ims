@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
-import { CalendarDays, Eye, Plus, Search, TrendingUp, Users } from 'lucide-react';
+import { BanknoteArrowUp, ChartSpline, CircleCheckBig, ClipboardList, Eye, Plus, Search } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
 import DataTable from '../../Components/Shared/DataTable';
@@ -75,10 +75,10 @@ export default function ReservationIndex({ bookings, summary, filters, statuses,
                 />
 
                 <StatGrid>
-                    <StatCard icon={Users} label="Records" value={summary.total} />
-                    <StatCard icon={CalendarDays} label="Confirmed" value={summary.confirmed} tone="success" />
-                    <StatCard icon={TrendingUp} label="Gross Sales" value={money(summary.gross)} />
-                    <StatCard icon={TrendingUp} label="Income" value={money(summary.income)} tone="primary" />
+                    <StatCard icon={ClipboardList} label="Records" value={summary.total} />
+                    <StatCard icon={CircleCheckBig} label="Confirmed" value={summary.confirmed} tone="success" />
+                    <StatCard icon={BanknoteArrowUp} label="Gross Sales" value={money(summary.gross)} />
+                    <StatCard icon={ChartSpline} label="Income" value={money(summary.income)} tone="primary" />
                 </StatGrid>
 
                 <DataTable

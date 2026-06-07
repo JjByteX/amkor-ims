@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\DashboardController;
 
 // Root → redirect to dashboard (AppShell handles the login guard)
 Route::get('/', function () {
@@ -9,5 +10,5 @@ Route::get('/', function () {
 
 // Dashboard — protected, all authenticated roles
 Route::middleware(['auth'])->group(function () {
-    Route::inertia('/dashboard', 'Dashboard')->name('dashboard');
+    Route::get('/dashboard', DashboardController::class)->name('dashboard');
 });

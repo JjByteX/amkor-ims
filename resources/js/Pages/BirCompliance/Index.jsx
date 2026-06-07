@@ -264,7 +264,7 @@ export default function BirIndex({
                     actions={
                         <div className="flex items-center" style={{ gap: 'var(--space-1)' }}>
                             <Button
-                                variant="secondary"
+                                variant="primary"
                                 icon={Download}
                                 onClick={handleExport}
                             >

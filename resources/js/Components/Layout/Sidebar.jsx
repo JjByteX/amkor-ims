@@ -2,12 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { usePage, Link, router } from '@inertiajs/react';
 import {
     PanelLeftClose, PanelLeftOpen,
-    LayoutDashboard,
-    BookOpen, FileSearch, Globe,
-    TrendingUp,
-    CreditCard, DollarSign, Wallet, ShieldCheck, Receipt, Banknote, FileText,
-    Users, Clock, Megaphone,
-    Bell, BookUser,
+    Gauge,
+    PlaneTakeoff, FileCheck2, MapPinned,
+    ChartNoAxesCombined,
+    CreditCard, Landmark, WalletCards, ShieldCheck, ReceiptText, Building2, Files,
+    UsersRound, CalendarClock, Megaphone,
+    Bell, BellDot, ContactRound, ClipboardCheck,
     Sun, Moon, LogOut,
 } from 'lucide-react';
 import NavItem from './NavItem';
@@ -24,21 +24,21 @@ const NAV_SECTIONS = [
             {
                 key  : 'dashboard',
                 href : '/dashboard',
-                icon : <LayoutDashboard size={20} />,
+                icon : <Gauge size={20} />,
                 label: 'Dashboard',
                 roles: 'all',
             },
             {
                 key  : 'contacts',
                 href : '/contacts',
-                icon : <BookUser size={20} />,
+                icon : <ContactRound size={20} />,
                 label: 'Contacts',
                 roles: 'all',
             },
             {
                 key  : 'notifications',
                 href : '/notifications',
-                icon : <Bell size={20} />,
+                icon : <BellDot size={20} />,
                 label: 'Notifications',
                 roles: 'all',
             },
@@ -51,35 +51,35 @@ const NAV_SECTIONS = [
             {
                 key  : 'reservation',
                 href : '/reservation',
-                icon : <BookOpen size={20} />,
+                icon : <PlaneTakeoff size={20} />,
                 label: 'Reservation & Booking',
                 roles: ['general_manager', 'resa_officer', 'ormoc_branch_officer', 'accounting_officer', 'admin_auditor', 'chief_operations_officer', 'general_sales_manager'],
             },
             {
                 key  : 'reservation-sales',
                 href : '/reservation-sales',
-                icon : <TrendingUp size={20} />,
+                icon : <ChartNoAxesCombined size={20} />,
                 label: 'RESA Sales Report',
                 roles: ['general_manager', 'resa_officer', 'ormoc_branch_officer', 'accounting_officer', 'admin_auditor', 'chief_operations_officer', 'general_sales_manager'],
             },
             {
                 key  : 'visa',
                 href : '/visa',
-                icon : <FileSearch size={20} />,
+                icon : <FileCheck2 size={20} />,
                 label: 'Visa & Documentation',
                 roles: ['general_manager', 'visa_documentation_officer', 'disbursement_officer', 'admin_auditor'],
             },
             {
                 key  : 'ormoc',
                 href : '/ormoc',
-                icon : <Globe size={20} />,
+                icon : <MapPinned size={20} />,
                 label: 'Ormoc Branch',
                 roles: ['general_manager', 'ormoc_branch_officer'],
             },
             {
                 key  : 'sales',
                 href : '/sales',
-                icon : <TrendingUp size={20} />,
+                icon : <ChartNoAxesCombined size={20} />,
                 label: 'Sales Summary',
                 roles: ['general_manager', 'chief_operations_officer', 'general_sales_manager', 'accounting_officer', 'admin_auditor', 'resa_officer', 'ormoc_branch_officer', 'visa_documentation_officer'],
             },
@@ -92,21 +92,21 @@ const NAV_SECTIONS = [
             {
                 key  : 'ar',
                 href : '/ar',
-                icon : <Receipt size={20} />,
+                icon : <ReceiptText size={20} />,
                 label: 'Accounts Receivable',
                 roles: ['general_manager', 'chief_operations_officer', 'general_sales_manager', 'accounting_officer', 'admin_auditor', 'resa_officer', 'ormoc_branch_officer', 'visa_documentation_officer'],
             },
             {
                 key  : 'payables',
                 href : '/payables',
-                icon : <DollarSign size={20} />,
+                icon : <Landmark size={20} />,
                 label: 'Accounts Payable',
                 roles: ['general_manager', 'accounting_officer', 'disbursement_officer', 'admin_auditor'],
             },
             {
                 key  : 'disbursement',
                 href : '/disbursement',
-                icon : <Wallet size={20} />,
+                icon : <WalletCards size={20} />,
                 label: 'Disbursement Ledger',
                 roles: ['general_manager', 'disbursement_officer', 'admin_auditor'],
             },
@@ -120,7 +120,7 @@ const NAV_SECTIONS = [
             {
                 key  : 'bills',
                 href : '/bills',
-                icon : <FileText size={20} />,
+                icon : <Files size={20} />,
                 label: 'Bills & On-Ques',
                 roles: ['general_manager', 'hr_admin_officer', 'disbursement_officer', 'admin_auditor'],
             },
@@ -134,14 +134,14 @@ const NAV_SECTIONS = [
             {
                 key  : 'iata',
                 href : '/iata',
-                icon : <Banknote size={20} />,
+                icon : <Building2 size={20} />,
                 label: 'IATA Payments',
                 roles: ['general_manager', 'disbursement_officer', 'admin_auditor'],
             },
             {
                 key  : 'bir',
                 href : '/bir',
-                icon : <FileText size={20} />,
+                icon : <ClipboardCheck size={20} />,
                 label: 'BIR / Compliance',
                 roles: ['general_manager', 'disbursement_officer', 'accounting_officer', 'admin_auditor'],
             },
@@ -154,14 +154,16 @@ const NAV_SECTIONS = [
             {
                 key  : 'hr',
                 href : '/hr',
-                icon : <Users size={20} />,
+                icon : <UsersRound size={20} />,
                 label: 'HR & Records',
+                inactiveOn: ['/hr/attendance'],
                 roles: ['general_manager', 'hr_admin_officer'],
             },
             {
                 key  : 'attendance',
                 href : '/attendance',
-                icon : <Clock size={20} />,
+                activeOn: ['/hr/attendance'],
+                icon : <CalendarClock size={20} />,
                 label: 'Attendance',
                 roles: ['general_manager', 'hr_admin_officer', 'resa_officer', 'ormoc_branch_officer', 'visa_documentation_officer', 'accounting_officer', 'disbursement_officer', 'admin_auditor', 'liaison_officer', 'marketing_officer'],
             },
@@ -370,12 +372,14 @@ export default function Sidebar() {
                             )}
                             <ul className={`flex flex-col gap-0.5 ${collapsed ? 'items-center' : ''}`}>
                                 {section.items.map((item) => (
-                                    <NavItem
-                                        key={item.key}
-                                        href={item.href}
-                                        icon={item.icon}
-                                        label={item.label}
-                                        collapsed={collapsed}
+                        <NavItem
+                            key={item.key}
+                            href={item.href}
+                            activeOn={item.activeOn}
+                            inactiveOn={item.inactiveOn}
+                            icon={item.icon}
+                            label={item.label}
+                            collapsed={collapsed}
                                     />
                                 ))}
                             </ul>

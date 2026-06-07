@@ -180,7 +180,7 @@ export default function EmployeeIndex({
                     subtitle={`${employees.total ?? 0} employee${employees.total !== 1 ? 's' : ''}`}
                     actions={
                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
-                            <Button variant="secondary" icon={Download} onClick={() => {}}>
+                            <Button variant="primary" icon={Download} onClick={() => {}}>
                                 Export
                             </Button>
                             {canManage && (
