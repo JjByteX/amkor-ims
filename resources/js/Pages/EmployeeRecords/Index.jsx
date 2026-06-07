@@ -6,7 +6,10 @@ import {
 } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
-import Card from '../../Components/UI/Card';
+import FilterStrip, { FilterField } from '../../Components/Shared/FilterStrip';
+import PageStack from '../../Components/Shared/PageStack';
+import StatCard from '../../Components/Shared/StatCard';
+import StatGrid from '../../Components/Shared/StatGrid';
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
 import DataTable from '../../Components/Shared/DataTable';
@@ -24,34 +27,6 @@ const STATUS_VARIANT = {
     resigned:     'neutral',
     terminated:   'error',
 };
-
-// ── Stat card ─────────────────────────────────────────────────────────────────
-
-function StatCard({ icon: Icon, label, value, color = 'var(--color-text)' }) {
-    return (
-        <Card>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                <div style={{
-                    width: 40, height: 40,
-                    borderRadius: 'var(--radius-md)',
-                    background: 'var(--color-bg)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0,
-                }}>
-                    <Icon size={18} style={{ color }} />
-                </div>
-                <div>
-                    <div className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)', opacity: 0.55 }}>
-                        {label}
-                    </div>
-                    <div className="font-heading font-semibold" style={{ fontSize: 'var(--font-size-heading)', color }}>
-                        {value}
-                    </div>
-                </div>
-            </div>
-        </Card>
-    );
-}
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
@@ -185,7 +160,7 @@ export default function EmployeeIndex({
 
     return (
         <AppShell>
-            <div className="flex flex-col flex-1 min-h-0" style={{ gap: 'var(--space-section)' }}>
+            <PageStack>
 
                 {/* Flash */}
                 {flash?.message && (
@@ -205,7 +180,7 @@ export default function EmployeeIndex({
                     subtitle={`${employees.total ?? 0} employee${employees.total !== 1 ? 's' : ''}`}
                     actions={
                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
-                            <Button variant="secondary" icon={Download} onClick={() => {}}>
+                            <Button variant="primary" icon={Download} onClick={() => {}}>
                                 Export
                             </Button>
                             {canManage && (
@@ -235,52 +210,14 @@ export default function EmployeeIndex({
                     </div>
                 )}
 
-                {/* Stat strip */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'var(--space-2)' }}>
-                    <StatCard icon={Users}     label="Total"         value={stats.total}        color="var(--color-text)" />
-                    <StatCard icon={UserCheck} label="Active"        value={stats.active}       color="var(--color-success)" />
-                    <StatCard icon={Clock}     label="Probationary"  value={stats.probationary} color="var(--color-warning)" />
-                    <StatCard icon={UserCheck} label="Regular"       value={stats.regular}      color="var(--color-primary)" />
-                    <StatCard icon={UserX}     label="Inactive"      value={stats.inactive}     color="var(--color-error)" />
-                </div>
+                <StatGrid>
+                    <StatCard icon={Users} label="Total" value={stats.total} />
+                    <StatCard icon={UserCheck} label="Active" value={stats.active} tone="success" />
+                    <StatCard icon={Clock} label="Probationary" value={stats.probationary} tone="warning" />
+                    <StatCard icon={UserCheck} label="Regular" value={stats.regular} tone="primary" />
+                    <StatCard icon={UserX} label="Inactive" value={stats.inactive} tone="error" />
+                </StatGrid>
 
-                {/* Filters */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 'var(--space-2)' }}>
-                    <div style={{ flex: 1, minWidth: 200 }}>
-                        <Input
-                            placeholder="Name, code, position…"
-                            value={searchInput}
-                            onChange={(e) => setSearchInput(e.target.value)}
-                            onKeyDown={handleSearchKey}
-                            icon={Search}
-                        />
-                    </div>
-                    <div style={{ minWidth: 160 }}>
-                        <Select
-                            options={[
-                                { value: '', label: 'All Statuses' },
-                                ...Object.entries(statuses).map(([v, l]) => ({ value: v, label: l })),
-                            ]}
-                            value={filters.status ?? ''}
-                            onChange={(e) => applyFilter({ status: e.target.value || undefined, page: 1 })}
-                        />
-                    </div>
-                    <div style={{ minWidth: 180 }}>
-                        <Select
-                            options={[
-                                { value: '', label: 'All Departments' },
-                                ...Object.entries(departments).map(([v, l]) => ({ value: v, label: l })),
-                            ]}
-                            value={filters.dept ?? ''}
-                            onChange={(e) => applyFilter({ dept: e.target.value || undefined, page: 1 })}
-                        />
-                    </div>
-                    {hasActiveFilters && (
-                        <Button variant="ghost" onClick={clearFilters}>Clear</Button>
-                    )}
-                </div>
-
-                {/* Table */}
                 <DataTable
                     columns={columns}
                     rows={employees.data ?? []}
@@ -288,8 +225,44 @@ export default function EmployeeIndex({
                     onPageChange={(page) =>
                         router.get(route('employees.index'), { ...filters, search: searchInput, page }, { preserveState: true })
                     }
+                    toolbar={
+                        <FilterStrip>
+                            <FilterField grow>
+                                <Input
+                                    placeholder="Name, code, position..."
+                                    value={searchInput}
+                                    onChange={(e) => setSearchInput(e.target.value)}
+                                    onKeyDown={handleSearchKey}
+                                    icon={Search}
+                                />
+                            </FilterField>
+                            <FilterField>
+                                <Select
+                                    options={[
+                                        { value: '', label: 'All Statuses' },
+                                        ...Object.entries(statuses).map(([v, l]) => ({ value: v, label: l })),
+                                    ]}
+                                    value={filters.status ?? ''}
+                                    onChange={(e) => applyFilter({ status: e.target.value || undefined, page: 1 })}
+                                />
+                            </FilterField>
+                            <FilterField width={190}>
+                                <Select
+                                    options={[
+                                        { value: '', label: 'All Departments' },
+                                        ...Object.entries(departments).map(([v, l]) => ({ value: v, label: l })),
+                                    ]}
+                                    value={filters.dept ?? ''}
+                                    onChange={(e) => applyFilter({ dept: e.target.value || undefined, page: 1 })}
+                                />
+                            </FilterField>
+                            {hasActiveFilters && (
+                                <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                            )}
+                        </FilterStrip>
+                    }
                 />
-            </div>
+            </PageStack>
         </AppShell>
     );
 }

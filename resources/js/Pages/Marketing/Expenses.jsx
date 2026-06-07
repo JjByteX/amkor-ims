@@ -6,6 +6,10 @@ import {
 } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
+import FilterStrip, { FilterField } from '../../Components/Shared/FilterStrip';
+import PageStack from '../../Components/Shared/PageStack';
+import SharedStatCard from '../../Components/Shared/StatCard';
+import StatGrid from '../../Components/Shared/StatGrid';
 import Card from '../../Components/UI/Card';
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
@@ -33,34 +37,6 @@ const STATUS_VARIANT = {
     submitted: 'warning',
     approved:  'success',
 };
-
-// ── Stat card ─────────────────────────────────────────────────────────────────
-
-function StatCard({ icon: Icon, label, value, color = 'var(--color-text)' }) {
-    return (
-        <Card>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                <div style={{
-                    width: 40, height: 40,
-                    borderRadius: 'var(--radius-md)',
-                    background: 'var(--color-bg)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0,
-                }}>
-                    <Icon size={18} style={{ color }} />
-                </div>
-                <div>
-                    <div className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)', opacity: 0.55 }}>
-                        {label}
-                    </div>
-                    <div className="font-heading font-semibold" style={{ fontSize: 'var(--font-size-heading)', color }}>
-                        {value}
-                    </div>
-                </div>
-            </div>
-        </Card>
-    );
-}
 
 // ── New Expense Form (inline modal) ───────────────────────────────────────────
 
@@ -308,7 +284,7 @@ export default function MarketingExpenses({
 
     return (
         <AppShell>
-            <div className="flex flex-col flex-1 min-h-0" style={{ gap: 'var(--space-section)' }}>
+            <PageStack>
 
                 {/* Flash */}
                 {flash?.message && (
@@ -331,7 +307,7 @@ export default function MarketingExpenses({
                             <Button variant="ghost" icon={ArrowLeft} onClick={() => router.get(route('marketing.index'))}>
                                 Materials
                             </Button>
-                            <Button variant="secondary" icon={Download} onClick={() => {}}>
+                            <Button variant="primary" icon={Download} onClick={() => {}}>
                                 Export
                             </Button>
                             {canCreate && (
@@ -343,10 +319,9 @@ export default function MarketingExpenses({
                     }
                 />
 
-                {/* Year total stat */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'var(--space-2)' }}>
-                    <StatCard icon={DollarSign} label="Year Total" value={PHP(yearTotal)} color="var(--color-primary)" />
-                </div>
+                <StatGrid>
+                    <SharedStatCard icon={DollarSign} label="Year Total" value={PHP(yearTotal)} tone="primary" />
+                </StatGrid>
 
                 {/* Monthly breakdown */}
                 <Card>
@@ -397,43 +372,6 @@ export default function MarketingExpenses({
                     </div>
                 </Card>
 
-                {/* Filters */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 'var(--space-2)' }}>
-                    <div style={{ flex: 1, minWidth: 200 }}>
-                        <Input
-                            placeholder="Campaign, vendor…"
-                            value={searchInput}
-                            onChange={(e) => setSearchInput(e.target.value)}
-                            onKeyDown={handleSearchKey}
-                            icon={Search}
-                        />
-                    </div>
-                    <div style={{ minWidth: 180 }}>
-                        <Select
-                            options={[
-                                { value: '', label: 'All Categories' },
-                                ...Object.entries(categories).map(([v, l]) => ({ value: v, label: l })),
-                            ]}
-                            value={filters.category ?? ''}
-                            onChange={(e) => applyFilter({ category: e.target.value || undefined, page: 1 })}
-                        />
-                    </div>
-                    <div style={{ minWidth: 160 }}>
-                        <Select
-                            options={[
-                                { value: '', label: 'All Statuses' },
-                                ...Object.entries(statuses).map(([v, l]) => ({ value: v, label: l })),
-                            ]}
-                            value={filters.status ?? ''}
-                            onChange={(e) => applyFilter({ status: e.target.value || undefined, page: 1 })}
-                        />
-                    </div>
-                    {hasActiveFilters && (
-                        <Button variant="ghost" onClick={clearFilters}>Clear</Button>
-                    )}
-                </div>
-
-                {/* Table */}
                 <DataTable
                     columns={columns}
                     rows={expenses.data ?? []}
@@ -441,8 +379,44 @@ export default function MarketingExpenses({
                     onPageChange={(page) =>
                         router.get(route('marketing.expenses'), { ...filters, search: searchInput, page }, { preserveState: true })
                     }
+                    toolbar={
+                        <FilterStrip>
+                            <FilterField grow>
+                                <Input
+                                    placeholder="Campaign, vendor..."
+                                    value={searchInput}
+                                    onChange={(e) => setSearchInput(e.target.value)}
+                                    onKeyDown={handleSearchKey}
+                                    icon={Search}
+                                />
+                            </FilterField>
+                            <FilterField width={180}>
+                                <Select
+                                    options={[
+                                        { value: '', label: 'All Categories' },
+                                        ...Object.entries(categories).map(([v, l]) => ({ value: v, label: l })),
+                                    ]}
+                                    value={filters.category ?? ''}
+                                    onChange={(e) => applyFilter({ category: e.target.value || undefined, page: 1 })}
+                                />
+                            </FilterField>
+                            <FilterField>
+                                <Select
+                                    options={[
+                                        { value: '', label: 'All Statuses' },
+                                        ...Object.entries(statuses).map(([v, l]) => ({ value: v, label: l })),
+                                    ]}
+                                    value={filters.status ?? ''}
+                                    onChange={(e) => applyFilter({ status: e.target.value || undefined, page: 1 })}
+                                />
+                            </FilterField>
+                            {hasActiveFilters && (
+                                <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                            )}
+                        </FilterStrip>
+                    }
                 />
-            </div>
+            </PageStack>
 
             <ExpenseModal
                 open={expenseOpen}

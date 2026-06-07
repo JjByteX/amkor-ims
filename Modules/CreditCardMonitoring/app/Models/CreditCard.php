@@ -25,8 +25,8 @@ class CreditCard extends Model
 
     protected $casts = [
         'statement_cut_off' => 'integer',
-        'due_day'           => 'integer',
-        'is_active'         => 'boolean',
+        'due_day' => 'integer',
+        'is_active' => 'boolean',
     ];
 
     // ─── Relationships ──────────────────────────────────────────────────────

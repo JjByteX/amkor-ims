@@ -56,45 +56,45 @@ class Collectible extends Model
     ];
 
     protected $casts = [
-        'date'                        => 'date',
-        'travel_date'                 => 'date',
-        'due_date'                    => 'date',
-        'collectible_amount_php'      => 'decimal:2',
-        'collectible_amount_usd'      => 'decimal:2',
-        'payment_received_php'        => 'decimal:2',
-        'payment_received_usd'        => 'decimal:2',
-        'balance_php'                 => 'decimal:2',
-        'balance_usd'                 => 'decimal:2',
-        'approved_by_coo_at'          => 'datetime',
-        'approved_by_gsm_at'          => 'datetime',
-        'endorsed_to_disbursement'    => 'boolean',
+        'date' => 'date',
+        'travel_date' => 'date',
+        'due_date' => 'date',
+        'collectible_amount_php' => 'decimal:2',
+        'collectible_amount_usd' => 'decimal:2',
+        'payment_received_php' => 'decimal:2',
+        'payment_received_usd' => 'decimal:2',
+        'balance_php' => 'decimal:2',
+        'balance_usd' => 'decimal:2',
+        'approved_by_coo_at' => 'datetime',
+        'approved_by_gsm_at' => 'datetime',
+        'endorsed_to_disbursement' => 'boolean',
         'endorsed_to_disbursement_at' => 'datetime',
-        'refund_processed'            => 'boolean',
-        'refund_processed_at'         => 'datetime',
-        'documents_endorsed'          => 'boolean',
-        'documents_endorsed_at'       => 'datetime',
+        'refund_processed' => 'boolean',
+        'refund_processed_at' => 'datetime',
+        'documents_endorsed' => 'boolean',
+        'documents_endorsed_at' => 'datetime',
     ];
 
     // ─── Constants ────────────────────────────────────────────────────────────
 
     public const DEPARTMENTS = [
-        'resa'  => 'RESA (QC)',
-        'visa'  => 'Visa & Documentation',
+        'resa' => 'RESA (QC)',
+        'visa' => 'Visa & Documentation',
         'ormoc' => 'Ormoc Branch',
     ];
 
     public const STATUSES = [
         'current' => 'Current',
         'overdue' => 'Overdue',
-        'paid'    => 'Paid',
+        'paid' => 'Paid',
     ];
 
     public const APPROVAL_STATUSES = [
-        'pending'      => 'Pending',
+        'pending' => 'Pending',
         'coo_approved' => 'COO Approved',
         'gsm_approved' => 'GSM Approved',
-        'approved'     => 'Fully Approved',
-        'rejected'     => 'Rejected',
+        'approved' => 'Fully Approved',
+        'rejected' => 'Rejected',
     ];
 
     // ─── Relationships ────────────────────────────────────────────────────────
@@ -139,38 +139,53 @@ class Collectible extends Model
 
     public function scopeForBranch($query, ?int $branchId)
     {
-        if (! $branchId) return $query;
+        if (! $branchId) {
+            return $query;
+        }
+
         return $query->where('branch_id', $branchId);
     }
 
     public function scopeForDepartment($query, ?string $dept)
     {
-        if (! $dept) return $query;
+        if (! $dept) {
+            return $query;
+        }
+
         return $query->where('department', $dept);
     }
 
     public function scopeForAgent($query, ?string $code)
     {
-        if (! $code) return $query;
+        if (! $code) {
+            return $query;
+        }
+
         return $query->where('agent_code', $code);
     }
 
     public function scopeForStatus($query, ?string $status)
     {
-        if (! $status) return $query;
+        if (! $status) {
+            return $query;
+        }
+
         return $query->where('status', $status);
     }
 
     public function scopeSearch($query, ?string $term)
     {
-        if (! $term) return $query;
+        if (! $term) {
+            return $query;
+        }
+
         return $query->where(function ($q) use ($term) {
-            $q->where('customer_name',      'ilike', "%{$term}%")
-              ->orWhere('corporate_account', 'ilike', "%{$term}%")
-              ->orWhere('particulars',       'ilike', "%{$term}%")
-              ->orWhere('or_number',         'ilike', "%{$term}%")
-              ->orWhere('ar_number',         'ilike', "%{$term}%")
-              ->orWhere('agent_code',        'ilike', "%{$term}%");
+            $q->where('customer_name', 'ilike', "%{$term}%")
+                ->orWhere('corporate_account', 'ilike', "%{$term}%")
+                ->orWhere('particulars', 'ilike', "%{$term}%")
+                ->orWhere('or_number', 'ilike', "%{$term}%")
+                ->orWhere('ar_number', 'ilike', "%{$term}%")
+                ->orWhere('agent_code', 'ilike', "%{$term}%");
         });
     }
 
@@ -182,7 +197,7 @@ class Collectible extends Model
     public function scopeOverdue($query)
     {
         return $query->where('due_date', '<', now()->toDateString())
-                     ->where('status', '!=', 'paid');
+            ->where('status', '!=', 'paid');
     }
 
     // ─── Computed helpers ─────────────────────────────────────────────────────

@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
-import { Plus, Search, Eye, Trash2 } from 'lucide-react';
+import { Plus, Search, Eye, Trash2, BanknoteArrowUp, ClipboardList, FileClock, FileWarning, CircleCheckBig } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
 import DataTable from '../../Components/Shared/DataTable';
+import FilterStrip, { FilterField } from '../../Components/Shared/FilterStrip';
+import PageStack from '../../Components/Shared/PageStack';
+import StatCard from '../../Components/Shared/StatCard';
+import StatGrid from '../../Components/Shared/StatGrid';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
 import Badge from '../../Components/UI/Badge';
-import Card from '../../Components/UI/Card';
 import ConfirmDialog from '../../Components/Shared/ConfirmDialog';
 import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
 
@@ -121,7 +124,7 @@ export default function BillsIndex({ bills, summary, filters, billTypes, statuse
 
     return (
         <AppShell>
-            <div className="flex flex-col flex-1 min-h-0" style={{ gap: 'var(--space-section)' }}>
+            <PageStack>
 
                 {flash?.message && (
                     <div className="rounded font-body" style={{
@@ -145,63 +148,53 @@ export default function BillsIndex({ bills, summary, filters, billTypes, statuse
                     )}
                 />
 
-                {/* Summary */}
                 {summary && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'var(--space-2)' }}>
-                        {[
-                            { label: 'Total Amount',  value: summary.total_amount,  color: 'var(--color-text)' },
-                            { label: 'Total Records', value: summary.total_count,   color: 'var(--color-text)', isCount: true },
-                            { label: 'Pending',       value: summary.pending_count, color: 'var(--color-warning)', isCount: true },
-                            { label: 'Overdue',       value: summary.overdue_count, color: 'var(--color-error)', isCount: true },
-                            { label: 'Paid',          value: summary.paid_count,    color: 'var(--color-success)', isCount: true },
-                        ].map((s) => (
-                            <Card key={s.label}>
-                                <div className="font-body text-gray-400" style={{ fontSize: 'var(--font-size-small)' }}>{s.label}</div>
-                                <div className="font-heading font-semibold" style={{ fontSize: 'var(--font-size-heading)', color: s.color, marginTop: 4 }}>
-                                    {s.isCount ? (s.value ?? 0) : <CurrencyDisplay amount={s.value ?? 0} currency="PHP" />}
-                                </div>
-                            </Card>
-                        ))}
-                    </div>
+                    <StatGrid>
+                        <StatCard icon={BanknoteArrowUp} label="Total Amount" value={<CurrencyDisplay amount={summary.total_amount ?? 0} currency="PHP" />} />
+                        <StatCard icon={ClipboardList} label="Total Records" value={summary.total_count ?? 0} />
+                        <StatCard icon={FileClock} label="Pending" value={summary.pending_count ?? 0} tone="warning" />
+                        <StatCard icon={FileWarning} label="Overdue" value={summary.overdue_count ?? 0} tone="error" />
+                        <StatCard icon={CircleCheckBig} label="Paid" value={summary.paid_count ?? 0} tone="success" />
+                    </StatGrid>
                 )}
-
-                {/* Filters */}
-                <div className="flex flex-wrap items-center" style={{ gap: 'var(--space-2)' }}>
-                    <div className="flex-1 min-w-[200px]">
-                        <Input
-                            placeholder="Bill name, provider, account no…"
-                            value={searchInput}
-                            onChange={(e) => setSearchInput(e.target.value)}
-                            onKeyDown={handleSearchKey}
-                            icon={Search}
-                        />
-                    </div>
-                    <div className="min-w-[160px]">
-                        <Select
-                            options={typeOptions}
-                            value={filters.bill_type ?? ''}
-                            onChange={(e) => applyFilter({ bill_type: e.target.value, page: 1 })}
-                        />
-                    </div>
-                    <div className="min-w-[160px]">
-                        <Select
-                            options={statusOptions}
-                            value={filters.status ?? ''}
-                            onChange={(e) => applyFilter({ status: e.target.value, page: 1 })}
-                        />
-                    </div>
-                    {hasActiveFilters && (
-                        <Button variant="ghost" onClick={clearFilters}>Clear</Button>
-                    )}
-                </div>
 
                 <DataTable
                     columns={columns}
                     rows={bills.data}
                     pagination={bills}
                     onPageChange={(page) => applyFilter({ page })}
+                    toolbar={
+                        <FilterStrip>
+                            <FilterField grow>
+                                <Input
+                                    placeholder="Bill name, provider, account no..."
+                                    value={searchInput}
+                                    onChange={(e) => setSearchInput(e.target.value)}
+                                    onKeyDown={handleSearchKey}
+                                    icon={Search}
+                                />
+                            </FilterField>
+                            <FilterField>
+                                <Select
+                                    options={typeOptions}
+                                    value={filters.bill_type ?? ''}
+                                    onChange={(e) => applyFilter({ bill_type: e.target.value, page: 1 })}
+                                />
+                            </FilterField>
+                            <FilterField>
+                                <Select
+                                    options={statusOptions}
+                                    value={filters.status ?? ''}
+                                    onChange={(e) => applyFilter({ status: e.target.value, page: 1 })}
+                                />
+                            </FilterField>
+                            {hasActiveFilters && (
+                                <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                            )}
+                        </FilterStrip>
+                    }
                 />
-            </div>
+            </PageStack>
 
             <ConfirmDialog
                 open={!!deleteTarget}

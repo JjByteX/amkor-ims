@@ -2,11 +2,13 @@
 
 namespace Modules\EmployeeRecords\Models;
 
+use App\Models\Branch;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Employee extends Model
 {
@@ -31,31 +33,31 @@ class Employee extends Model
     ];
 
     protected $casts = [
-        'date_of_birth'              => 'date',
-        'date_hired'                 => 'date',
-        'regularization_date'        => 'date',
-        'data_privacy_consent'       => 'boolean',
-        'data_privacy_consent_date'  => 'date',
-        'uniform_records'            => 'array',
+        'date_of_birth' => 'date',
+        'date_hired' => 'date',
+        'regularization_date' => 'date',
+        'data_privacy_consent' => 'boolean',
+        'data_privacy_consent_date' => 'date',
+        'uniform_records' => 'array',
     ];
 
     // ── Constants ─────────────────────────────────────────────────────────────
 
     public const EMPLOYMENT_STATUSES = [
         'probationary' => 'Probationary',
-        'regular'      => 'Regular',
-        'resigned'     => 'Resigned',
-        'terminated'   => 'Terminated',
+        'regular' => 'Regular',
+        'resigned' => 'Resigned',
+        'terminated' => 'Terminated',
     ];
 
     public const DEPARTMENTS = [
-        'Reservation'   => 'Reservation (RESA)',
-        'Visa'          => 'Visa & Documentation',
-        'Finance'       => 'Finance & Admin',
-        'Ormoc'         => 'Ormoc Branch',
-        'Marketing'     => 'Marketing',
-        'Operations'    => 'Operations',
-        'Executive'     => 'Executive',
+        'Reservation' => 'Reservation (RESA)',
+        'Visa' => 'Visa & Documentation',
+        'Finance' => 'Finance & Admin',
+        'Ormoc' => 'Ormoc Branch',
+        'Marketing' => 'Marketing',
+        'Operations' => 'Operations',
+        'Executive' => 'Executive',
     ];
 
     public const GENDERS = ['Male', 'Female', 'Other'];
@@ -66,22 +68,22 @@ class Employee extends Model
 
     public function branch(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Branch::class);
+        return $this->belongsTo(Branch::class);
     }
 
     public function createdBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'created_by');
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function updatedBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'updated_by');
+        return $this->belongsTo(User::class, 'updated_by');
     }
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'user_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     // ── Accessors ─────────────────────────────────────────────────────────────
@@ -96,6 +98,7 @@ class Employee extends Model
         if ($this->suffix) {
             $name .= " {$this->suffix}";
         }
+
         return $name;
     }
 
@@ -111,19 +114,20 @@ class Employee extends Model
         if (! $this->date_hired) {
             return '—';
         }
-        $now   = now();
+        $now = now();
         $hired = $this->date_hired;
 
         if (in_array($this->employment_status, ['resigned', 'terminated'], true)) {
             return 'Inactive';
         }
 
-        $years  = $hired->diffInYears($now);
+        $years = $hired->diffInYears($now);
         $months = $hired->copy()->addYears($years)->diffInMonths($now);
 
         if ($years === 0) {
             return "{$months}mo";
         }
+
         return $months > 0 ? "{$years}yr {$months}mo" : "{$years}yr";
     }
 
@@ -153,12 +157,13 @@ class Employee extends Model
         if (! $term) {
             return $query;
         }
+
         return $query->where(function ($q) use ($term) {
-            $q->where('first_name',  'ilike', "%{$term}%")
-              ->orWhere('last_name',  'ilike', "%{$term}%")
-              ->orWhere('position',   'ilike', "%{$term}%")
-              ->orWhere('employee_code', 'ilike', "%{$term}%")
-              ->orWhere('work_email', 'ilike', "%{$term}%");
+            $q->where('first_name', 'ilike', "%{$term}%")
+                ->orWhere('last_name', 'ilike', "%{$term}%")
+                ->orWhere('position', 'ilike', "%{$term}%")
+                ->orWhere('employee_code', 'ilike', "%{$term}%")
+                ->orWhere('work_email', 'ilike', "%{$term}%");
         });
     }
 
@@ -167,6 +172,7 @@ class Employee extends Model
         if (! $branchId) {
             return $query;
         }
+
         return $query->where('branch_id', $branchId);
     }
 
@@ -175,6 +181,7 @@ class Employee extends Model
         if (! $status) {
             return $query;
         }
+
         return $query->where('employment_status', $status);
     }
 
@@ -183,6 +190,7 @@ class Employee extends Model
         if (! $dept) {
             return $query;
         }
+
         return $query->where('department', $dept);
     }
 }

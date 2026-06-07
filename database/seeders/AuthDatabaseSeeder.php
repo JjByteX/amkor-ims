@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class AuthDatabaseSeeder extends Seeder
 {
@@ -26,24 +27,24 @@ class AuthDatabaseSeeder extends Seeder
     public function run(): void
     {
         // Spatie caches permissions — clear before seeding so nothing is stale
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         // ── 1. BRANCHES ────────────────────────────────────────────────────────
         $qcMain = Branch::create([
-            'name'    => 'QC Main Branch',
-            'code'    => 'QC_MAIN',
+            'name' => 'QC Main Branch',
+            'code' => 'QC_MAIN',
             'address' => 'Suite 108 West City Plaza Bldg. #66, West Avenue, Quezon City',
         ]);
 
         $visCentre = Branch::create([
-            'name'    => 'Visa Centre',
-            'code'    => 'VISA_CENTRE',
+            'name' => 'Visa Centre',
+            'code' => 'VISA_CENTRE',
             'address' => 'Suite 107 West City Plaza Bldg. #66, West Avenue, Quezon City',
         ]);
 
         $ormoc = Branch::create([
-            'name'    => 'Ormoc Branch',
-            'code'    => 'ORMOC',
+            'name' => 'Ormoc Branch',
+            'code' => 'ORMOC',
             'address' => 'Unit 315 Robinsons Place Ormoc, Cogon, Ormoc City, Leyte',
         ]);
 
@@ -368,88 +369,88 @@ class AuthDatabaseSeeder extends Seeder
 
         $users = [
             [
-                'name'                  => 'JRT',
-                'email'                 => 'jrt@amkor.ph',
-                'branch_id'             => $qcMain->id,
-                'role'                  => 'general_manager',
-                'must_change_password'  => false,  // Owner — no force-reset
+                'name' => 'JRT',
+                'email' => 'jrt@amkor.ph',
+                'branch_id' => $qcMain->id,
+                'role' => 'general_manager',
+                'must_change_password' => false,  // Owner — no force-reset
             ],
             [
-                'name'                  => 'Chief Operations Officer',
-                'email'                 => 'coo@amkor.ph',
-                'branch_id'             => $qcMain->id,
-                'role'                  => 'chief_operations_officer',
-                'must_change_password'  => true,   // Placeholder — update name when OQ-2 resolved
+                'name' => 'Chief Operations Officer',
+                'email' => 'coo@amkor.ph',
+                'branch_id' => $qcMain->id,
+                'role' => 'chief_operations_officer',
+                'must_change_password' => true,   // Placeholder — update name when OQ-2 resolved
             ],
             [
-                'name'                  => 'General Sales Manager',
-                'email'                 => 'gsm@amkor.ph',
-                'branch_id'             => $qcMain->id,
-                'role'                  => 'general_sales_manager',
-                'must_change_password'  => true,   // Placeholder — update name when OQ-3 resolved
+                'name' => 'General Sales Manager',
+                'email' => 'gsm@amkor.ph',
+                'branch_id' => $qcMain->id,
+                'role' => 'general_sales_manager',
+                'must_change_password' => true,   // Placeholder — update name when OQ-3 resolved
             ],
             [
-                'name'                  => 'Accounting Officer',
-                'email'                 => 'accounting@amkor.ph',
-                'branch_id'             => $qcMain->id,
-                'role'                  => 'accounting_officer',
-                'must_change_password'  => true,
+                'name' => 'Accounting Officer',
+                'email' => 'accounting@amkor.ph',
+                'branch_id' => $qcMain->id,
+                'role' => 'accounting_officer',
+                'must_change_password' => true,
             ],
             [
-                'name'                  => 'Dalle',
-                'email'                 => 'dalle@amkor.ph',
-                'branch_id'             => $qcMain->id,
-                'role'                  => 'disbursement_officer',
-                'must_change_password'  => true,
+                'name' => 'Dalle',
+                'email' => 'dalle@amkor.ph',
+                'branch_id' => $qcMain->id,
+                'role' => 'disbursement_officer',
+                'must_change_password' => true,
             ],
             [
-                'name'                  => 'Admin Auditor',
-                'email'                 => 'auditor@amkor.ph',
-                'branch_id'             => $qcMain->id,
-                'role'                  => 'admin_auditor',
-                'must_change_password'  => true,   // Placeholder — update name when OQ-1 resolved
+                'name' => 'Admin Auditor',
+                'email' => 'auditor@amkor.ph',
+                'branch_id' => $qcMain->id,
+                'role' => 'admin_auditor',
+                'must_change_password' => true,   // Placeholder — update name when OQ-1 resolved
             ],
             [
-                'name'                  => 'HR & Admin Officer',
-                'email'                 => 'hradmin@amkor.ph',
-                'branch_id'             => $qcMain->id,
-                'role'                  => 'hr_admin_officer',
-                'must_change_password'  => true,
+                'name' => 'HR & Admin Officer',
+                'email' => 'hradmin@amkor.ph',
+                'branch_id' => $qcMain->id,
+                'role' => 'hr_admin_officer',
+                'must_change_password' => true,
             ],
             [
-                'name'                  => 'Liaison Officer',
-                'email'                 => 'liaison@amkor.ph',
-                'branch_id'             => $qcMain->id,
-                'role'                  => 'liaison_officer',
-                'must_change_password'  => true,
+                'name' => 'Liaison Officer',
+                'email' => 'liaison@amkor.ph',
+                'branch_id' => $qcMain->id,
+                'role' => 'liaison_officer',
+                'must_change_password' => true,
             ],
             [
-                'name'                  => 'Ms. Jhona Ramos',
-                'email'                 => 'jhona@amkor.ph',
-                'branch_id'             => $qcMain->id,
-                'role'                  => 'resa_officer',
-                'must_change_password'  => true,
+                'name' => 'Ms. Jhona Ramos',
+                'email' => 'jhona@amkor.ph',
+                'branch_id' => $qcMain->id,
+                'role' => 'resa_officer',
+                'must_change_password' => true,
             ],
             [
-                'name'                  => 'Ormoc Branch Officer',
-                'email'                 => 'ormoc@amkor.ph',
-                'branch_id'             => $ormoc->id,
-                'role'                  => 'ormoc_branch_officer',
-                'must_change_password'  => true,
+                'name' => 'Ormoc Branch Officer',
+                'email' => 'ormoc@amkor.ph',
+                'branch_id' => $ormoc->id,
+                'role' => 'ormoc_branch_officer',
+                'must_change_password' => true,
             ],
             [
-                'name'                  => 'Visa & Documentation Officer',
-                'email'                 => 'visa@amkor.ph',
-                'branch_id'             => $visCentre->id,
-                'role'                  => 'visa_documentation_officer',
-                'must_change_password'  => true,
+                'name' => 'Visa & Documentation Officer',
+                'email' => 'visa@amkor.ph',
+                'branch_id' => $visCentre->id,
+                'role' => 'visa_documentation_officer',
+                'must_change_password' => true,
             ],
             [
-                'name'                  => 'Marketing Officer',
-                'email'                 => 'marketing@amkor.ph',
-                'branch_id'             => $qcMain->id,
-                'role'                  => 'marketing_officer',
-                'must_change_password'  => true,
+                'name' => 'Marketing Officer',
+                'email' => 'marketing@amkor.ph',
+                'branch_id' => $qcMain->id,
+                'role' => 'marketing_officer',
+                'must_change_password' => true,
             ],
         ];
 
@@ -459,8 +460,8 @@ class AuthDatabaseSeeder extends Seeder
 
             $user = User::create([
                 ...$userData,
-                'password'              => $defaultPassword,
-                'email_verified_at'     => now(),
+                'password' => $defaultPassword,
+                'email_verified_at' => now(),
             ]);
 
             $user->assignRole($role);
@@ -469,39 +470,39 @@ class AuthDatabaseSeeder extends Seeder
         // ── 6. AGENT CODES ────────────────────────────────────────────────────
         // RESA sub-groups: Individual and Groups
         $resaIndividual = ['RT', 'RP', 'EJ', 'KG', 'CM', 'JR', 'EB', 'JF'];
-        $resaGroups     = ['MMT', 'AL', 'KL'];
-        $jmmt           = ['JMMT']; // sole JMMT code — sub_group: individual per brief context
+        $resaGroups = ['MMT', 'AL', 'KL'];
+        $jmmt = ['JMMT']; // sole JMMT code — sub_group: individual per brief context
 
         foreach ($resaIndividual as $code) {
             DB::table('agent_codes')->insert([
-                'code'        => $code,
-                'department'  => 'resa',
-                'sub_group'   => 'individual',
-                'is_active'   => true,
-                'created_at'  => now(),
-                'updated_at'  => now(),
+                'code' => $code,
+                'department' => 'resa',
+                'sub_group' => 'individual',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         }
 
         foreach ($resaGroups as $code) {
             DB::table('agent_codes')->insert([
-                'code'        => $code,
-                'department'  => 'resa',
-                'sub_group'   => 'groups',
-                'is_active'   => true,
-                'created_at'  => now(),
-                'updated_at'  => now(),
+                'code' => $code,
+                'department' => 'resa',
+                'sub_group' => 'groups',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         }
 
         foreach ($jmmt as $code) {
             DB::table('agent_codes')->insert([
-                'code'        => $code,
-                'department'  => 'resa',
-                'sub_group'   => 'individual',
-                'is_active'   => true,
-                'created_at'  => now(),
-                'updated_at'  => now(),
+                'code' => $code,
+                'department' => 'resa',
+                'sub_group' => 'individual',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         }
 
@@ -509,12 +510,12 @@ class AuthDatabaseSeeder extends Seeder
         $visaCodes = ['ALEX', 'RICCI', 'MEL', 'KAE', 'MIMI', 'MMT'];
         foreach ($visaCodes as $code) {
             DB::table('agent_codes')->insert([
-                'code'        => $code,
-                'department'  => 'visa',
-                'sub_group'   => null,
-                'is_active'   => true,
-                'created_at'  => now(),
-                'updated_at'  => now(),
+                'code' => $code,
+                'department' => 'visa',
+                'sub_group' => null,
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         }
 
@@ -522,12 +523,12 @@ class AuthDatabaseSeeder extends Seeder
         $ormocCodes = ['AM', 'LB', 'RD', 'KP', 'MMT'];
         foreach ($ormocCodes as $code) {
             DB::table('agent_codes')->insert([
-                'code'        => $code,
-                'department'  => 'ormoc',
-                'sub_group'   => null,
-                'is_active'   => true,
-                'created_at'  => now(),
-                'updated_at'  => now(),
+                'code' => $code,
+                'department' => 'ormoc',
+                'sub_group' => null,
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         }
     }

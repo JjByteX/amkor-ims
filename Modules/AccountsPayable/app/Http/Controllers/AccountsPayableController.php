@@ -44,27 +44,27 @@ class AccountsPayableController extends Controller
 
     public function index(Request $request): Response
     {
-        $user   = $request->user();
-        $role   = $user?->getRoleNames()->first();
+        $user = $request->user();
+        $role = $user?->getRoleNames()->first();
 
         if (! in_array($role, self::VIEW_ROLES, true)) {
             abort(403);
         }
 
-        $search   = $request->get('search');
-        $status   = $request->get('status');
+        $search = $request->get('search');
+        $status = $request->get('status');
         $currency = $request->get('currency');
-        $month    = $request->get('month');
+        $month = $request->get('month');
 
         $query = Payable::with(['contact', 'branch', 'createdBy', 'voucher'])
             ->latest('invoice_date');
 
         $query->search($search)
-              ->forStatus($status)
-              ->forCurrency($currency);
+            ->forStatus($status)
+            ->forCurrency($currency);
 
         if ($month) {
-            [$y, $m] = explode('-', $month . '-01');
+            [$y, $m] = explode('-', $month.'-01');
             $query->forMonth((int) $y, (int) $m);
         }
 
@@ -87,15 +87,15 @@ class AccountsPayableController extends Controller
             ')->first();
 
         return Inertia::render('AccountsPayable/Index', [
-            'payables'         => $payables,
-            'summary'          => $summary,
-            'filters'          => compact('search', 'status', 'currency', 'month'),
-            'statuses'         => Payable::STATUSES,
-            'currencies'       => Payable::CURRENCIES,
+            'payables' => $payables,
+            'summary' => $summary,
+            'filters' => compact('search', 'status', 'currency', 'month'),
+            'statuses' => Payable::STATUSES,
+            'currencies' => Payable::CURRENCIES,
             'approvalStatuses' => Payable::APPROVAL_STATUSES,
-            'canWrite'         => $this->canPrepare($request),
-            'canCheck'         => $this->canCheck($request),
-            'canApprove'       => $this->canApprove($request),
+            'canWrite' => $this->canPrepare($request),
+            'canCheck' => $this->canCheck($request),
+            'canApprove' => $this->canApprove($request),
         ]);
     }
 
@@ -106,9 +106,9 @@ class AccountsPayableController extends Controller
         $this->requirePreparer($request);
 
         return Inertia::render('AccountsPayable/Create', [
-            'currencies'    => Payable::CURRENCIES,
-            'paymentModes'  => Payable::PAYMENT_MODES,
-            'statuses'      => Payable::STATUSES,
+            'currencies' => Payable::CURRENCIES,
+            'paymentModes' => Payable::PAYMENT_MODES,
+            'statuses' => Payable::STATUSES,
         ]);
     }
 
@@ -121,12 +121,12 @@ class AccountsPayableController extends Controller
         $data = $request->validated();
         $data['created_by'] = $request->user()->id;
         $data['updated_by'] = $request->user()->id;
-        $data['branch_id']  = $request->user()->branch_id;
+        $data['branch_id'] = $request->user()->branch_id;
 
         // Compute balances
-        $data['balance_php'] = max(0, (float)($data['invoice_amount_php'] ?? 0) - (float)($data['payment_php'] ?? 0));
-        $data['balance_usd'] = max(0, (float)($data['invoice_amount_usd'] ?? 0) - (float)($data['payment_usd'] ?? 0));
-        $data['balance_jpy'] = max(0, (float)($data['invoice_amount_jpy'] ?? 0) - (float)($data['payment_jpy'] ?? 0));
+        $data['balance_php'] = max(0, (float) ($data['invoice_amount_php'] ?? 0) - (float) ($data['payment_php'] ?? 0));
+        $data['balance_usd'] = max(0, (float) ($data['invoice_amount_usd'] ?? 0) - (float) ($data['payment_usd'] ?? 0));
+        $data['balance_jpy'] = max(0, (float) ($data['invoice_amount_jpy'] ?? 0) - (float) ($data['payment_jpy'] ?? 0));
 
         // Auto-status
         $allPaid = $data['balance_php'] <= 0 && $data['balance_usd'] <= 0 && $data['balance_jpy'] <= 0;
@@ -163,14 +163,14 @@ class AccountsPayableController extends Controller
         $ap->load(['contact', 'branch', 'createdBy', 'updatedBy', 'checker', 'approver', 'releaser', 'voucher']);
 
         return Inertia::render('AccountsPayable/Show', [
-            'payable'          => $ap,
-            'currencies'       => Payable::CURRENCIES,
-            'statuses'         => Payable::STATUSES,
+            'payable' => $ap,
+            'currencies' => Payable::CURRENCIES,
+            'statuses' => Payable::STATUSES,
             'approvalStatuses' => Payable::APPROVAL_STATUSES,
-            'paymentModes'     => Payable::PAYMENT_MODES,
-            'canWrite'         => $this->canPrepare($request),
-            'canCheck'         => $this->canCheck($request),
-            'canApprove'       => $this->canApprove($request),
+            'paymentModes' => Payable::PAYMENT_MODES,
+            'canWrite' => $this->canPrepare($request),
+            'canCheck' => $this->canCheck($request),
+            'canApprove' => $this->canApprove($request),
         ]);
     }
 
@@ -186,10 +186,10 @@ class AccountsPayableController extends Controller
         }
 
         return Inertia::render('AccountsPayable/Edit', [
-            'payable'       => $ap,
-            'currencies'    => Payable::CURRENCIES,
-            'paymentModes'  => Payable::PAYMENT_MODES,
-            'statuses'      => Payable::STATUSES,
+            'payable' => $ap,
+            'currencies' => Payable::CURRENCIES,
+            'paymentModes' => Payable::PAYMENT_MODES,
+            'statuses' => Payable::STATUSES,
         ]);
     }
 
@@ -207,9 +207,9 @@ class AccountsPayableController extends Controller
         $data['updated_by'] = $request->user()->id;
 
         // Recompute balances
-        $data['balance_php'] = max(0, (float)($data['invoice_amount_php'] ?? $ap->invoice_amount_php) - (float)($data['payment_php'] ?? $ap->payment_php));
-        $data['balance_usd'] = max(0, (float)($data['invoice_amount_usd'] ?? $ap->invoice_amount_usd) - (float)($data['payment_usd'] ?? $ap->payment_usd));
-        $data['balance_jpy'] = max(0, (float)($data['invoice_amount_jpy'] ?? $ap->invoice_amount_jpy) - (float)($data['payment_jpy'] ?? $ap->payment_jpy));
+        $data['balance_php'] = max(0, (float) ($data['invoice_amount_php'] ?? $ap->invoice_amount_php) - (float) ($data['payment_php'] ?? $ap->payment_php));
+        $data['balance_usd'] = max(0, (float) ($data['invoice_amount_usd'] ?? $ap->invoice_amount_usd) - (float) ($data['payment_usd'] ?? $ap->payment_usd));
+        $data['balance_jpy'] = max(0, (float) ($data['invoice_amount_jpy'] ?? $ap->invoice_amount_jpy) - (float) ($data['payment_jpy'] ?? $ap->payment_jpy));
 
         $allPaid = $data['balance_php'] <= 0 && $data['balance_usd'] <= 0 && $data['balance_jpy'] <= 0;
         $due = $data['due_date'] ?? $ap->due_date?->toDateString();
@@ -269,11 +269,11 @@ class AccountsPayableController extends Controller
         $request->validate(['audit_remarks' => ['nullable', 'string']]);
 
         $ap->update([
-            'checked_by'      => $request->user()->id,
-            'checked_at'      => now(),
+            'checked_by' => $request->user()->id,
+            'checked_at' => now(),
             'approval_status' => 'checked',
-            'audit_remarks'   => $request->audit_remarks ?? $ap->audit_remarks,
-            'updated_by'      => $request->user()->id,
+            'audit_remarks' => $request->audit_remarks ?? $ap->audit_remarks,
+            'updated_by' => $request->user()->id,
         ]);
 
         return back()->with('flash', ['type' => 'success', 'message' => 'Payable checked.']);
@@ -296,10 +296,10 @@ class AccountsPayableController extends Controller
         }
 
         $ap->update([
-            'approved_by'     => $request->user()->id,
-            'approved_at'     => now(),
+            'approved_by' => $request->user()->id,
+            'approved_at' => now(),
             'approval_status' => 'approved',
-            'updated_by'      => $request->user()->id,
+            'updated_by' => $request->user()->id,
         ]);
 
         return back()->with('flash', ['type' => 'success', 'message' => 'Payable approved. Ready for release.']);
@@ -318,15 +318,15 @@ class AccountsPayableController extends Controller
         }
 
         $request->validate([
-            'payment_date'          => ['nullable', 'date'],
+            'payment_date' => ['nullable', 'date'],
             'deposit_slip_attached' => ['nullable', 'boolean'],
         ]);
 
         $updates = [
-            'released_by'     => $request->user()->id,
-            'released_at'     => now(),
+            'released_by' => $request->user()->id,
+            'released_at' => now(),
             'approval_status' => 'released',
-            'updated_by'      => $request->user()->id,
+            'updated_by' => $request->user()->id,
         ];
 
         if ($request->payment_date) {
@@ -334,7 +334,7 @@ class AccountsPayableController extends Controller
         }
 
         if ($request->deposit_slip_attached) {
-            $updates['deposit_slip_attached']    = true;
+            $updates['deposit_slip_attached'] = true;
             $updates['deposit_slip_attached_at'] = now();
         }
 
@@ -357,18 +357,28 @@ class AccountsPayableController extends Controller
         }
 
         $request->validate([
-            'payment_php'  => ['nullable', 'numeric', 'min:0'],
-            'payment_usd'  => ['nullable', 'numeric', 'min:0'],
-            'payment_jpy'  => ['nullable', 'numeric', 'min:0'],
+            'payment_php' => ['nullable', 'numeric', 'min:0'],
+            'payment_usd' => ['nullable', 'numeric', 'min:0'],
+            'payment_jpy' => ['nullable', 'numeric', 'min:0'],
             'payment_date' => ['nullable', 'date'],
-            'check_no'     => ['nullable', 'string', 'max:100'],
+            'check_no' => ['nullable', 'string', 'max:100'],
         ]);
 
-        if ($request->payment_php !== null) $ap->payment_php = $request->payment_php;
-        if ($request->payment_usd !== null) $ap->payment_usd = $request->payment_usd;
-        if ($request->payment_jpy !== null) $ap->payment_jpy = $request->payment_jpy;
-        if ($request->payment_date)         $ap->payment_date = $request->payment_date;
-        if ($request->check_no)             $ap->check_no = $request->check_no;
+        if ($request->payment_php !== null) {
+            $ap->payment_php = $request->payment_php;
+        }
+        if ($request->payment_usd !== null) {
+            $ap->payment_usd = $request->payment_usd;
+        }
+        if ($request->payment_jpy !== null) {
+            $ap->payment_jpy = $request->payment_jpy;
+        }
+        if ($request->payment_date) {
+            $ap->payment_date = $request->payment_date;
+        }
+        if ($request->check_no) {
+            $ap->check_no = $request->check_no;
+        }
 
         $ap->recalculate();
         $ap->updated_by = $request->user()->id;

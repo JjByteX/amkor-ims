@@ -15,9 +15,12 @@ class CreditCardMonitoringController extends Controller
     // ─── Roles ──────────────────────────────────────────────────────────────
 
     private const PREPARER_ROLES = ['hr_admin_officer', 'disbursement_officer'];
-    private const CHECKER_ROLES  = ['admin_auditor', 'general_manager'];
+
+    private const CHECKER_ROLES = ['admin_auditor', 'general_manager'];
+
     private const APPROVER_ROLES = ['general_manager'];
-    private const VIEW_ROLES     = ['hr_admin_officer', 'disbursement_officer', 'admin_auditor', 'general_manager'];
+
+    private const VIEW_ROLES = ['hr_admin_officer', 'disbursement_officer', 'admin_auditor', 'general_manager'];
 
     // ════════════════════════════════════════════════════════════════════════
     // CARDS MASTER LIST
@@ -26,7 +29,9 @@ class CreditCardMonitoringController extends Controller
     public function cardsIndex(Request $request): Response
     {
         $role = $request->user()?->getRoleNames()->first();
-        if (! in_array($role, self::VIEW_ROLES, true)) abort(403);
+        if (! in_array($role, self::VIEW_ROLES, true)) {
+            abort(403);
+        }
 
         $cards = CreditCard::active()
             ->withCount('payments')
@@ -34,7 +39,7 @@ class CreditCardMonitoringController extends Controller
             ->get();
 
         return Inertia::render('CreditCardMonitoring/Cards', [
-            'cards'    => $cards,
+            'cards' => $cards,
             'canWrite' => $this->canPrepare($request),
         ]);
     }
@@ -44,12 +49,12 @@ class CreditCardMonitoringController extends Controller
         $this->requirePreparer($request);
 
         $data = $request->validate([
-            'card_name'         => ['required', 'string', 'max:255'],
-            'bank_name'         => ['nullable', 'string', 'max:100'],
-            'last_four'         => ['nullable', 'string', 'size:4', 'regex:/^\d{4}$/'],
+            'card_name' => ['required', 'string', 'max:255'],
+            'bank_name' => ['nullable', 'string', 'max:100'],
+            'last_four' => ['nullable', 'string', 'size:4', 'regex:/^\d{4}$/'],
             'statement_cut_off' => ['nullable', 'integer', 'min:1', 'max:31'],
-            'due_day'           => ['nullable', 'integer', 'min:1', 'max:31'],
-            'notes'             => ['nullable', 'string'],
+            'due_day' => ['nullable', 'integer', 'min:1', 'max:31'],
+            'notes' => ['nullable', 'string'],
         ]);
 
         $data['created_by'] = $request->user()->id;
@@ -65,13 +70,13 @@ class CreditCardMonitoringController extends Controller
         $this->requirePreparer($request);
 
         $data = $request->validate([
-            'card_name'         => ['required', 'string', 'max:255'],
-            'bank_name'         => ['nullable', 'string', 'max:100'],
-            'last_four'         => ['nullable', 'string', 'size:4', 'regex:/^\d{4}$/'],
+            'card_name' => ['required', 'string', 'max:255'],
+            'bank_name' => ['nullable', 'string', 'max:100'],
+            'last_four' => ['nullable', 'string', 'size:4', 'regex:/^\d{4}$/'],
             'statement_cut_off' => ['nullable', 'integer', 'min:1', 'max:31'],
-            'due_day'           => ['nullable', 'integer', 'min:1', 'max:31'],
-            'is_active'         => ['boolean'],
-            'notes'             => ['nullable', 'string'],
+            'due_day' => ['nullable', 'integer', 'min:1', 'max:31'],
+            'is_active' => ['boolean'],
+            'notes' => ['nullable', 'string'],
         ]);
 
         $data['updated_by'] = $request->user()->id;
@@ -87,11 +92,13 @@ class CreditCardMonitoringController extends Controller
     public function index(Request $request): Response
     {
         $role = $request->user()?->getRoleNames()->first();
-        if (! in_array($role, self::VIEW_ROLES, true)) abort(403);
+        if (! in_array($role, self::VIEW_ROLES, true)) {
+            abort(403);
+        }
 
         $cardId = $request->get('card_id');
         $status = $request->get('status');
-        $month  = $request->get('month');
+        $month = $request->get('month');
 
         $query = CreditCardPayment::with(['creditCard', 'createdBy', 'checker', 'approver'])
             ->latest('due_date');
@@ -99,12 +106,12 @@ class CreditCardMonitoringController extends Controller
         $query->forCard($cardId)->forStatus($status);
 
         if ($month) {
-            [$y, $m] = explode('-', $month . '-01');
+            [$y, $m] = explode('-', $month.'-01');
             $query->forMonth((int) $y, (int) $m);
         }
 
         $payments = $query->paginate(25)->withQueryString();
-        $cards    = CreditCard::active()->get(['id', 'card_name', 'bank_name', 'last_four']);
+        $cards = CreditCard::active()->get(['id', 'card_name', 'bank_name', 'last_four']);
 
         $summary = CreditCardPayment::forCard($cardId)->forStatus($status)
             ->selectRaw('
@@ -115,15 +122,15 @@ class CreditCardMonitoringController extends Controller
             ')->first();
 
         return Inertia::render('CreditCardMonitoring/Index', [
-            'payments'         => $payments,
-            'cards'            => $cards,
-            'summary'          => $summary,
-            'filters'          => compact('cardId', 'status', 'month'),
-            'statuses'         => CreditCardPayment::STATUSES,
+            'payments' => $payments,
+            'cards' => $cards,
+            'summary' => $summary,
+            'filters' => compact('cardId', 'status', 'month'),
+            'statuses' => CreditCardPayment::STATUSES,
             'approvalStatuses' => CreditCardPayment::APPROVAL_STATUSES,
-            'canWrite'         => $this->canPrepare($request),
-            'canCheck'         => $this->canCheck($request),
-            'canApprove'       => $this->canApprove($request),
+            'canWrite' => $this->canPrepare($request),
+            'canCheck' => $this->canCheck($request),
+            'canApprove' => $this->canApprove($request),
         ]);
     }
 
@@ -142,16 +149,16 @@ class CreditCardMonitoringController extends Controller
 
         $data = $request->validate([
             'credit_card_id' => ['required', 'exists:credit_cards,id'],
-            'amount'         => ['required', 'numeric', 'min:0.01'],
-            'due_date'       => ['required', 'date'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'due_date' => ['required', 'date'],
             'statement_date' => ['nullable', 'date'],
-            'remarks'        => ['nullable', 'string'],
+            'remarks' => ['nullable', 'string'],
         ]);
 
-        $data['payment_no']  = CreditCardPayment::nextNumber();
-        $data['status']      = now()->greaterThan($data['due_date']) ? 'overdue' : 'pending';
-        $data['created_by']  = $request->user()->id;
-        $data['updated_by']  = $request->user()->id;
+        $data['payment_no'] = CreditCardPayment::nextNumber();
+        $data['status'] = now()->greaterThan($data['due_date']) ? 'overdue' : 'pending';
+        $data['created_by'] = $request->user()->id;
+        $data['updated_by'] = $request->user()->id;
 
         $payment = CreditCardPayment::create($data);
 
@@ -163,17 +170,19 @@ class CreditCardMonitoringController extends Controller
     public function show(Request $request, CreditCardPayment $payment): Response
     {
         $role = $request->user()?->getRoleNames()->first();
-        if (! in_array($role, self::VIEW_ROLES, true)) abort(403);
+        if (! in_array($role, self::VIEW_ROLES, true)) {
+            abort(403);
+        }
 
         $payment->load(['creditCard', 'createdBy', 'checker', 'approver', 'releaser', 'voucher']);
 
         return Inertia::render('CreditCardMonitoring/Show', [
-            'payment'          => $payment,
-            'statuses'         => CreditCardPayment::STATUSES,
+            'payment' => $payment,
+            'statuses' => CreditCardPayment::STATUSES,
             'approvalStatuses' => CreditCardPayment::APPROVAL_STATUSES,
-            'canWrite'         => $this->canPrepare($request),
-            'canCheck'         => $this->canCheck($request),
-            'canApprove'       => $this->canApprove($request),
+            'canWrite' => $this->canPrepare($request),
+            'canCheck' => $this->canCheck($request),
+            'canApprove' => $this->canApprove($request),
         ]);
     }
 
@@ -181,17 +190,21 @@ class CreditCardMonitoringController extends Controller
 
     public function check(Request $request, CreditCardPayment $payment): RedirectResponse
     {
-        if (! $this->canCheck($request)) abort(403);
-        if ($payment->checked_at) return back()->with('flash', ['type' => 'warning', 'message' => 'Already checked.']);
+        if (! $this->canCheck($request)) {
+            abort(403);
+        }
+        if ($payment->checked_at) {
+            return back()->with('flash', ['type' => 'warning', 'message' => 'Already checked.']);
+        }
 
         $request->validate(['audit_remarks' => ['nullable', 'string']]);
 
         $payment->update([
-            'checked_by'      => $request->user()->id,
-            'checked_at'      => now(),
+            'checked_by' => $request->user()->id,
+            'checked_at' => now(),
             'approval_status' => 'checked',
-            'audit_remarks'   => $request->audit_remarks ?? $payment->audit_remarks,
-            'updated_by'      => $request->user()->id,
+            'audit_remarks' => $request->audit_remarks ?? $payment->audit_remarks,
+            'updated_by' => $request->user()->id,
         ]);
 
         return back()->with('flash', ['type' => 'success', 'message' => 'Payment checked.']);
@@ -199,15 +212,21 @@ class CreditCardMonitoringController extends Controller
 
     public function approve(Request $request, CreditCardPayment $payment): RedirectResponse
     {
-        if (! $this->canApprove($request)) abort(403);
-        if (! $payment->checked_at) return back()->with('flash', ['type' => 'error', 'message' => 'Must be checked before approval.']);
-        if ($payment->approved_at) return back()->with('flash', ['type' => 'warning', 'message' => 'Already approved.']);
+        if (! $this->canApprove($request)) {
+            abort(403);
+        }
+        if (! $payment->checked_at) {
+            return back()->with('flash', ['type' => 'error', 'message' => 'Must be checked before approval.']);
+        }
+        if ($payment->approved_at) {
+            return back()->with('flash', ['type' => 'warning', 'message' => 'Already approved.']);
+        }
 
         $payment->update([
-            'approved_by'     => $request->user()->id,
-            'approved_at'     => now(),
+            'approved_by' => $request->user()->id,
+            'approved_at' => now(),
             'approval_status' => 'approved',
-            'updated_by'      => $request->user()->id,
+            'updated_by' => $request->user()->id,
         ]);
 
         return back()->with('flash', ['type' => 'success', 'message' => 'Payment approved.']);
@@ -216,17 +235,19 @@ class CreditCardMonitoringController extends Controller
     public function release(Request $request, CreditCardPayment $payment): RedirectResponse
     {
         $this->requirePreparer($request);
-        if (! $payment->approved_at) return back()->with('flash', ['type' => 'error', 'message' => 'Must be approved before release.']);
+        if (! $payment->approved_at) {
+            return back()->with('flash', ['type' => 'error', 'message' => 'Must be approved before release.']);
+        }
 
         $request->validate(['payment_date' => ['nullable', 'date']]);
 
         $payment->update([
-            'released_by'     => $request->user()->id,
-            'released_at'     => now(),
+            'released_by' => $request->user()->id,
+            'released_at' => now(),
             'approval_status' => 'released',
-            'status'          => 'paid',
-            'payment_date'    => $request->payment_date ?? now()->toDateString(),
-            'updated_by'      => $request->user()->id,
+            'status' => 'paid',
+            'payment_date' => $request->payment_date ?? now()->toDateString(),
+            'updated_by' => $request->user()->id,
         ]);
 
         return back()->with('flash', ['type' => 'success', 'message' => 'Payment released. Card marked paid.']);
@@ -251,6 +272,8 @@ class CreditCardMonitoringController extends Controller
 
     private function requirePreparer(Request $request): void
     {
-        if (! $this->canPrepare($request)) abort(403);
+        if (! $this->canPrepare($request)) {
+            abort(403);
+        }
     }
 }

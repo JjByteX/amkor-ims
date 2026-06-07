@@ -34,14 +34,14 @@ class OrmocBranchController extends Controller
 
     public function index(Request $request): Response
     {
-        $user   = $request->user();
-        $role   = $user?->getRoleNames()->first();
+        $user = $request->user();
+        $role = $user?->getRoleNames()->first();
         $search = $request->get('search');
-        $agent  = $request->get('agent');
+        $agent = $request->get('agent');
         $status = $request->get('status');
-        $type   = $request->get('booking_type');
-        $month  = $request->get('month');
-        $year   = (int) $request->get('year', now()->year);
+        $type = $request->get('booking_type');
+        $month = $request->get('month');
+        $year = (int) $request->get('year', now()->year);
 
         $query = OrmocBooking::with(['branch', 'createdBy'])
             ->latest('date');
@@ -53,24 +53,30 @@ class OrmocBranchController extends Controller
 
         $query->search($search);
 
-        if ($agent) $query->forAgent($agent);
-        if ($status) $query->where('status', $status);
-        if ($type)   $query->where('booking_type', $type);
+        if ($agent) {
+            $query->forAgent($agent);
+        }
+        if ($status) {
+            $query->where('status', $status);
+        }
+        if ($type) {
+            $query->where('booking_type', $type);
+        }
 
         if ($month) {
-            [$y, $m] = explode('-', $month . '-01');
+            [$y, $m] = explode('-', $month.'-01');
             $query->forMonth((int) $y, (int) $m);
         }
 
         $bookings = $query->paginate(25)->withQueryString();
 
         return Inertia::render('OrmocBranch/Index', [
-            'bookings'     => $bookings,
-            'filters'      => compact('search', 'agent', 'status', 'type', 'month', 'year'),
-            'statuses'     => OrmocBooking::STATUSES,
+            'bookings' => $bookings,
+            'filters' => compact('search', 'agent', 'status', 'type', 'month', 'year'),
+            'statuses' => OrmocBooking::STATUSES,
             'bookingTypes' => OrmocBooking::BOOKING_TYPES,
-            'agentCodes'   => OrmocBooking::AGENT_CODES,
-            'canWrite'     => $this->canWrite($request),
+            'agentCodes' => OrmocBooking::AGENT_CODES,
+            'canWrite' => $this->canWrite($request),
         ]);
     }
 
@@ -81,9 +87,9 @@ class OrmocBranchController extends Controller
         $this->requireWriteAccess($request);
 
         return Inertia::render('OrmocBranch/Create', [
-            'statuses'     => OrmocBooking::STATUSES,
+            'statuses' => OrmocBooking::STATUSES,
             'bookingTypes' => OrmocBooking::BOOKING_TYPES,
-            'agentCodes'   => OrmocBooking::AGENT_CODES,
+            'agentCodes' => OrmocBooking::AGENT_CODES,
             'paymentModes' => OrmocBooking::PAYMENT_MODES,
         ]);
     }
@@ -95,14 +101,14 @@ class OrmocBranchController extends Controller
         $this->requireWriteAccess($request);
 
         $data = $request->validated();
-        $data['created_by']   = $request->user()->id;
-        $data['updated_by']   = $request->user()->id;
-        $data['branch_id']    = $request->user()->branch_id;
-        $data['status']       = $data['status'] ?? 'inquiry';
+        $data['created_by'] = $request->user()->id;
+        $data['updated_by'] = $request->user()->id;
+        $data['branch_id'] = $request->user()->branch_id;
+        $data['status'] = $data['status'] ?? 'inquiry';
         $data['booking_type'] = $data['booking_type'] ?? 'domestic';
 
         // Auto-compute income
-        if (empty($data['income']) && !empty($data['selling_price']) && !empty($data['net_payable'])) {
+        if (empty($data['income']) && ! empty($data['selling_price']) && ! empty($data['net_payable'])) {
             $data['income'] = $data['selling_price'] - $data['net_payable'];
         }
 
@@ -130,7 +136,7 @@ class OrmocBranchController extends Controller
     {
         $role = $request->user()?->getRoleNames()->first();
 
-        if (!in_array($role, self::VIEW_ROLES, true)) {
+        if (! in_array($role, self::VIEW_ROLES, true)) {
             abort(403);
         }
 
@@ -142,11 +148,11 @@ class OrmocBranchController extends Controller
         $ormoc->load(['branch', 'createdBy', 'updatedBy', 'escalatedBy']);
 
         return Inertia::render('OrmocBranch/Show', [
-            'booking'      => $ormoc,
-            'statuses'     => OrmocBooking::STATUSES,
+            'booking' => $ormoc,
+            'statuses' => OrmocBooking::STATUSES,
             'bookingTypes' => OrmocBooking::BOOKING_TYPES,
             'paymentModes' => OrmocBooking::PAYMENT_MODES,
-            'canWrite'     => $this->canWrite($request),
+            'canWrite' => $this->canWrite($request),
         ]);
     }
 
@@ -163,10 +169,10 @@ class OrmocBranchController extends Controller
         }
 
         return Inertia::render('OrmocBranch/Edit', [
-            'booking'      => $ormoc,
-            'statuses'     => OrmocBooking::STATUSES,
+            'booking' => $ormoc,
+            'statuses' => OrmocBooking::STATUSES,
             'bookingTypes' => OrmocBooking::BOOKING_TYPES,
-            'agentCodes'   => OrmocBooking::AGENT_CODES,
+            'agentCodes' => OrmocBooking::AGENT_CODES,
             'paymentModes' => OrmocBooking::PAYMENT_MODES,
         ]);
     }
@@ -185,7 +191,7 @@ class OrmocBranchController extends Controller
         $data['updated_by'] = $request->user()->id;
 
         // Auto-compute income
-        if (!isset($data['income']) && isset($data['selling_price'], $data['net_payable'])) {
+        if (! isset($data['income']) && isset($data['selling_price'], $data['net_payable'])) {
             $data['income'] = $data['selling_price'] - $data['net_payable'];
         }
 
@@ -227,15 +233,15 @@ class OrmocBranchController extends Controller
         $this->requireWriteAccess($request);
 
         $request->validate([
-            'status' => ['required', 'in:' . implode(',', array_keys(OrmocBooking::STATUSES))],
+            'status' => ['required', 'in:'.implode(',', array_keys(OrmocBooking::STATUSES))],
         ]);
 
         $ormoc->update([
-            'status'     => $request->status,
+            'status' => $request->status,
             'updated_by' => $request->user()->id,
         ]);
 
-        return back()->with('flash', ['type' => 'success', 'message' => 'Status updated to ' . OrmocBooking::STATUSES[$request->status] . '.']);
+        return back()->with('flash', ['type' => 'success', 'message' => 'Status updated to '.OrmocBooking::STATUSES[$request->status].'.']);
     }
 
     // ─── Update notes ─────────────────────────────────────────────────────────
@@ -246,7 +252,7 @@ class OrmocBranchController extends Controller
         $request->validate(['notes' => ['nullable', 'string']]);
 
         $ormoc->update([
-            'notes'      => $request->notes,
+            'notes' => $request->notes,
             'updated_by' => $request->user()->id,
         ]);
 
@@ -284,10 +290,10 @@ class OrmocBranchController extends Controller
 
         $ormoc->update([
             'escalated_to_head_office' => true,
-            'escalated_at'             => now(),
-            'escalated_by'             => $request->user()->id,
-            'booking_type'             => 'international',
-            'updated_by'               => $request->user()->id,
+            'escalated_at' => now(),
+            'escalated_by' => $request->user()->id,
+            'booking_type' => 'international',
+            'updated_by' => $request->user()->id,
         ]);
 
         return back()->with('flash', ['type' => 'success', 'message' => 'Escalation queued — RESA head office notified.']);
@@ -304,9 +310,9 @@ class OrmocBranchController extends Controller
         }
 
         $ormoc->update([
-            'po_sent_to_mariposa'    => true,
+            'po_sent_to_mariposa' => true,
             'po_sent_to_mariposa_at' => now(),
-            'updated_by'             => $request->user()->id,
+            'updated_by' => $request->user()->id,
         ]);
 
         return back()->with('flash', ['type' => 'success', 'message' => 'PO marked as sent to Mariposa.']);
@@ -323,10 +329,10 @@ class OrmocBranchController extends Controller
         }
 
         $ormoc->update([
-            'forwarded_to_accounting'    => true,
+            'forwarded_to_accounting' => true,
             'forwarded_to_accounting_at' => now(),
-            'status'                     => 'confirmed',
-            'updated_by'                 => $request->user()->id,
+            'status' => 'confirmed',
+            'updated_by' => $request->user()->id,
         ]);
 
         return back()->with('flash', ['type' => 'success', 'message' => 'Forwarded to Accounting. Booking is now locked.']);
@@ -345,7 +351,7 @@ class OrmocBranchController extends Controller
 
     private function requireWriteAccess(Request $request): void
     {
-        if (!$this->canWrite($request)) {
+        if (! $this->canWrite($request)) {
             abort(403, 'You do not have permission to modify Ormoc bookings.');
         }
     }

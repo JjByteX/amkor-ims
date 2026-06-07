@@ -37,26 +37,26 @@ class CreditCardPayment extends Model
     ];
 
     protected $casts = [
-        'amount'         => 'decimal:2',
-        'due_date'       => 'date',
+        'amount' => 'decimal:2',
+        'due_date' => 'date',
         'statement_date' => 'date',
-        'payment_date'   => 'date',
-        'checked_at'     => 'datetime',
-        'approved_at'    => 'datetime',
-        'released_at'    => 'datetime',
+        'payment_date' => 'date',
+        'checked_at' => 'datetime',
+        'approved_at' => 'datetime',
+        'released_at' => 'datetime',
     ];
 
     // ─── Constants ──────────────────────────────────────────────────────────
 
     public const STATUSES = [
         'pending' => 'Pending',
-        'paid'    => 'Paid',
+        'paid' => 'Paid',
         'overdue' => 'Overdue',
     ];
 
     public const APPROVAL_STATUSES = [
-        'pending'  => 'Pending',
-        'checked'  => 'Checked',
+        'pending' => 'Pending',
+        'checked' => 'Checked',
         'approved' => 'Approved',
         'released' => 'Released',
     ];
@@ -109,6 +109,7 @@ class CreditCardPayment extends Model
     {
         $year = now()->year;
         $last = static::whereYear('created_at', $year)->max('id') ?? 0;
+
         return sprintf('CCP-%d-%05d', $year, $last + 1);
     }
 
@@ -116,13 +117,19 @@ class CreditCardPayment extends Model
 
     public function scopeForCard($query, ?int $cardId)
     {
-        if (! $cardId) return $query;
+        if (! $cardId) {
+            return $query;
+        }
+
         return $query->where('credit_card_id', $cardId);
     }
 
     public function scopeForStatus($query, ?string $status)
     {
-        if (! $status) return $query;
+        if (! $status) {
+            return $query;
+        }
+
         return $query->where('status', $status);
     }
 

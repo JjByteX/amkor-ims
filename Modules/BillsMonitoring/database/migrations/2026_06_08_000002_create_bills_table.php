@@ -31,13 +31,13 @@ return new class extends Migration
                 // Approval chain: pending|checked|approved|released
                 $table->string('approval_status', 30)->default('pending');
                 $table->foreignId('checked_by')
-                      ->nullable()->constrained('users')->nullOnDelete();
+                    ->nullable()->constrained('users')->nullOnDelete();
                 $table->timestamp('checked_at')->nullable();
                 $table->foreignId('approved_by')
-                      ->nullable()->constrained('users')->nullOnDelete();
+                    ->nullable()->constrained('users')->nullOnDelete();
                 $table->timestamp('approved_at')->nullable();
                 $table->foreignId('released_by')
-                      ->nullable()->constrained('users')->nullOnDelete();
+                    ->nullable()->constrained('users')->nullOnDelete();
                 $table->timestamp('released_at')->nullable();
 
                 // Linked voucher
@@ -47,11 +47,11 @@ return new class extends Migration
                 $table->text('audit_remarks')->nullable();
 
                 $table->foreignId('branch_id')
-                      ->nullable()->constrained('branches')->nullOnDelete();
+                    ->nullable()->constrained('branches')->nullOnDelete();
                 $table->foreignId('created_by')
-                      ->nullable()->constrained('users')->nullOnDelete();
+                    ->nullable()->constrained('users')->nullOnDelete();
                 $table->foreignId('updated_by')
-                      ->nullable()->constrained('users')->nullOnDelete();
+                    ->nullable()->constrained('users')->nullOnDelete();
 
                 $table->timestamps();
                 $table->softDeletes();
@@ -59,8 +59,8 @@ return new class extends Migration
 
             Schema::table('bills', function (Blueprint $table) {
                 $table->foreign('voucher_id')
-                      ->references('id')->on('vouchers')
-                      ->nullOnDelete();
+                    ->references('id')->on('vouchers')
+                    ->nullOnDelete();
             });
         }
     }

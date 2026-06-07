@@ -26,6 +26,7 @@ export default function Card({
     compact   = false,
     as        = 'div',
     style     = {},
+    ...rest
 }) {
     const Tag = as;
 
@@ -39,14 +40,10 @@ export default function Card({
                 padding     : compact ? 'var(--space-2)' : 'var(--space-card)',
                 border      : 'var(--border-container)',
                 borderRadius: 'var(--radius-lg)',
-                boxShadow: [
-                    '0 4px 6px -6px rgba(0,0,0,0.015)',
-                    '0 3px 4px -4px rgba(0,0,0,0.012)',
-                    '0 2px 2px -2px rgba(0,0,0,0.010)',
-                    '0 1px 1px -1px rgba(0,0,0,0.008)',
-                ].join(','),
+                boxShadow   : 'var(--shadow-card)',
                 ...style,
             }}
+            {...rest}
         >
             {children}
         </Tag>

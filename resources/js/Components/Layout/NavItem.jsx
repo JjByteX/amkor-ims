@@ -13,19 +13,27 @@ import { ChevronDown } from 'lucide-react';
  *   href     : string             (route URL)
  *   icon     : ReactNode          (Lucide icon, 20px)
  *   label    : string
+ *   activeOn : string[]           (optional extra active URL prefixes)
  *   children : NavItem[]          (nested sub-items)
  *   collapsed: bool               (sidebar collapsed state)
  */
-export default function NavItem({ href, icon, label, children, collapsed = false }) {
+export default function NavItem({ href, icon, label, activeOn = [], inactiveOn = [], children, collapsed = false }) {
     const { url } = usePage();
     const hasChildren = !!children;
+    const matches = (path) => path && (url === path || url.startsWith(path + '/'));
+    const isSuppressed = inactiveOn.some(matches);
 
-    const isActive = href
-        ? url === href || url.startsWith(href + '/')
-        : false;
+    const isActive = !isSuppressed && (
+        (href ? matches(href) : false) ||
+        activeOn.some(matches)
+    );
 
     const childActive = hasChildren
-        ? children.some((c) => url === c.props?.href || url.startsWith((c.props?.href ?? '') + '/'))
+        ? children.some((c) => {
+            const childHref = c.props?.href;
+            const childActiveOn = c.props?.activeOn ?? [];
+            return matches(childHref) || childActiveOn.some(matches);
+        })
         : false;
 
     const [open, setOpen] = useState(childActive);
@@ -67,9 +75,9 @@ export default function NavItem({ href, icon, label, children, collapsed = false
                     className="flex items-center w-full"
                     style={{
                         ...itemStyle,
-                        gap        : '10px',
-                        paddingLeft: '10px',
-                        paddingRight: '10px',
+                        gap        : '12px',
+                        paddingLeft: '14px',
+                        paddingRight: '14px',
                         fontSize   : 'var(--font-size-small)',
                         fontFamily : 'var(--font-body)',
                         fontWeight : isActive ? 'var(--font-weight-semibold)' : 'var(--font-weight-normal)',
@@ -104,9 +112,9 @@ export default function NavItem({ href, icon, label, children, collapsed = false
                 className="w-full flex items-center"
                 style={{
                     ...itemStyle,
-                    gap        : '10px',
-                    paddingLeft: '10px',
-                    paddingRight: '10px',
+                        gap        : '12px',
+                        paddingLeft: '14px',
+                        paddingRight: '14px',
                     fontSize   : 'var(--font-size-small)',
                     fontFamily : 'var(--font-body)',
                     fontWeight : childActive ? 'var(--font-weight-semibold)' : 'var(--font-weight-normal)',

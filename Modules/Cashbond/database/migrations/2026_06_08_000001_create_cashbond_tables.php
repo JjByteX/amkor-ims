@@ -24,9 +24,9 @@ return new class extends Migration
                 $table->text('notes')->nullable();
 
                 $table->foreignId('created_by')
-                      ->nullable()->constrained('users')->nullOnDelete();
+                    ->nullable()->constrained('users')->nullOnDelete();
                 $table->foreignId('updated_by')
-                      ->nullable()->constrained('users')->nullOnDelete();
+                    ->nullable()->constrained('users')->nullOnDelete();
 
                 $table->timestamps();
             });
@@ -38,8 +38,8 @@ return new class extends Migration
                 $table->id();
 
                 $table->foreignId('portal_id')
-                      ->constrained('cashbond_portals')
-                      ->cascadeOnDelete();
+                    ->constrained('cashbond_portals')
+                    ->cascadeOnDelete();
 
                 // Reference number: CBR-YYYY-XXXXX
                 $table->string('reload_no', 50)->unique();
@@ -51,13 +51,13 @@ return new class extends Migration
                 // Approval chain: pending|checked|approved|released
                 $table->string('approval_status', 30)->default('pending');
                 $table->foreignId('checked_by')
-                      ->nullable()->constrained('users')->nullOnDelete();
+                    ->nullable()->constrained('users')->nullOnDelete();
                 $table->timestamp('checked_at')->nullable();
                 $table->foreignId('approved_by')
-                      ->nullable()->constrained('users')->nullOnDelete();
+                    ->nullable()->constrained('users')->nullOnDelete();
                 $table->timestamp('approved_at')->nullable();
                 $table->foreignId('released_by')
-                      ->nullable()->constrained('users')->nullOnDelete();
+                    ->nullable()->constrained('users')->nullOnDelete();
                 $table->timestamp('released_at')->nullable();
 
                 // Supplier confirmation
@@ -72,9 +72,9 @@ return new class extends Migration
                 $table->text('audit_remarks')->nullable();
 
                 $table->foreignId('created_by')
-                      ->nullable()->constrained('users')->nullOnDelete();
+                    ->nullable()->constrained('users')->nullOnDelete();
                 $table->foreignId('updated_by')
-                      ->nullable()->constrained('users')->nullOnDelete();
+                    ->nullable()->constrained('users')->nullOnDelete();
 
                 $table->timestamps();
                 $table->softDeletes();
@@ -83,8 +83,8 @@ return new class extends Migration
             // FK to vouchers after both tables exist
             Schema::table('cashbond_reloads', function (Blueprint $table) {
                 $table->foreign('voucher_id')
-                      ->references('id')->on('vouchers')
-                      ->nullOnDelete();
+                    ->references('id')->on('vouchers')
+                    ->nullOnDelete();
             });
         }
     }

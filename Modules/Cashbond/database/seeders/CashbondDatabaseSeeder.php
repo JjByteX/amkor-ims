@@ -23,13 +23,13 @@ class CashbondDatabaseSeeder extends Seeder
             DB::table('cashbond_portals')->updateOrInsert(
                 ['name' => $name],
                 [
-                    'name'                => $name,
-                    'current_balance'     => 0.00,
+                    'name' => $name,
+                    'current_balance' => 0.00,
                     'maintaining_balance' => null,
-                    'is_active'           => true,
-                    'notes'               => null,
-                    'created_at'          => now(),
-                    'updated_at'          => now(),
+                    'is_active' => true,
+                    'notes' => null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]
             );
         }

@@ -44,7 +44,7 @@ class CheckBranch
     /**
      * Handle an incoming request.
      *
-     * @param string ...$branches  Branch code(s) that are allowed (e.g. 'ORMOC', 'QC_MAIN')
+     * @param  string  ...$branches  Branch code(s) that are allowed (e.g. 'ORMOC', 'QC_MAIN')
      */
     public function handle(Request $request, Closure $next, string ...$branches): Response
     {

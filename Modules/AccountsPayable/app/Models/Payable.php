@@ -58,23 +58,23 @@ class Payable extends Model
     ];
 
     protected $casts = [
-        'invoice_date'              => 'date',
-        'due_date'                  => 'date',
-        'payment_date'              => 'date',
-        'invoice_amount_php'        => 'decimal:2',
-        'invoice_amount_usd'        => 'decimal:2',
-        'invoice_amount_jpy'        => 'decimal:2',
-        'payment_php'               => 'decimal:2',
-        'payment_usd'               => 'decimal:2',
-        'payment_jpy'               => 'decimal:2',
-        'balance_php'               => 'decimal:2',
-        'balance_usd'               => 'decimal:2',
-        'balance_jpy'               => 'decimal:2',
-        'checked_at'                => 'datetime',
-        'approved_at'               => 'datetime',
-        'released_at'               => 'datetime',
-        'deposit_slip_attached'     => 'boolean',
-        'deposit_slip_attached_at'  => 'datetime',
+        'invoice_date' => 'date',
+        'due_date' => 'date',
+        'payment_date' => 'date',
+        'invoice_amount_php' => 'decimal:2',
+        'invoice_amount_usd' => 'decimal:2',
+        'invoice_amount_jpy' => 'decimal:2',
+        'payment_php' => 'decimal:2',
+        'payment_usd' => 'decimal:2',
+        'payment_jpy' => 'decimal:2',
+        'balance_php' => 'decimal:2',
+        'balance_usd' => 'decimal:2',
+        'balance_jpy' => 'decimal:2',
+        'checked_at' => 'datetime',
+        'approved_at' => 'datetime',
+        'released_at' => 'datetime',
+        'deposit_slip_attached' => 'boolean',
+        'deposit_slip_attached_at' => 'datetime',
     ];
 
     // ─── Constants ─────────────────────────────────────────────────────────
@@ -88,20 +88,20 @@ class Payable extends Model
     public const STATUSES = [
         'pending' => 'Pending',
         'overdue' => 'Overdue',
-        'paid'    => 'Paid',
-        'filed'   => 'Filed',
+        'paid' => 'Paid',
+        'filed' => 'Filed',
     ];
 
     public const APPROVAL_STATUSES = [
-        'pending'  => 'Pending',
-        'checked'  => 'Checked',
+        'pending' => 'Pending',
+        'checked' => 'Checked',
         'approved' => 'Approved',
         'released' => 'Released',
     ];
 
     public const PAYMENT_MODES = [
-        'cash'         => 'Cash',
-        'check'        => 'Check',
+        'cash' => 'Cash',
+        'check' => 'Check',
         'bank_deposit' => 'Bank Deposit',
     ];
 
@@ -151,30 +151,42 @@ class Payable extends Model
 
     public function scopeSearch($query, ?string $term)
     {
-        if (! $term) return $query;
+        if (! $term) {
+            return $query;
+        }
+
         return $query->where(function ($q) use ($term) {
             $q->where('supplier_name', 'ilike', "%{$term}%")
-              ->orWhere('invoice_no',  'ilike', "%{$term}%")
-              ->orWhere('requisition_no', 'ilike', "%{$term}%")
-              ->orWhere('acr',         'ilike', "%{$term}%");
+                ->orWhere('invoice_no', 'ilike', "%{$term}%")
+                ->orWhere('requisition_no', 'ilike', "%{$term}%")
+                ->orWhere('acr', 'ilike', "%{$term}%");
         });
     }
 
     public function scopeForStatus($query, ?string $status)
     {
-        if (! $status) return $query;
+        if (! $status) {
+            return $query;
+        }
+
         return $query->where('status', $status);
     }
 
     public function scopeForCurrency($query, ?string $currency)
     {
-        if (! $currency) return $query;
+        if (! $currency) {
+            return $query;
+        }
+
         return $query->where('currency', $currency);
     }
 
     public function scopeForBranch($query, ?int $branchId)
     {
-        if (! $branchId) return $query;
+        if (! $branchId) {
+            return $query;
+        }
+
         return $query->where('branch_id', $branchId);
     }
 
@@ -186,7 +198,7 @@ class Payable extends Model
     public function scopeOverdue($query)
     {
         return $query->where('due_date', '<', now()->toDateString())
-                     ->whereNotIn('status', ['paid', 'filed']);
+            ->whereNotIn('status', ['paid', 'filed']);
     }
 
     // ─── Computed helpers ──────────────────────────────────────────────────

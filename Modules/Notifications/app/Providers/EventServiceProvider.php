@@ -3,6 +3,12 @@
 namespace Modules\Notifications\Providers;
 
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
+use App\Events\DashboardSummaryRequested;
+use Modules\Notifications\Listeners\ContributeDashboardSummary;
+use Modules\Notifications\Listeners\SendReservationBookingConfirmedNotification;
+use Modules\Notifications\Listeners\SendReservationForwardedToAccountingNotification;
+use Modules\Reservation\Events\ReservationBookingConfirmed;
+use Modules\Reservation\Events\ReservationForwardedToAccounting;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -11,7 +17,17 @@ class EventServiceProvider extends ServiceProvider
      *
      * @var array<string, array<int, string>>
      */
-    protected $listen = [];
+    protected $listen = [
+        DashboardSummaryRequested::class => [
+            ContributeDashboardSummary::class,
+        ],
+        ReservationBookingConfirmed::class => [
+            SendReservationBookingConfirmedNotification::class,
+        ],
+        ReservationForwardedToAccounting::class => [
+            SendReservationForwardedToAccountingNotification::class,
+        ],
+    ];
 
     /**
      * Indicates if events should be discovered.

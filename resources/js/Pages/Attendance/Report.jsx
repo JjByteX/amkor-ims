@@ -5,7 +5,10 @@ import {
 } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
-import Card from '../../Components/UI/Card';
+import FilterStrip, { FilterField } from '../../Components/Shared/FilterStrip';
+import PageStack from '../../Components/Shared/PageStack';
+import StatCard from '../../Components/Shared/StatCard';
+import StatGrid from '../../Components/Shared/StatGrid';
 import Button from '../../Components/UI/Button';
 import Select from '../../Components/UI/Select';
 import DataTable from '../../Components/Shared/DataTable';
@@ -160,7 +163,7 @@ export default function AttendanceReport({ summary, filters, branches, canExport
 
     return (
         <AppShell>
-            <div className="flex flex-col flex-1 min-h-0" style={{ gap: 'var(--space-section)' }}>
+            <PageStack>
 
                 <PageHeader
                     title="Attendance Report"
@@ -171,7 +174,7 @@ export default function AttendanceReport({ summary, filters, branches, canExport
                                 Back
                             </Button>
                             {canExport && (
-                                <Button variant="secondary" icon={Download} onClick={() => {}}>
+                                <Button variant="primary" icon={Download} onClick={() => {}}>
                                     Export
                                 </Button>
                             )}
@@ -179,65 +182,49 @@ export default function AttendanceReport({ summary, filters, branches, canExport
                     }
                 />
 
-                {/* Grand totals strip */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 'var(--space-2)' }}>
-                    {[
-                        { label: 'Present',    value: totals.present,              color: 'var(--color-success)', icon: CheckCircle },
-                        { label: 'Absent',     value: totals.absent,               color: 'var(--color-error)',   icon: XCircle },
-                        { label: 'On Leave',   value: totals.leave,                color: 'var(--color-info)',    icon: Users },
-                        { label: 'Total Late', value: fmtMinutes(totals.late),     color: 'var(--color-warning)', icon: AlertTriangle },
-                        { label: 'Hrs Worked', value: fmtMinutes(totals.worked),   color: 'var(--color-primary)', icon: Clock },
-                    ].map(({ label, value, color, icon: Icon }) => (
-                        <Card key={label}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
-                                <Icon size={16} style={{ color, flexShrink: 0 }} />
-                                <div>
-                                    <div className="font-body" style={{ fontSize: 11, color: 'var(--color-text)', opacity: 0.5 }}>{label}</div>
-                                    <div className="font-heading font-semibold" style={{ fontSize: 18, color }}>{value}</div>
-                                </div>
-                            </div>
-                        </Card>
-                    ))}
-                </div>
-
-                {/* Month nav + branch filter */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 'var(--space-2)', justifyContent: 'space-between' }}>
-                    {/* Month nav */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
-                        <Button variant="ghost" size="sm" icon={ChevronLeft} onClick={() => goMonth(-1)} />
-                        <span className="font-body font-semibold" style={{ fontSize: 'var(--font-size-small)', minWidth: 130, textAlign: 'center', color: 'var(--color-text)' }}>
-                            {MONTHS[month - 1]} {year}
-                        </span>
-                        <Button variant="ghost" size="sm" icon={ChevronRight} onClick={() => goMonth(1)} />
-                    </div>
-
-                    {/* Branch filter */}
-                    {branches?.length > 1 && (
-                        <div style={{ minWidth: 180 }}>
-                            <Select
-                                options={[
-                                    { value: '', label: 'All Branches' },
-                                    ...branches.map((b) => ({ value: b.id, label: b.name })),
-                                ]}
-                                value={branchId ?? ''}
-                                onChange={(e) => applyFilter({ branch_id: e.target.value || undefined })}
-                            />
-                        </div>
-                    )}
-                </div>
+                <StatGrid min="150px">
+                    <StatCard icon={CheckCircle} label="Present" value={totals.present} tone="success" />
+                    <StatCard icon={XCircle} label="Absent" value={totals.absent} tone="error" />
+                    <StatCard icon={Users} label="On Leave" value={totals.leave} tone="info" />
+                    <StatCard icon={AlertTriangle} label="Total Late" value={fmtMinutes(totals.late)} tone="warning" />
+                    <StatCard icon={Clock} label="Hrs Worked" value={fmtMinutes(totals.worked)} tone="primary" />
+                </StatGrid>
 
                 {/* Summary table */}
                 <DataTable
                     columns={columns}
                     rows={summary}
                     emptyMessage={`No attendance records found for ${MONTHS[month - 1]} ${year}.`}
+                    toolbar={
+                        <FilterStrip>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
+                                <Button variant="ghost" size="sm" icon={ChevronLeft} onClick={() => goMonth(-1)} />
+                                <span className="font-body font-semibold" style={{ fontSize: 'var(--font-size-small)', minWidth: 130, textAlign: 'center', color: 'var(--color-text)' }}>
+                                    {MONTHS[month - 1]} {year}
+                                </span>
+                                <Button variant="ghost" size="sm" icon={ChevronRight} onClick={() => goMonth(1)} />
+                            </div>
+                            {branches?.length > 1 && (
+                                <FilterField width={190}>
+                                    <Select
+                                        options={[
+                                            { value: '', label: 'All Branches' },
+                                            ...branches.map((b) => ({ value: b.id, label: b.name })),
+                                        ]}
+                                        value={branchId ?? ''}
+                                        onChange={(e) => applyFilter({ branch_id: e.target.value || undefined })}
+                                    />
+                                </FilterField>
+                            )}
+                        </FilterStrip>
+                    }
                 />
 
                 {/* Footnote */}
                 <div className="font-body" style={{ fontSize: 11, color: 'var(--color-text)', opacity: 0.4, textAlign: 'right' }}>
                     Standard hours: 8:00 AM – 5:00 PM · Late threshold: past 8:00 AM · Undertime: before 5:00 PM
                 </div>
-            </div>
+            </PageStack>
         </AppShell>
     );
 }

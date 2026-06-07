@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
-import { Plus, Search, Filter, Eye, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Search, Eye, Pencil, Trash2 } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
 import DataTable from '../../Components/Shared/DataTable';
+import FilterStrip, { FilterField } from '../../Components/Shared/FilterStrip';
+import PageStack from '../../Components/Shared/PageStack';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
 import Badge from '../../Components/UI/Badge';
-import Card from '../../Components/UI/Card';
 import ConfirmDialog from '../../Components/Shared/ConfirmDialog';
 import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
 
@@ -177,7 +178,7 @@ export default function VisaIndex({ applications, filters, statuses, agentCodes,
 
     return (
         <AppShell>
-            <div className="flex flex-col flex-1 min-h-0" style={{ gap: "var(--space-section)" }}>
+            <PageStack>
 
                 {flash?.message && (
                     <div
@@ -204,45 +205,44 @@ export default function VisaIndex({ applications, filters, statuses, agentCodes,
                     )}
                 />
 
-                {/* Filters */}
-                <div className="flex flex-wrap items-center" style={{ gap: 'var(--space-2)' }}>
-                    <div className="flex-1 min-w-[200px]">
-                        <Input
-                            placeholder="Customer, agency, visa type, reference..."
-                            value={searchInput}
-                            onChange={(e) => setSearchInput(e.target.value)}
-                            onKeyDown={handleSearchKey}
-                            icon={Search}
-                        />
-                    </div>
-                    <div className="min-w-[160px]">
-                        <Select
-                            options={agentOptions}
-                            value={filters.agent ?? ''}
-                            onChange={(e) => applyFilter({ agent: e.target.value, page: 1 })}
-                        />
-                    </div>
-                    <div className="min-w-[160px]">
-                        <Select
-                            options={statusOptions}
-                            value={filters.status ?? ''}
-                            onChange={(e) => applyFilter({ status: e.target.value, page: 1 })}
-                        />
-                    </div>
-                    {hasActiveFilters && (
-                        <Button variant="ghost" onClick={clearFilters}>Clear</Button>
-                    )}
-                </div>
-
-                {/* Table */}
                 <DataTable
                     columns={columns}
                     rows={applications.data}
                     pagination={applications}
                     onPageChange={(page) => applyFilter({ page })}
+                    toolbar={
+                        <FilterStrip>
+                            <FilterField grow>
+                                <Input
+                                    placeholder="Customer, agency, visa type, reference..."
+                                    value={searchInput}
+                                    onChange={(e) => setSearchInput(e.target.value)}
+                                    onKeyDown={handleSearchKey}
+                                    icon={Search}
+                                />
+                            </FilterField>
+                            <FilterField>
+                                <Select
+                                    options={agentOptions}
+                                    value={filters.agent ?? ''}
+                                    onChange={(e) => applyFilter({ agent: e.target.value, page: 1 })}
+                                />
+                            </FilterField>
+                            <FilterField>
+                                <Select
+                                    options={statusOptions}
+                                    value={filters.status ?? ''}
+                                    onChange={(e) => applyFilter({ status: e.target.value, page: 1 })}
+                                />
+                            </FilterField>
+                            {hasActiveFilters && (
+                                <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                            )}
+                        </FilterStrip>
+                    }
                 />
 
-            </div>
+            </PageStack>
 
             <ConfirmDialog
                 open={!!deleteTarget}

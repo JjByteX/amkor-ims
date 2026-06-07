@@ -29,14 +29,14 @@ class DocumentGenerationController extends Controller
     */
 
     private const COMPANY = [
-        'name'      => 'Amkor Travel & Tours Inc.',
-        'tin_main'  => '223-586-994-00000',
+        'name' => 'Amkor Travel & Tours Inc.',
+        'tin_main' => '223-586-994-00000',
         'tin_ormoc' => '223-586-994-001',
-        'address_main'  => 'Suite 108 West City Plaza Bldg. #66, West Avenue, Quezon City',
+        'address_main' => 'Suite 108 West City Plaza Bldg. #66, West Avenue, Quezon City',
         'address_ormoc' => 'Unit 315 Robinsons Place Ormoc, Cogon, Ormoc City, Leyte',
-        'phone'     => '',
-        'iata'      => 'Yes',
-        'ptaa'      => 'Yes',
+        'phone' => '',
+        'iata' => 'Yes',
+        'ptaa' => 'Yes',
     ];
 
     private const BANK_DETAILS = [
@@ -60,10 +60,10 @@ class DocumentGenerationController extends Controller
         }
 
         $data = [
-            'company'       => self::COMPANY,
-            'transaction'   => $birTransaction,
+            'company' => self::COMPANY,
+            'transaction' => $birTransaction,
             'amountInWords' => BirTransaction::amountInWords((float) $birTransaction->gross_amount),
-            'generatedAt'   => now()->format('F d, Y h:i A'),
+            'generatedAt' => now()->format('F d, Y h:i A'),
         ];
 
         $pdf = Pdf::loadView('documentgeneration::pdf.acknowledgement-receipt', $data)
@@ -74,11 +74,11 @@ class DocumentGenerationController extends Controller
 
         // Mark as generated
         $birTransaction->update([
-            'pdf_generated'    => true,
+            'pdf_generated' => true,
             'pdf_generated_at' => now(),
         ]);
 
-        $filename = "AR-{$birTransaction->document_number}-" . now()->format('Ymd') . '.pdf';
+        $filename = "AR-{$birTransaction->document_number}-".now()->format('Ymd').'.pdf';
 
         return $pdf->download($filename);
     }
@@ -97,12 +97,12 @@ class DocumentGenerationController extends Controller
         }
 
         $data = [
-            'company'       => self::COMPANY,
-            'transaction'   => $birTransaction,
+            'company' => self::COMPANY,
+            'transaction' => $birTransaction,
             'amountInWords' => BirTransaction::amountInWords((float) $birTransaction->gross_amount),
-            'atpNumber'     => BirTransaction::BIR_ATP_NUMBER,
-            'vatRate'       => BirTransaction::VAT_RATE * 100,  // 12
-            'generatedAt'   => now()->format('F d, Y h:i A'),
+            'atpNumber' => BirTransaction::BIR_ATP_NUMBER,
+            'vatRate' => BirTransaction::VAT_RATE * 100,  // 12
+            'generatedAt' => now()->format('F d, Y h:i A'),
         ];
 
         $pdf = Pdf::loadView('documentgeneration::pdf.service-invoice', $data)
@@ -112,11 +112,11 @@ class DocumentGenerationController extends Controller
             ->setOption('isRemoteEnabled', false);
 
         $birTransaction->update([
-            'pdf_generated'    => true,
+            'pdf_generated' => true,
             'pdf_generated_at' => now(),
         ]);
 
-        $filename = "SI-{$birTransaction->document_number}-" . now()->format('Ymd') . '.pdf';
+        $filename = "SI-{$birTransaction->document_number}-".now()->format('Ymd').'.pdf';
 
         return $pdf->download($filename);
     }
@@ -135,11 +135,11 @@ class DocumentGenerationController extends Controller
         }
 
         $data = [
-            'company'       => self::COMPANY,
-            'transaction'   => $birTransaction,
+            'company' => self::COMPANY,
+            'transaction' => $birTransaction,
             'amountInWords' => BirTransaction::amountInWords((float) $birTransaction->gross_amount),
-            'bankDetails'   => self::BANK_DETAILS,
-            'generatedAt'   => now()->format('F d, Y h:i A'),
+            'bankDetails' => self::BANK_DETAILS,
+            'generatedAt' => now()->format('F d, Y h:i A'),
         ];
 
         $pdf = Pdf::loadView('documentgeneration::pdf.statement-of-account', $data)
@@ -149,11 +149,11 @@ class DocumentGenerationController extends Controller
             ->setOption('isRemoteEnabled', false);
 
         $birTransaction->update([
-            'pdf_generated'    => true,
+            'pdf_generated' => true,
             'pdf_generated_at' => now(),
         ]);
 
-        $filename = "SOA-{$birTransaction->document_number}-" . now()->format('Ymd') . '.pdf';
+        $filename = "SOA-{$birTransaction->document_number}-".now()->format('Ymd').'.pdf';
 
         return $pdf->download($filename);
     }
@@ -174,9 +174,9 @@ class DocumentGenerationController extends Controller
         $voucher->load(['branch', 'createdBy', 'checker', 'approver', 'releaser']);
 
         $data = [
-            'company'    => self::COMPANY,
-            'voucher'    => $voucher,
-            'generatedAt'=> now()->format('F d, Y h:i A'),
+            'company' => self::COMPANY,
+            'voucher' => $voucher,
+            'generatedAt' => now()->format('F d, Y h:i A'),
         ];
 
         $pdf = Pdf::loadView('documentgeneration::pdf.cash-voucher', $data)
@@ -186,11 +186,11 @@ class DocumentGenerationController extends Controller
             ->setOption('isRemoteEnabled', false);
 
         $voucher->update([
-            'pdf_generated'    => true,
+            'pdf_generated' => true,
             'pdf_generated_at' => now(),
         ]);
 
-        $filename = "CV-{$voucher->voucher_no}-" . now()->format('Ymd') . '.pdf';
+        $filename = "CV-{$voucher->voucher_no}-".now()->format('Ymd').'.pdf';
 
         return $pdf->download($filename);
     }
@@ -211,9 +211,9 @@ class DocumentGenerationController extends Controller
         $voucher->load(['branch', 'createdBy', 'checker', 'approver', 'releaser']);
 
         $data = [
-            'company'    => self::COMPANY,
-            'voucher'    => $voucher,
-            'generatedAt'=> now()->format('F d, Y h:i A'),
+            'company' => self::COMPANY,
+            'voucher' => $voucher,
+            'generatedAt' => now()->format('F d, Y h:i A'),
         ];
 
         $pdf = Pdf::loadView('documentgeneration::pdf.check-voucher', $data)
@@ -223,11 +223,11 @@ class DocumentGenerationController extends Controller
             ->setOption('isRemoteEnabled', false);
 
         $voucher->update([
-            'pdf_generated'    => true,
+            'pdf_generated' => true,
             'pdf_generated_at' => now(),
         ]);
 
-        $filename = "CHV-{$voucher->voucher_no}-" . now()->format('Ymd') . '.pdf';
+        $filename = "CHV-{$voucher->voucher_no}-".now()->format('Ymd').'.pdf';
 
         return $pdf->download($filename);
     }

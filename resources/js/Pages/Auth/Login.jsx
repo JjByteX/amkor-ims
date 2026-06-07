@@ -1,8 +1,9 @@
 import { useForm } from '@inertiajs/react';
-import { Mail, Lock, AlertCircle } from 'lucide-react';
+import { Mail, Lock } from 'lucide-react';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Alert from '../../Components/UI/Alert';
+import Card from '../../Components/UI/Card';
 
 /**
  * Login page — no layout wrapper (public route).
@@ -25,20 +26,10 @@ export default function Login({ timedOut = false }) {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[var(--color-bg)]">
-            {/* Card — uses --radius-lg matching the Card component */}
-            <div
-                className="w-full max-w-[400px] bg-[var(--color-card)] p-8 flex flex-col gap-6"
-                style={{
-                    borderRadius: 'var(--radius-lg)',
-                    border: 'var(--border-container)',
-                    boxShadow: [
-                        '0 4px 6px -6px rgba(0,0,0,0.015)',
-                        '0 3px 4px -4px rgba(0,0,0,0.012)',
-                        '0 2px 2px -2px rgba(0,0,0,0.010)',
-                        '0 1px 1px -1px rgba(0,0,0,0.008)',
-                    ].join(','),
-                }}
+        <div className="flex min-h-screen items-center justify-center bg-[var(--color-bg)] px-4 py-8 sm:px-6">
+            <Card
+                className="flex w-full max-w-[430px] flex-col"
+                style={{ gap: 'var(--space-3)', padding: '32px' }}
             >
                 {/* Logo + company name */}
                 <div className="flex flex-col items-center gap-3 text-center">
@@ -48,12 +39,12 @@ export default function Login({ timedOut = false }) {
                     </div>
                     <div>
                         <h1
-                            className="font-heading font-semibold text-[var(--color-text)]"
-                            style={{ fontSize: 'var(--font-size-heading)' }}
+                            className="font-heading font-bold text-[var(--color-text)]"
+                            style={{ fontSize: 'var(--font-size-heading)', lineHeight: 'var(--line-height-tight)' }}
                         >
                             Amkor Travel & Tours
                         </h1>
-                        <p className="font-body text-[13px] text-gray-400 mt-0.5">
+                        <p className="font-body text-[13px] text-[var(--color-text-muted)] mt-1">
                             Internal Management System
                         </p>
                     </div>
@@ -107,10 +98,10 @@ export default function Login({ timedOut = false }) {
                     </Button>
                 </form>
 
-                <p className="text-center font-body text-[11px] text-gray-300">
+                <p className="text-center font-body text-[12px] text-[var(--color-text-muted)]">
                     Contact your administrator if you cannot access your account.
                 </p>
-            </div>
+            </Card>
         </div>
     );
 }

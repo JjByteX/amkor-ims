@@ -22,14 +22,14 @@ export default function Badge({ variant = 'neutral', children, className = '' })
         <span
             className={[
                 'inline-flex items-center',
-                'px-2 py-0.5',
+                'px-2.5 py-1',
                 'text-[13px] font-semibold',
                 'font-body',
                 'whitespace-nowrap',
                 variants[variant] ?? variants.neutral,
                 className,
             ].join(' ')}
-            style={{ borderRadius: 'var(--radius-md)' }}
+            style={{ borderRadius: 'var(--radius-md)', lineHeight: 1 }}
         >
             {children}
         </span>

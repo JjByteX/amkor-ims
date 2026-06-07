@@ -3,54 +3,60 @@
 namespace Modules\Notifications\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class NotificationsController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(Request $request): Response
     {
-        return view('notifications::index');
+        $status = $request->string('status')->toString();
+
+        $query = $request->user()
+            ->notifications()
+            ->when($status === 'unread', fn ($q) => $q->whereNull('read_at'))
+            ->when($status === 'archived', fn ($q) => $q->whereNotNull('archived_at'))
+            ->when($status !== 'archived', fn ($q) => $q->whereNull('archived_at'))
+            ->latest();
+
+        return Inertia::render('Notifications/Index', [
+            'notifications' => $query->paginate(30)->withQueryString(),
+            'filters' => ['status' => $status],
+            'unreadCount' => $request->user()->unreadNotifications()->whereNull('archived_at')->count(),
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function markRead(Request $request, string $notification): RedirectResponse
     {
-        return view('notifications::create');
+        $item = $request->user()->notifications()->whereKey($notification)->firstOrFail();
+        $item->markAsRead();
+
+        return back()->with('flash', ['type' => 'success', 'message' => 'Notification marked as read.']);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request) {}
-
-    /**
-     * Show the specified resource.
-     */
-    public function show($id)
+    public function markAllRead(Request $request): RedirectResponse
     {
-        return view('notifications::show');
+        $request->user()->unreadNotifications()->whereNull('archived_at')->update(['read_at' => now()]);
+
+        return back()->with('flash', ['type' => 'success', 'message' => 'All notifications marked as read.']);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id)
+    public function archive(Request $request, string $notification): RedirectResponse
     {
-        return view('notifications::edit');
+        $request->user()
+            ->notifications()
+            ->whereKey($notification)
+            ->update(['archived_at' => now(), 'read_at' => now()]);
+
+        return back()->with('flash', ['type' => 'success', 'message' => 'Notification archived.']);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id) {}
+    public function destroy(Request $request, string $notification): RedirectResponse
+    {
+        $request->user()->notifications()->whereKey($notification)->delete();
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id) {}
+        return back()->with('flash', ['type' => 'success', 'message' => 'Notification deleted.']);
+    }
 }

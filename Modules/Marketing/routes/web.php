@@ -6,24 +6,24 @@ use Modules\Marketing\Http\Controllers\MarketingController;
 Route::middleware(['auth', 'verified'])->prefix('marketing')->name('marketing.')->group(function () {
 
     // ── Materials (main resource) ─────────────────────────────────────────────
-    Route::get('/',              [MarketingController::class, 'index'])->name('index');
-    Route::get('/create',        [MarketingController::class, 'create'])->name('create');
-    Route::post('/',             [MarketingController::class, 'store'])->name('store');
-    Route::get('/{marketing}',   [MarketingController::class, 'show'])->name('show');
+    Route::get('/', [MarketingController::class, 'index'])->name('index');
+    Route::get('/create', [MarketingController::class, 'create'])->name('create');
+    Route::post('/', [MarketingController::class, 'store'])->name('store');
+    Route::get('/{marketing}', [MarketingController::class, 'show'])->name('show');
     Route::get('/{marketing}/edit', [MarketingController::class, 'edit'])->name('edit');
-    Route::put('/{marketing}',   [MarketingController::class, 'update'])->name('update');
+    Route::put('/{marketing}', [MarketingController::class, 'update'])->name('update');
 
     // Workflow actions
-    Route::post('/{marketing}/submit',  [MarketingController::class, 'submit'])->name('submit');
+    Route::post('/{marketing}/submit', [MarketingController::class, 'submit'])->name('submit');
     Route::post('/{marketing}/approve', [MarketingController::class, 'approve'])->name('approve');
-    Route::post('/{marketing}/reject',  [MarketingController::class, 'reject'])->name('reject');
+    Route::post('/{marketing}/reject', [MarketingController::class, 'reject'])->name('reject');
     Route::post('/{marketing}/publish', [MarketingController::class, 'publish'])->name('publish');
     Route::post('/{marketing}/archive', [MarketingController::class, 'archive'])->name('archive');
 
     // ── Expenses ──────────────────────────────────────────────────────────────
-    Route::get('/expenses/list',              [MarketingController::class, 'expenses'])->name('expenses');
-    Route::post('/expenses',                  [MarketingController::class, 'storeExpense'])->name('expenses.store');
-    Route::post('/expenses/{expense}/approve',[MarketingController::class, 'approveExpense'])->name('expenses.approve');
+    Route::get('/expenses/list', [MarketingController::class, 'expenses'])->name('expenses');
+    Route::post('/expenses', [MarketingController::class, 'storeExpense'])->name('expenses.store');
+    Route::post('/expenses/{expense}/approve', [MarketingController::class, 'approveExpense'])->name('expenses.approve');
 
     // ── Analytics ─────────────────────────────────────────────────────────────
     Route::get('/analytics/overview', [MarketingController::class, 'analytics'])->name('analytics');

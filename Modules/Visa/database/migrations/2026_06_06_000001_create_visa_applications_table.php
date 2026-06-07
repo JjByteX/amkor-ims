@@ -24,8 +24,8 @@ return new class extends Migration
 
             // ── Financials ─────────────────────────────────────────────────
             $table->decimal('selling_price', 12, 2)->nullable();
-            $table->decimal('net_payable',   12, 2)->nullable();
-            $table->decimal('income',        12, 2)->nullable();
+            $table->decimal('net_payable', 12, 2)->nullable();
+            $table->decimal('income', 12, 2)->nullable();
 
             // ── Status & notes ─────────────────────────────────────────────
             // pending|on_process|completed|approved|denied|forfeited|refunded
@@ -37,8 +37,8 @@ return new class extends Migration
             $table->string('mode_of_payment', 20)->nullable();
             $table->date('payment_date')->nullable();
             $table->string('soa_number', 100)->nullable();
-            $table->string('si_number',  100)->nullable();
-            $table->string('ar_number',  100)->nullable();
+            $table->string('si_number', 100)->nullable();
+            $table->string('ar_number', 100)->nullable();
 
             // ── Embassy payment tracking ───────────────────────────────────
             $table->date('payment_due_date')->nullable();
@@ -50,25 +50,25 @@ return new class extends Migration
             $table->timestamp('or_received_at')->nullable();
             $table->timestamp('or_endorsed_at')->nullable();
             $table->foreignId('or_endorsed_by')
-                  ->nullable()
-                  ->constrained('users')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
 
             // ── Relations ──────────────────────────────────────────────────
             $table->foreignId('branch_id')
-                  ->nullable()
-                  ->constrained('branches')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('branches')
+                ->nullOnDelete();
 
             $table->foreignId('created_by')
-                  ->nullable()
-                  ->constrained('users')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
 
             $table->foreignId('updated_by')
-                  ->nullable()
-                  ->constrained('users')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
 
             $table->timestamps();
             $table->softDeletes();

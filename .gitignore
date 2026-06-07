@@ -22,3 +22,7 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+.opencode/
+.agents/
+AGENTS.md
+postgresql-binaries.zip

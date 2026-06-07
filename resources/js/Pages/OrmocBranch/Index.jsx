@@ -4,11 +4,12 @@ import { Plus, Search, Eye, Pencil, Trash2, ArrowUpRight, Package, AlertTriangle
 import AppShell        from '../../Components/Layout/AppShell';
 import PageHeader      from '../../Components/Shared/PageHeader';
 import DataTable       from '../../Components/Shared/DataTable';
+import FilterStrip, { FilterField } from '../../Components/Shared/FilterStrip';
+import PageStack       from '../../Components/Shared/PageStack';
 import Button          from '../../Components/UI/Button';
 import Input           from '../../Components/UI/Input';
 import Select          from '../../Components/UI/Select';
 import Badge           from '../../Components/UI/Badge';
-import Card            from '../../Components/UI/Card';
 import ConfirmDialog   from '../../Components/Shared/ConfirmDialog';
 import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
 
@@ -194,7 +195,7 @@ export default function OrmocBranchIndex({
 
     return (
         <AppShell>
-            <div className="flex flex-col flex-1 min-h-0" style={{ gap: "var(--space-section)" }}>
+            <PageStack>
 
                 {flash?.message && (
                     <div
@@ -222,44 +223,6 @@ export default function OrmocBranchIndex({
                     }
                 />
 
-                {/* Filters */}
-                <div className="flex flex-wrap items-center" style={{ gap: 'var(--space-2)' }}>
-                    <div style={{ flex: '1 1 220px', minWidth: 180 }}>
-                        <Input
-                            placeholder="Search client, destination, ref numbers…"
-                            value={searchInput}
-                            onChange={(e) => setSearchInput(e.target.value)}
-                            onKeyDown={handleSearchKey}
-                            icon={Search}
-                        />
-                    </div>
-                    <div style={{ minWidth: 130 }}>
-                        <Select
-                            options={agentOptions}
-                            value={filters.agent ?? ''}
-                            onChange={(e) => applyFilter({ agent: e.target.value, page: 1 })}
-                        />
-                    </div>
-                    <div style={{ minWidth: 140 }}>
-                        <Select
-                            options={statusOptions}
-                            value={filters.status ?? ''}
-                            onChange={(e) => applyFilter({ status: e.target.value, page: 1 })}
-                        />
-                    </div>
-                    <div style={{ minWidth: 130 }}>
-                        <Select
-                            options={typeOptions}
-                            value={filters.booking_type ?? ''}
-                            onChange={(e) => applyFilter({ booking_type: e.target.value, page: 1 })}
-                        />
-                    </div>
-                    {(filters.search || filters.agent || filters.status || filters.booking_type) && (
-                        <Button variant="ghost" size="sm" onClick={clearFilters}>Clear</Button>
-                    )}
-                </div>
-
-                {/* Table */}
                 <DataTable
                     columns={columns}
                     rows={bookings.data}
@@ -268,9 +231,46 @@ export default function OrmocBranchIndex({
                     emptyIcon={<Package size={32} />}
                     emptyTitle="No bookings found"
                     emptyDescription="Create a new booking or adjust your filters."
+                    toolbar={
+                        <FilterStrip>
+                            <FilterField grow>
+                                <Input
+                                    placeholder="Search client, destination, ref numbers..."
+                                    value={searchInput}
+                                    onChange={(e) => setSearchInput(e.target.value)}
+                                    onKeyDown={handleSearchKey}
+                                    icon={Search}
+                                />
+                            </FilterField>
+                            <FilterField width={140}>
+                                <Select
+                                    options={agentOptions}
+                                    value={filters.agent ?? ''}
+                                    onChange={(e) => applyFilter({ agent: e.target.value, page: 1 })}
+                                />
+                            </FilterField>
+                            <FilterField width={150}>
+                                <Select
+                                    options={statusOptions}
+                                    value={filters.status ?? ''}
+                                    onChange={(e) => applyFilter({ status: e.target.value, page: 1 })}
+                                />
+                            </FilterField>
+                            <FilterField width={140}>
+                                <Select
+                                    options={typeOptions}
+                                    value={filters.booking_type ?? ''}
+                                    onChange={(e) => applyFilter({ booking_type: e.target.value, page: 1 })}
+                                />
+                            </FilterField>
+                            {(filters.search || filters.agent || filters.status || filters.booking_type) && (
+                                <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                            )}
+                        </FilterStrip>
+                    }
                 />
 
-            </div>
+            </PageStack>
 
             <ConfirmDialog
                 open={!!deleteTarget}

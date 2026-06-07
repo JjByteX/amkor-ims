@@ -9,6 +9,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Contacts\Models\Contact;
 use Modules\IataPayments\Models\IataPayment;
+use Modules\Notifications\Services\NotificationDispatcher;
 
 class IataPaymentsController extends Controller
 {
@@ -16,20 +17,25 @@ class IataPaymentsController extends Controller
 
     // Per Notes.md IATA workflow: Dalle (disbursement_officer) prepares, Auditor checks, JRT approves
     private const PREPARER_ROLES = ['disbursement_officer', 'accounting_officer'];
-    private const CHECKER_ROLES  = ['admin_auditor', 'general_manager'];
+
+    private const CHECKER_ROLES = ['admin_auditor', 'general_manager'];
+
     private const APPROVER_ROLES = ['general_manager'];
-    private const VIEW_ROLES     = ['disbursement_officer', 'accounting_officer', 'admin_auditor', 'general_manager'];
+
+    private const VIEW_ROLES = ['disbursement_officer', 'accounting_officer', 'admin_auditor', 'general_manager'];
 
     // ─── Index ───────────────────────────────────────────────────────────────
 
     public function index(Request $request): Response
     {
         $role = $request->user()?->getRoleNames()->first();
-        if (! in_array($role, self::VIEW_ROLES, true)) abort(403);
+        if (! in_array($role, self::VIEW_ROLES, true)) {
+            abort(403);
+        }
 
         $search = $request->get('search');
         $status = $request->get('status');
-        $month  = $request->get('month');
+        $month = $request->get('month');
 
         $query = IataPayment::with(['contact', 'branch', 'createdBy', 'checker', 'approver', 'voucher'])
             ->latest('due_date');
@@ -37,7 +43,7 @@ class IataPaymentsController extends Controller
         $query->search($search)->forStatus($status);
 
         if ($month) {
-            [$y, $m] = explode('-', $month . '-01');
+            [$y, $m] = explode('-', $month.'-01');
             $query->forMonth((int) $y, (int) $m);
         }
 
@@ -53,14 +59,14 @@ class IataPaymentsController extends Controller
             ')->first();
 
         return Inertia::render('IataPayments/Index', [
-            'payments'         => $payments,
-            'summary'          => $summary,
-            'filters'          => compact('search', 'status', 'month'),
-            'statuses'         => IataPayment::STATUSES,
+            'payments' => $payments,
+            'summary' => $summary,
+            'filters' => compact('search', 'status', 'month'),
+            'statuses' => IataPayment::STATUSES,
             'approvalStatuses' => IataPayment::APPROVAL_STATUSES,
-            'canWrite'         => $this->canPrepare($request),
-            'canCheck'         => $this->canCheck($request),
-            'canApprove'       => $this->canApprove($request),
+            'canWrite' => $this->canPrepare($request),
+            'canCheck' => $this->canCheck($request),
+            'canApprove' => $this->canApprove($request),
         ]);
     }
 
@@ -88,18 +94,18 @@ class IataPaymentsController extends Controller
         $this->requirePreparer($request);
 
         $data = $request->validate([
-            'contact_id'        => ['nullable', 'exists:contacts,id'],
-            'operator_name'     => ['required', 'string', 'max:255'],
+            'contact_id' => ['nullable', 'exists:contacts,id'],
+            'operator_name' => ['required', 'string', 'max:255'],
             'billing_reference' => ['nullable', 'string', 'max:100'],
-            'billing_date'      => ['nullable', 'date'],
-            'due_date'          => ['required', 'date'],
-            'amount'            => ['required', 'numeric', 'min:0.01'],
-            'remarks'           => ['nullable', 'string'],
+            'billing_date' => ['nullable', 'date'],
+            'due_date' => ['required', 'date'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'remarks' => ['nullable', 'string'],
         ]);
 
         $data['payment_no'] = IataPayment::nextNumber();
-        $data['status']     = now()->greaterThan($data['due_date']) ? 'overdue' : 'pending';
-        $data['branch_id']  = $request->user()->branch_id;
+        $data['status'] = now()->greaterThan($data['due_date']) ? 'overdue' : 'pending';
+        $data['branch_id'] = $request->user()->branch_id;
         $data['created_by'] = $request->user()->id;
         $data['updated_by'] = $request->user()->id;
 
@@ -115,17 +121,19 @@ class IataPaymentsController extends Controller
     public function show(Request $request, IataPayment $payment): Response
     {
         $role = $request->user()?->getRoleNames()->first();
-        if (! in_array($role, self::VIEW_ROLES, true)) abort(403);
+        if (! in_array($role, self::VIEW_ROLES, true)) {
+            abort(403);
+        }
 
         $payment->load(['contact', 'branch', 'createdBy', 'updatedBy', 'checker', 'approver', 'releaser', 'voucher']);
 
         return Inertia::render('IataPayments/Show', [
-            'payment'          => $payment,
-            'statuses'         => IataPayment::STATUSES,
+            'payment' => $payment,
+            'statuses' => IataPayment::STATUSES,
             'approvalStatuses' => IataPayment::APPROVAL_STATUSES,
-            'canWrite'         => $this->canPrepare($request),
-            'canCheck'         => $this->canCheck($request),
-            'canApprove'       => $this->canApprove($request),
+            'canWrite' => $this->canPrepare($request),
+            'canCheck' => $this->canCheck($request),
+            'canApprove' => $this->canApprove($request),
         ]);
     }
 
@@ -144,7 +152,7 @@ class IataPaymentsController extends Controller
             ->orderBy('name')->get(['id', 'name']);
 
         return Inertia::render('IataPayments/Edit', [
-            'payment'   => $payment,
+            'payment' => $payment,
             'operators' => $operators,
         ]);
     }
@@ -160,13 +168,13 @@ class IataPaymentsController extends Controller
         }
 
         $data = $request->validate([
-            'contact_id'        => ['nullable', 'exists:contacts,id'],
-            'operator_name'     => ['required', 'string', 'max:255'],
+            'contact_id' => ['nullable', 'exists:contacts,id'],
+            'operator_name' => ['required', 'string', 'max:255'],
             'billing_reference' => ['nullable', 'string', 'max:100'],
-            'billing_date'      => ['nullable', 'date'],
-            'due_date'          => ['required', 'date'],
-            'amount'            => ['required', 'numeric', 'min:0.01'],
-            'remarks'           => ['nullable', 'string'],
+            'billing_date' => ['nullable', 'date'],
+            'due_date' => ['required', 'date'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'remarks' => ['nullable', 'string'],
         ]);
 
         if ($payment->status !== 'paid') {
@@ -186,8 +194,12 @@ class IataPaymentsController extends Controller
     public function destroy(Request $request, IataPayment $payment): RedirectResponse
     {
         $role = $request->user()?->getRoleNames()->first();
-        if (! in_array($role, ['general_manager', 'disbursement_officer'], true)) abort(403);
-        if ($payment->isApproved()) return back()->with('flash', ['type' => 'error', 'message' => 'Cannot delete an approved record.']);
+        if (! in_array($role, ['general_manager', 'disbursement_officer'], true)) {
+            abort(403);
+        }
+        if ($payment->isApproved()) {
+            return back()->with('flash', ['type' => 'error', 'message' => 'Cannot delete an approved record.']);
+        }
 
         $payment->delete();
 
@@ -199,17 +211,21 @@ class IataPaymentsController extends Controller
 
     public function check(Request $request, IataPayment $payment): RedirectResponse
     {
-        if (! $this->canCheck($request)) abort(403);
-        if ($payment->checked_at) return back()->with('flash', ['type' => 'warning', 'message' => 'Already checked.']);
+        if (! $this->canCheck($request)) {
+            abort(403);
+        }
+        if ($payment->checked_at) {
+            return back()->with('flash', ['type' => 'warning', 'message' => 'Already checked.']);
+        }
 
         $request->validate(['audit_remarks' => ['nullable', 'string']]);
 
         $payment->update([
-            'checked_by'      => $request->user()->id,
-            'checked_at'      => now(),
+            'checked_by' => $request->user()->id,
+            'checked_at' => now(),
             'approval_status' => 'checked',
-            'audit_remarks'   => $request->audit_remarks ?? $payment->audit_remarks,
-            'updated_by'      => $request->user()->id,
+            'audit_remarks' => $request->audit_remarks ?? $payment->audit_remarks,
+            'updated_by' => $request->user()->id,
         ]);
 
         return back()->with('flash', ['type' => 'success', 'message' => 'IATA payment checked.']);
@@ -217,15 +233,21 @@ class IataPaymentsController extends Controller
 
     public function approve(Request $request, IataPayment $payment): RedirectResponse
     {
-        if (! $this->canApprove($request)) abort(403);
-        if (! $payment->checked_at) return back()->with('flash', ['type' => 'error', 'message' => 'Must be checked before approval.']);
-        if ($payment->approved_at) return back()->with('flash', ['type' => 'warning', 'message' => 'Already approved.']);
+        if (! $this->canApprove($request)) {
+            abort(403);
+        }
+        if (! $payment->checked_at) {
+            return back()->with('flash', ['type' => 'error', 'message' => 'Must be checked before approval.']);
+        }
+        if ($payment->approved_at) {
+            return back()->with('flash', ['type' => 'warning', 'message' => 'Already approved.']);
+        }
 
         $payment->update([
-            'approved_by'     => $request->user()->id,
-            'approved_at'     => now(),
+            'approved_by' => $request->user()->id,
+            'approved_at' => now(),
             'approval_status' => 'approved',
-            'updated_by'      => $request->user()->id,
+            'updated_by' => $request->user()->id,
         ]);
 
         return back()->with('flash', ['type' => 'success', 'message' => 'IATA payment approved. Ready for settlement.']);
@@ -234,24 +256,26 @@ class IataPaymentsController extends Controller
     public function release(Request $request, IataPayment $payment): RedirectResponse
     {
         $this->requirePreparer($request);
-        if (! $payment->approved_at) return back()->with('flash', ['type' => 'error', 'message' => 'Must be approved before release.']);
+        if (! $payment->approved_at) {
+            return back()->with('flash', ['type' => 'error', 'message' => 'Must be approved before release.']);
+        }
 
         $request->validate([
-            'payment_date'          => ['nullable', 'date'],
+            'payment_date' => ['nullable', 'date'],
             'deposit_slip_attached' => ['nullable', 'boolean'],
         ]);
 
         $updates = [
-            'released_by'     => $request->user()->id,
-            'released_at'     => now(),
+            'released_by' => $request->user()->id,
+            'released_at' => now(),
             'approval_status' => 'released',
-            'status'          => 'paid',
-            'payment_date'    => $request->payment_date ?? now()->toDateString(),
-            'updated_by'      => $request->user()->id,
+            'status' => 'paid',
+            'payment_date' => $request->payment_date ?? now()->toDateString(),
+            'updated_by' => $request->user()->id,
         ];
 
         if ($request->deposit_slip_attached) {
-            $updates['deposit_slip_attached']    = true;
+            $updates['deposit_slip_attached'] = true;
             $updates['deposit_slip_attached_at'] = now();
         }
 
@@ -263,16 +287,41 @@ class IataPaymentsController extends Controller
     public function notify(Request $request, IataPayment $payment): RedirectResponse
     {
         $this->requirePreparer($request);
-        if (! $payment->released_at) return back()->with('flash', ['type' => 'error', 'message' => 'Must be released before notifying operator.']);
+        if (! $payment->released_at) {
+            return back()->with('flash', ['type' => 'error', 'message' => 'Must be released before notifying operator.']);
+        }
 
-        // Notification stub — Phase 12 wires email
+        $payment->loadMissing('contact');
+
+        if ($payment->contact?->email) {
+            app(NotificationDispatcher::class)->email(
+                $payment->contact->email,
+                "Payment confirmation for {$payment->payment_no}",
+                "Hello {$payment->operator_name},",
+                [
+                    "This confirms that Amkor Travel & Tours has released payment for {$payment->payment_no}.",
+                    'Amount: PHP '.number_format((float) $payment->amount, 2),
+                    'Payment date: '.($payment->payment_date?->format('M d, Y') ?? now()->format('M d, Y')),
+                    'Thank you.',
+                ],
+            );
+        }
+
+        app(NotificationDispatcher::class)->notifyRoles(
+            ['general_manager', 'admin_auditor', 'accounting_officer'],
+            'IATA operator notified',
+            "{$payment->operator_name} notification recorded for {$payment->payment_no}.",
+            "/iata/{$payment->id}",
+            'success',
+        );
+
         $payment->update([
-            'operator_notified'    => true,
+            'operator_notified' => true,
             'operator_notified_at' => now(),
-            'updated_by'           => $request->user()->id,
+            'updated_by' => $request->user()->id,
         ]);
 
-        return back()->with('flash', ['type' => 'success', 'message' => 'Operator notification recorded. (Email wired in Phase 12.)']);
+        return back()->with('flash', ['type' => 'success', 'message' => 'Operator notification sent and recorded.']);
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -294,6 +343,8 @@ class IataPaymentsController extends Controller
 
     private function requirePreparer(Request $request): void
     {
-        if (! $this->canPrepare($request)) abort(403);
+        if (! $this->canPrepare($request)) {
+            abort(403);
+        }
     }
 }

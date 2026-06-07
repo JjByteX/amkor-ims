@@ -2,153 +2,179 @@ import { useState, useEffect, useRef } from 'react';
 import { usePage, Link, router } from '@inertiajs/react';
 import {
     PanelLeftClose, PanelLeftOpen,
-    LayoutDashboard,
-    BookOpen, FileSearch, Globe,
-    TrendingUp,
-    CreditCard, DollarSign, Wallet, ShieldCheck, Receipt, Banknote, FileText,
-    Users, Clock, Megaphone,
-    Bell, BookUser,
+    Gauge,
+    PlaneTakeoff, FileCheck2, MapPinned,
+    ChartNoAxesCombined,
+    CreditCard, Landmark, WalletCards, ShieldCheck, ReceiptText, Building2, Files,
+    UsersRound, CalendarClock, Megaphone,
+    Bell, BellDot, ContactRound, ClipboardCheck,
     Sun, Moon, LogOut,
 } from 'lucide-react';
 import NavItem from './NavItem';
 
 /* ─────────────────────────────────────────────────────────────────────────────
    Nav structure definition
-   Each entry: { key, href, icon, label, roles: string[] | 'all' }
+   Each section: { key, label, items: [{ key, href, icon, label, roles }] }
    ───────────────────────────────────────────────────────────────────────────── */
-const NAV_ITEMS = [
+const NAV_SECTIONS = [
     {
-        key  : 'dashboard',
-        href : '/dashboard',
-        icon : <LayoutDashboard size={20} />,
-        label: 'Dashboard',
-        roles: 'all',
+        key  : 'main',
+        label: 'Main',
+        items: [
+            {
+                key  : 'dashboard',
+                href : '/dashboard',
+                icon : <Gauge size={20} />,
+                label: 'Dashboard',
+                roles: 'all',
+            },
+            {
+                key  : 'contacts',
+                href : '/contacts',
+                icon : <ContactRound size={20} />,
+                label: 'Contacts',
+                roles: 'all',
+            },
+            {
+                key  : 'notifications',
+                href : '/notifications',
+                icon : <BellDot size={20} />,
+                label: 'Notifications',
+                roles: 'all',
+            },
+        ],
     },
     {
-        key  : 'reservation',
-        href : '/reservation',
-        icon : <BookOpen size={20} />,
-        label: 'Reservation & Booking',
-        roles: ['general_manager', 'resa_officer', 'ormoc_branch_officer', 'accounting_officer', 'admin_auditor', 'chief_operations_officer', 'general_sales_manager'],
+        key  : 'operations',
+        label: 'Operations',
+        items: [
+            {
+                key  : 'reservation',
+                href : '/reservation',
+                icon : <PlaneTakeoff size={20} />,
+                label: 'Reservation & Booking',
+                roles: ['general_manager', 'resa_officer', 'ormoc_branch_officer', 'accounting_officer', 'admin_auditor', 'chief_operations_officer', 'general_sales_manager'],
+            },
+            {
+                key  : 'reservation-sales',
+                href : '/reservation-sales',
+                icon : <ChartNoAxesCombined size={20} />,
+                label: 'RESA Sales Report',
+                roles: ['general_manager', 'resa_officer', 'ormoc_branch_officer', 'accounting_officer', 'admin_auditor', 'chief_operations_officer', 'general_sales_manager'],
+            },
+            {
+                key  : 'visa',
+                href : '/visa',
+                icon : <FileCheck2 size={20} />,
+                label: 'Visa & Documentation',
+                roles: ['general_manager', 'visa_documentation_officer', 'disbursement_officer', 'admin_auditor'],
+            },
+            {
+                key  : 'ormoc',
+                href : '/ormoc',
+                icon : <MapPinned size={20} />,
+                label: 'Ormoc Branch',
+                roles: ['general_manager', 'ormoc_branch_officer'],
+            },
+            {
+                key  : 'sales',
+                href : '/sales',
+                icon : <ChartNoAxesCombined size={20} />,
+                label: 'Sales Summary',
+                roles: ['general_manager', 'chief_operations_officer', 'general_sales_manager', 'accounting_officer', 'admin_auditor', 'resa_officer', 'ormoc_branch_officer', 'visa_documentation_officer'],
+            },
+        ],
     },
     {
-        key  : 'reservation-sales',
-        href : '/reservation-sales',
-        icon : <TrendingUp size={20} />,
-        label: 'RESA Sales Report',
-        roles: ['general_manager', 'resa_officer', 'ormoc_branch_officer', 'accounting_officer', 'admin_auditor', 'chief_operations_officer', 'general_sales_manager'],
+        key  : 'finance',
+        label: 'Finance',
+        items: [
+            {
+                key  : 'ar',
+                href : '/ar',
+                icon : <ReceiptText size={20} />,
+                label: 'Accounts Receivable',
+                roles: ['general_manager', 'chief_operations_officer', 'general_sales_manager', 'accounting_officer', 'admin_auditor', 'resa_officer', 'ormoc_branch_officer', 'visa_documentation_officer'],
+            },
+            {
+                key  : 'payables',
+                href : '/payables',
+                icon : <Landmark size={20} />,
+                label: 'Accounts Payable',
+                roles: ['general_manager', 'accounting_officer', 'disbursement_officer', 'admin_auditor'],
+            },
+            {
+                key  : 'disbursement',
+                href : '/disbursement',
+                icon : <WalletCards size={20} />,
+                label: 'Disbursement Ledger',
+                roles: ['general_manager', 'disbursement_officer', 'admin_auditor'],
+            },
+            {
+                key  : 'cashbond',
+                href : '/cashbond',
+                icon : <ShieldCheck size={20} />,
+                label: 'Cashbond Monitoring',
+                roles: ['general_manager', 'disbursement_officer', 'admin_auditor'],
+            },
+            {
+                key  : 'bills',
+                href : '/bills',
+                icon : <Files size={20} />,
+                label: 'Bills & On-Ques',
+                roles: ['general_manager', 'hr_admin_officer', 'disbursement_officer', 'admin_auditor'],
+            },
+            {
+                key  : 'creditcard',
+                href : '/credit-cards',
+                icon : <CreditCard size={20} />,
+                label: 'Credit Cards',
+                roles: ['general_manager', 'hr_admin_officer', 'disbursement_officer', 'admin_auditor'],
+            },
+            {
+                key  : 'iata',
+                href : '/iata',
+                icon : <Building2 size={20} />,
+                label: 'IATA Payments',
+                roles: ['general_manager', 'disbursement_officer', 'admin_auditor'],
+            },
+            {
+                key  : 'bir',
+                href : '/bir',
+                icon : <ClipboardCheck size={20} />,
+                label: 'BIR / Compliance',
+                roles: ['general_manager', 'disbursement_officer', 'accounting_officer', 'admin_auditor'],
+            },
+        ],
     },
     {
-        key  : 'visa',
-        href : '/visa',
-        icon : <FileSearch size={20} />,
-        label: 'Visa & Documentation',
-        roles: ['general_manager', 'visa_documentation_officer', 'disbursement_officer', 'admin_auditor'],
-    },
-    {
-        key  : 'ormoc',
-        href : '/ormoc',
-        icon : <Globe size={20} />,
-        label: 'Ormoc Branch',
-        roles: ['general_manager', 'ormoc_branch_officer'],
-    },
-    {
-        key  : 'sales',
-        href : '/sales',
-        icon : <TrendingUp size={20} />,
-        label: 'Sales Summary',
-        roles: ['general_manager', 'chief_operations_officer', 'general_sales_manager', 'accounting_officer', 'admin_auditor', 'resa_officer', 'ormoc_branch_officer', 'visa_documentation_officer'],
-    },
-    {
-        key  : 'ar',
-        href : '/ar',
-        icon : <Receipt size={20} />,
-        label: 'Accounts Receivable',
-        roles: ['general_manager', 'chief_operations_officer', 'general_sales_manager', 'accounting_officer', 'admin_auditor', 'resa_officer', 'ormoc_branch_officer', 'visa_documentation_officer'],
-    },
-    {
-        key  : 'payables',
-        href : '/payables',
-        icon : <DollarSign size={20} />,
-        label: 'Accounts Payable',
-        roles: ['general_manager', 'accounting_officer', 'disbursement_officer', 'admin_auditor'],
-    },
-    {
-        key  : 'disbursement',
-        href : '/disbursement',
-        icon : <Wallet size={20} />,
-        label: 'Disbursement Ledger',
-        roles: ['general_manager', 'disbursement_officer', 'admin_auditor'],
-    },
-    {
-        key  : 'cashbond',
-        href : '/cashbond',
-        icon : <ShieldCheck size={20} />,
-        label: 'Cashbond Monitoring',
-        roles: ['general_manager', 'disbursement_officer', 'admin_auditor'],
-    },
-    {
-        key  : 'bills',
-        href : '/bills',
-        icon : <FileText size={20} />,
-        label: 'Bills & On-Ques',
-        roles: ['general_manager', 'hr_admin_officer', 'disbursement_officer', 'admin_auditor'],
-    },
-    {
-        key  : 'creditcard',
-        href : '/credit-cards',
-        icon : <CreditCard size={20} />,
-        label: 'Credit Cards',
-        roles: ['general_manager', 'hr_admin_officer', 'disbursement_officer', 'admin_auditor'],
-    },
-    {
-        key  : 'iata',
-        href : '/iata',
-        icon : <Banknote size={20} />,
-        label: 'IATA Payments',
-        roles: ['general_manager', 'disbursement_officer', 'admin_auditor'],
-    },
-    {
-        key  : 'bir',
-        href : '/bir',
-        icon : <FileText size={20} />,
-        label: 'BIR / Compliance',
-        roles: ['general_manager', 'disbursement_officer', 'accounting_officer', 'admin_auditor'],
-    },
-    {
-        key  : 'hr',
-        href : '/hr',
-        icon : <Users size={20} />,
-        label: 'HR & Records',
-        roles: ['general_manager', 'hr_admin_officer'],
-    },
-    {
-        key  : 'attendance',
-        href : '/attendance',
-        icon : <Clock size={20} />,
-        label: 'Attendance',
-        roles: ['general_manager', 'hr_admin_officer', 'resa_officer', 'ormoc_branch_officer', 'visa_documentation_officer', 'accounting_officer', 'disbursement_officer', 'admin_auditor', 'liaison_officer', 'marketing_officer'],
-    },
-    {
-        key  : 'marketing',
-        href : '/marketing',
-        icon : <Megaphone size={20} />,
-        label: 'Marketing',
-        roles: ['general_manager', 'chief_operations_officer', 'marketing_officer'],
-    },
-    {
-        key  : 'contacts',
-        href : '/contacts',
-        icon : <BookUser size={20} />,
-        label: 'Contacts',
-        roles: 'all',
-    },
-    {
-        key  : 'notifications',
-        href : '/notifications',
-        icon : <Bell size={20} />,
-        label: 'Notifications',
-        roles: 'all',
+        key  : 'admin',
+        label: 'Admin',
+        items: [
+            {
+                key  : 'hr',
+                href : '/hr',
+                icon : <UsersRound size={20} />,
+                label: 'HR & Records',
+                inactiveOn: ['/hr/attendance'],
+                roles: ['general_manager', 'hr_admin_officer'],
+            },
+            {
+                key  : 'attendance',
+                href : '/attendance',
+                activeOn: ['/hr/attendance'],
+                icon : <CalendarClock size={20} />,
+                label: 'Attendance',
+                roles: ['general_manager', 'hr_admin_officer', 'resa_officer', 'ormoc_branch_officer', 'visa_documentation_officer', 'accounting_officer', 'disbursement_officer', 'admin_auditor', 'liaison_officer', 'marketing_officer'],
+            },
+            {
+                key  : 'marketing',
+                href : '/marketing',
+                icon : <Megaphone size={20} />,
+                label: 'Marketing',
+                roles: ['general_manager', 'chief_operations_officer', 'marketing_officer'],
+            },
+        ],
     },
 ];
 
@@ -187,6 +213,7 @@ export default function Sidebar() {
     const user      = auth?.user;
     const role      = user?.role ?? '';
     const roleLabel = ROLE_LABELS[role] ?? role;
+    const unreadNotifications = auth?.unread_notifications ?? 0;
 
     /* ── Collapsed state ─────────────────────────────────────────────────────── */
     const [collapsed, setCollapsed] = useState(() => {
@@ -244,9 +271,12 @@ export default function Sidebar() {
         router.post(route('auth.logout'));
     };
 
-    const visibleItems = NAV_ITEMS.filter(
-        (item) => item.roles === 'all' || item.roles.includes(role)
-    );
+    const navSections = NAV_SECTIONS.map((section) => ({
+        ...section,
+        items: section.items.filter(
+            (item) => item.roles === 'all' || item.roles.includes(role)
+        ),
+    })).filter((section) => section.items.length > 0);
 
     /* ── Shared border style (matches --border-container token) ─────────────── */
     const borderColor = 'var(--color-border)';
@@ -324,15 +354,36 @@ export default function Sidebar() {
                 className="flex-1 overflow-y-auto overflow-x-hidden"
                 style={{ padding: 'var(--space-1) var(--space-2)' }}
             >
-                <ul className={`flex flex-col gap-0.5 ${collapsed ? 'items-center' : ''}`}>
-                    {visibleItems.map((item) => (
+                <ul className={`flex flex-col ${collapsed ? 'items-center gap-0.5' : 'gap-1'}`}>
+                    {navSections.map((section) => (
+                        <li key={section.key} className="w-full">
+                            {!collapsed && (
+                                <p
+                                    className="px-2 pb-1 pt-3 font-body font-semibold uppercase"
+                                    style={{
+                                        color        : 'var(--color-text-muted)',
+                                        fontSize     : '11px',
+                                        lineHeight   : 1.2,
+                                        letterSpacing: 0,
+                                    }}
+                                >
+                                    {section.label}
+                                </p>
+                            )}
+                            <ul className={`flex flex-col gap-0.5 ${collapsed ? 'items-center' : ''}`}>
+                                {section.items.map((item) => (
                         <NavItem
                             key={item.key}
                             href={item.href}
+                            activeOn={item.activeOn}
+                            inactiveOn={item.inactiveOn}
                             icon={item.icon}
                             label={item.label}
                             collapsed={collapsed}
-                        />
+                                    />
+                                ))}
+                            </ul>
+                        </li>
                     ))}
                 </ul>
             </nav>
@@ -362,8 +413,9 @@ export default function Sidebar() {
                             style={{ borderRadius: 'var(--radius-md)' }}
                         >
                             <Bell size={20} />
-                            {/* Unread dot — Phase 12 */}
-                            {/* <span className="absolute top-2 right-2 w-2 h-2 bg-[var(--color-error)] rounded-full" /> */}
+                            {unreadNotifications > 0 && (
+                                <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-[var(--color-error)]" />
+                            )}
                         </Link>
 
                         {/* Avatar — opens profile menu */}
@@ -393,7 +445,8 @@ export default function Sidebar() {
                             gap          : 'var(--space-1)',
                             padding      : '6px var(--space-1)',
                             borderRadius : 'var(--radius-md)',
-                            minHeight    : '40px',
+                            minHeight    : '44px',
+                            border       : '1px solid transparent',
                         }}
                     >
                         {/* Avatar */}
@@ -444,8 +497,11 @@ export default function Sidebar() {
                             title="Notifications"
                         >
                             <Bell size={16} />
-                            {/* Unread dot — Phase 12 */}
-                            {/* <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[var(--color-error)] rounded-full" /> */}
+                            {unreadNotifications > 0 && (
+                                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-error)] px-1 text-[10px] font-bold text-white">
+                                    {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                                </span>
+                            )}
                         </div>
                     </button>
                 )}
@@ -462,8 +518,8 @@ export default function Sidebar() {
                         bottom       : collapsed ? '106px' : '68px',
                         borderRadius : 'var(--radius-lg)',
                         border       : 'var(--border-container)',
-                        boxShadow    : '0 -2px 8px rgba(0,0,0,0.08), var(--shadow-card)',
-                        padding      : '4px',
+                        boxShadow    : '0 18px 48px -28px rgba(15,23,42,0.32), var(--shadow-card)',
+                        padding      : '6px',
                     }}
                 >
                     {/* Dark mode toggle */}
@@ -471,12 +527,12 @@ export default function Sidebar() {
                         onClick={() => { setDark((d) => !d); setMenuOpen(false); }}
                         className={[
                             'w-full flex items-center gap-3',
-                            'h-9 px-3',
+                            'h-10 px-3',
                             'font-body text-[var(--color-text)]',
                             'hover:bg-black/5 dark:hover:bg-white/6',
                             'transition-colors duration-0',
                         ].join(' ')}
-                        style={{ fontSize: '13px', borderRadius: 'var(--radius-md)' }}
+                        style={{ fontSize: '13px', borderRadius: 'var(--radius-md)', fontWeight: 500 }}
                     >
                         {dark
                             ? <Sun  size={15} className="shrink-0 text-gray-400" />
@@ -493,12 +549,12 @@ export default function Sidebar() {
                         onClick={handleLogout}
                         className={[
                             'w-full flex items-center gap-3',
-                            'h-9 px-3',
+                            'h-10 px-3',
                             'font-body text-[var(--color-error)]',
                             'hover:bg-red-50 dark:hover:bg-red-900/15',
                             'transition-colors duration-0',
                         ].join(' ')}
-                        style={{ fontSize: '13px', borderRadius: 'var(--radius-md)' }}
+                        style={{ fontSize: '13px', borderRadius: 'var(--radius-md)', fontWeight: 500 }}
                     >
                         <LogOut size={15} className="shrink-0" />
                         <span>Sign out</span>

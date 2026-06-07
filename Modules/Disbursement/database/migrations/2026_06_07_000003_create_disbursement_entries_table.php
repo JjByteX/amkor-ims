@@ -23,9 +23,9 @@ return new class extends Migration
             // ── Reference ─────────────────────────────────────────────────────
             $table->string('reference_no', 100)->nullable();
             $table->foreignId('voucher_id')
-                  ->nullable()
-                  ->constrained('vouchers')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('vouchers')
+                ->nullOnDelete();
 
             // ── Payee / description ───────────────────────────────────────────
             $table->string('payee', 255)->nullable();
@@ -47,17 +47,17 @@ return new class extends Migration
 
             // ── Branch & audit trail ──────────────────────────────────────────
             $table->foreignId('branch_id')
-                  ->nullable()
-                  ->constrained('branches')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('branches')
+                ->nullOnDelete();
             $table->foreignId('created_by')
-                  ->nullable()
-                  ->constrained('users')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
             $table->foreignId('updated_by')
-                  ->nullable()
-                  ->constrained('users')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
 
             $table->timestamps();
             $table->softDeletes();

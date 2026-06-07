@@ -3,6 +3,7 @@
 namespace Modules\EmployeeRecords\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Branch;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -14,7 +15,8 @@ class EmployeeRecordsController extends Controller
 {
     // From Roles.md — HR module
     private const MANAGE_ROLES = ['hr_admin_officer', 'general_manager'];
-    private const VIEW_ROLES   = ['hr_admin_officer', 'general_manager', 'admin_auditor'];
+
+    private const VIEW_ROLES = ['hr_admin_officer', 'general_manager', 'admin_auditor'];
 
     // ════════════════════════════════════════════════════════════════════════
     // INDEX
@@ -26,7 +28,7 @@ class EmployeeRecordsController extends Controller
 
         $search = $request->get('search');
         $status = $request->get('status');
-        $dept   = $request->get('department');
+        $dept = $request->get('department');
         $branch = $request->get('branch_id');
 
         $role = $request->user()?->getRoleNames()->first();
@@ -53,14 +55,14 @@ class EmployeeRecordsController extends Controller
         }
 
         $stats = [
-            'total'        => $statsQuery->count(),
-            'active'       => $statsQuery->clone()->active()->count(),
+            'total' => $statsQuery->count(),
+            'active' => $statsQuery->clone()->active()->count(),
             'probationary' => $statsQuery->clone()->forStatus('probationary')->count(),
-            'regular'      => $statsQuery->clone()->forStatus('regular')->count(),
-            'inactive'     => $statsQuery->clone()->whereIn('employment_status', ['resigned', 'terminated'])->count(),
-            'sil_overdue'  => $statsQuery->clone()->active()
-                                ->whereColumn('sil_used', '>', 'sil_total')
-                                ->count(),
+            'regular' => $statsQuery->clone()->forStatus('regular')->count(),
+            'inactive' => $statsQuery->clone()->whereIn('employment_status', ['resigned', 'terminated'])->count(),
+            'sil_overdue' => $statsQuery->clone()->active()
+                ->whereColumn('sil_used', '>', 'sil_total')
+                ->count(),
         ];
 
         // Flag probationary employees who've been > 6 months (regularization due)
@@ -72,13 +74,13 @@ class EmployeeRecordsController extends Controller
             ->count();
 
         return Inertia::render('EmployeeRecords/Index', [
-            'employees'         => $employees,
-            'stats'             => $stats,
+            'employees' => $employees,
+            'stats' => $stats,
             'regularizationDue' => $regularizationDue,
-            'filters'           => compact('search', 'status', 'dept', 'branch'),
-            'statuses'          => Employee::EMPLOYMENT_STATUSES,
-            'departments'       => Employee::DEPARTMENTS,
-            'canManage'         => $this->canManage($request),
+            'filters' => compact('search', 'status', 'dept', 'branch'),
+            'statuses' => Employee::EMPLOYMENT_STATUSES,
+            'departments' => Employee::DEPARTMENTS,
+            'canManage' => $this->canManage($request),
         ]);
     }
 
@@ -92,16 +94,16 @@ class EmployeeRecordsController extends Controller
         $employee->load(['branch', 'createdBy', 'updatedBy', 'user']);
 
         return Inertia::render('EmployeeRecords/Show', [
-            'employee'    => array_merge($employee->toArray(), [
-                'full_name'         => $employee->full_name,
-                'display_name'      => $employee->display_name,
-                'tenure'            => $employee->tenure,
-                'sil_remaining'     => $employee->sil_remaining,
-                'regularization_due'=> $employee->regularization_due,
+            'employee' => array_merge($employee->toArray(), [
+                'full_name' => $employee->full_name,
+                'display_name' => $employee->display_name,
+                'tenure' => $employee->tenure,
+                'sil_remaining' => $employee->sil_remaining,
+                'regularization_due' => $employee->regularization_due,
             ]),
-            'statuses'    => Employee::EMPLOYMENT_STATUSES,
+            'statuses' => Employee::EMPLOYMENT_STATUSES,
             'departments' => Employee::DEPARTMENTS,
-            'canManage'   => $this->canManage($request),
+            'canManage' => $this->canManage($request),
         ]);
     }
 
@@ -114,12 +116,12 @@ class EmployeeRecordsController extends Controller
         $this->requireManageAccess($request);
 
         return Inertia::render('EmployeeRecords/Form', [
-            'employee'    => null,
-            'statuses'    => Employee::EMPLOYMENT_STATUSES,
+            'employee' => null,
+            'statuses' => Employee::EMPLOYMENT_STATUSES,
             'departments' => Employee::DEPARTMENTS,
-            'genders'     => Employee::GENDERS,
+            'genders' => Employee::GENDERS,
             'civilStatuses' => Employee::CIVIL_STATUSES,
-            'branches'    => \App\Models\Branch::orderBy('name')->get(['id', 'name', 'code']),
+            'branches' => Branch::orderBy('name')->get(['id', 'name', 'code']),
         ]);
     }
 
@@ -131,7 +133,7 @@ class EmployeeRecordsController extends Controller
 
         // Auto-generate employee code if blank
         if (empty($data['employee_code'])) {
-            $data['employee_code'] = 'AMK-' . str_pad(Employee::withTrashed()->count() + 1, 4, '0', STR_PAD_LEFT);
+            $data['employee_code'] = 'AMK-'.str_pad(Employee::withTrashed()->count() + 1, 4, '0', STR_PAD_LEFT);
         }
 
         $employee = Employee::create($data);
@@ -151,15 +153,15 @@ class EmployeeRecordsController extends Controller
         $employee->load(['branch']);
 
         return Inertia::render('EmployeeRecords/Form', [
-            'employee'      => array_merge($employee->toArray(), [
-                'tenure'        => $employee->tenure,
+            'employee' => array_merge($employee->toArray(), [
+                'tenure' => $employee->tenure,
                 'sil_remaining' => $employee->sil_remaining,
             ]),
-            'statuses'      => Employee::EMPLOYMENT_STATUSES,
-            'departments'   => Employee::DEPARTMENTS,
-            'genders'       => Employee::GENDERS,
+            'statuses' => Employee::EMPLOYMENT_STATUSES,
+            'departments' => Employee::DEPARTMENTS,
+            'genders' => Employee::GENDERS,
             'civilStatuses' => Employee::CIVIL_STATUSES,
-            'branches'      => \App\Models\Branch::orderBy('name')->get(['id', 'name', 'code']),
+            'branches' => Branch::orderBy('name')->get(['id', 'name', 'code']),
         ]);
     }
 
@@ -177,7 +179,7 @@ class EmployeeRecordsController extends Controller
 
         return redirect()
             ->route('employees.show', $employee)
-            ->with('flash', ['type' => 'success', 'message' => "Employee record updated."]);
+            ->with('flash', ['type' => 'success', 'message' => 'Employee record updated.']);
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -195,7 +197,7 @@ class EmployeeRecordsController extends Controller
 
         return redirect()
             ->route('employees.index')
-            ->with('flash', ['type' => 'success', 'message' => "Employee record removed (soft-deleted)."]);
+            ->with('flash', ['type' => 'success', 'message' => 'Employee record removed (soft-deleted).']);
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -208,7 +210,7 @@ class EmployeeRecordsController extends Controller
 
         $validated = $request->validate([
             'sil_total' => ['required', 'integer', 'min:0', 'max:365'],
-            'sil_used'  => ['required', 'integer', 'min:0'],
+            'sil_used' => ['required', 'integer', 'min:0'],
         ]);
 
         $employee->update(array_merge($validated, ['updated_by' => $request->user()->id]));

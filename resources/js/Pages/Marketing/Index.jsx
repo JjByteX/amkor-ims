@@ -8,7 +8,10 @@ import {
 } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
-import Card from '../../Components/UI/Card';
+import FilterStrip, { FilterField } from '../../Components/Shared/FilterStrip';
+import PageStack from '../../Components/Shared/PageStack';
+import SharedStatCard from '../../Components/Shared/StatCard';
+import StatGrid from '../../Components/Shared/StatGrid';
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
 import DataTable from '../../Components/Shared/DataTable';
@@ -38,34 +41,6 @@ const TYPE_ICON = {
     tv_ad:            Send,
     other:            Star,
 };
-
-// ── Stat card ─────────────────────────────────────────────────────────────────
-
-function StatCard({ icon: Icon, label, value, color = 'var(--color-text)' }) {
-    return (
-        <Card>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                <div style={{
-                    width: 40, height: 40,
-                    borderRadius: 'var(--radius-md)',
-                    background: 'var(--color-bg)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0,
-                }}>
-                    <Icon size={18} style={{ color }} />
-                </div>
-                <div>
-                    <div className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)', opacity: 0.55 }}>
-                        {label}
-                    </div>
-                    <div className="font-heading font-semibold" style={{ fontSize: 'var(--font-size-heading)', color }}>
-                        {value}
-                    </div>
-                </div>
-            </div>
-        </Card>
-    );
-}
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
@@ -202,7 +177,7 @@ export default function MarketingIndex({
 
     return (
         <AppShell>
-            <div className="flex flex-col flex-1 min-h-0" style={{ gap: 'var(--space-section)' }}>
+            <PageStack>
 
                 {/* Flash */}
                 {flash?.message && (
@@ -223,14 +198,14 @@ export default function MarketingIndex({
                     actions={
                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
                             <Button
-                                variant="secondary"
+                                variant="primary"
                                 icon={Download}
                                 onClick={() => router.get(route('marketing.expenses'))}
                             >
                                 Expenses
                             </Button>
                             <Button
-                                variant="secondary"
+                                variant="primary"
                                 onClick={() => router.get(route('marketing.analytics'))}
                             >
                                 Analytics
@@ -244,68 +219,15 @@ export default function MarketingIndex({
                     }
                 />
 
-                {/* Stats strip */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 'var(--space-2)' }}>
-                    <StatCard icon={Megaphone}   label="Total"     value={total}                 color="var(--color-text)" />
-                    <StatCard icon={Clock}       label="Draft"     value={summary.draft ?? 0}    color="var(--color-text)" />
-                    <StatCard icon={AlertCircle} label="Pending"   value={summary.submitted ?? 0} color="var(--color-warning)" />
-                    <StatCard icon={CheckCircle} label="Approved"  value={summary.approved ?? 0} color="var(--color-info)" />
-                    <StatCard icon={Send}        label="Published" value={summary.published ?? 0} color="var(--color-success)" />
-                    <StatCard icon={Archive}     label="Archived"  value={summary.archived ?? 0} color="var(--color-text)" />
-                </div>
+                <StatGrid min="150px">
+                    <SharedStatCard icon={Megaphone} label="Total" value={total} />
+                    <SharedStatCard icon={Clock} label="Draft" value={summary.draft ?? 0} />
+                    <SharedStatCard icon={AlertCircle} label="Pending" value={summary.submitted ?? 0} tone="warning" />
+                    <SharedStatCard icon={CheckCircle} label="Approved" value={summary.approved ?? 0} tone="info" />
+                    <SharedStatCard icon={Send} label="Published" value={summary.published ?? 0} tone="success" />
+                    <SharedStatCard icon={Archive} label="Archived" value={summary.archived ?? 0} />
+                </StatGrid>
 
-                {/* Year nav + filters */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 'var(--space-2)' }}>
-                    {/* Year nav */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)', flex: '0 0 auto' }}>
-                        <Button variant="ghost" size="sm" icon={ChevronLeft} onClick={() => goYear(-1)} />
-                        <span className="font-body font-semibold" style={{ fontSize: 'var(--font-size-small)', minWidth: 48, textAlign: 'center', color: 'var(--color-text)' }}>
-                            {year}
-                        </span>
-                        <Button variant="ghost" size="sm" icon={ChevronRight} onClick={() => goYear(1)} />
-                    </div>
-
-                    {/* Search */}
-                    <div style={{ flex: 1, minWidth: 200 }}>
-                        <Input
-                            placeholder="Title, description…"
-                            value={searchInput}
-                            onChange={(e) => setSearchInput(e.target.value)}
-                            onKeyDown={handleSearchKey}
-                            icon={Search}
-                        />
-                    </div>
-
-                    {/* Status filter */}
-                    <div style={{ minWidth: 180 }}>
-                        <Select
-                            options={[
-                                { value: '', label: 'All Statuses' },
-                                ...Object.entries(statuses).map(([v, l]) => ({ value: v, label: l })),
-                            ]}
-                            value={filters.status ?? ''}
-                            onChange={(e) => applyFilter({ status: e.target.value || undefined, page: 1 })}
-                        />
-                    </div>
-
-                    {/* Type filter */}
-                    <div style={{ minWidth: 180 }}>
-                        <Select
-                            options={[
-                                { value: '', label: 'All Types' },
-                                ...Object.entries(materialTypes).map(([v, l]) => ({ value: v, label: l })),
-                            ]}
-                            value={filters.type ?? ''}
-                            onChange={(e) => applyFilter({ type: e.target.value || undefined, page: 1 })}
-                        />
-                    </div>
-
-                    {hasActiveFilters && (
-                        <Button variant="ghost" onClick={clearFilters}>Clear</Button>
-                    )}
-                </div>
-
-                {/* Table */}
                 <DataTable
                     columns={columns}
                     rows={materials.data ?? []}
@@ -313,8 +235,51 @@ export default function MarketingIndex({
                     onPageChange={(page) =>
                         router.get(route('marketing.index'), { ...filters, search: searchInput, page }, { preserveState: true })
                     }
+                    toolbar={
+                        <FilterStrip>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)', flex: '0 0 auto' }}>
+                                <Button variant="ghost" size="sm" icon={ChevronLeft} onClick={() => goYear(-1)} />
+                                <span className="font-body font-semibold" style={{ fontSize: 'var(--font-size-small)', minWidth: 48, textAlign: 'center', color: 'var(--color-text)' }}>
+                                    {year}
+                                </span>
+                                <Button variant="ghost" size="sm" icon={ChevronRight} onClick={() => goYear(1)} />
+                            </div>
+                            <FilterField grow>
+                                <Input
+                                    placeholder="Title, description..."
+                                    value={searchInput}
+                                    onChange={(e) => setSearchInput(e.target.value)}
+                                    onKeyDown={handleSearchKey}
+                                    icon={Search}
+                                />
+                            </FilterField>
+                            <FilterField width={180}>
+                                <Select
+                                    options={[
+                                        { value: '', label: 'All Statuses' },
+                                        ...Object.entries(statuses).map(([v, l]) => ({ value: v, label: l })),
+                                    ]}
+                                    value={filters.status ?? ''}
+                                    onChange={(e) => applyFilter({ status: e.target.value || undefined, page: 1 })}
+                                />
+                            </FilterField>
+                            <FilterField width={180}>
+                                <Select
+                                    options={[
+                                        { value: '', label: 'All Types' },
+                                        ...Object.entries(materialTypes).map(([v, l]) => ({ value: v, label: l })),
+                                    ]}
+                                    value={filters.type ?? ''}
+                                    onChange={(e) => applyFilter({ type: e.target.value || undefined, page: 1 })}
+                                />
+                            </FilterField>
+                            {hasActiveFilters && (
+                                <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                            )}
+                        </FilterStrip>
+                    }
                 />
-            </div>
+            </PageStack>
         </AppShell>
     );
 }

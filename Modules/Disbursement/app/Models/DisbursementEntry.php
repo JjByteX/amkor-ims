@@ -33,24 +33,24 @@ class DisbursementEntry extends Model
     ];
 
     protected $casts = [
-        'date'               => 'date',
-        'amount'             => 'decimal:2',
+        'date' => 'date',
+        'amount' => 'decimal:2',
         'access_file_period' => 'date',
     ];
 
     // ─── Constants ─────────────────────────────────────────────────────────
 
     public const CATEGORIES = [
-        'cash'            => 'Cash',
-        'check'           => 'Check',
-        'liaison_admin'   => 'Liaison Travel (Admin)',
-        'liaison_banks'   => 'Liaison Travel (Banks)',
+        'cash' => 'Cash',
+        'check' => 'Check',
+        'liaison_admin' => 'Liaison Travel (Admin)',
+        'liaison_banks' => 'Liaison Travel (Banks)',
     ];
 
     public const FUND_TYPES = [
         'cash_on_hand' => 'Cash on Hand',
         'cash_on_bank' => 'Cash on Bank',
-        'petty_cash'   => 'Petty Cash',
+        'petty_cash' => 'Petty Cash',
     ];
 
     public const CURRENCIES = [
@@ -85,23 +85,32 @@ class DisbursementEntry extends Model
 
     public function scopeSearch($query, ?string $term)
     {
-        if (! $term) return $query;
+        if (! $term) {
+            return $query;
+        }
+
         return $query->where(function ($q) use ($term) {
-            $q->where('payee',        'ilike', "%{$term}%")
-              ->orWhere('description', 'ilike', "%{$term}%")
-              ->orWhere('reference_no','ilike', "%{$term}%");
+            $q->where('payee', 'ilike', "%{$term}%")
+                ->orWhere('description', 'ilike', "%{$term}%")
+                ->orWhere('reference_no', 'ilike', "%{$term}%");
         });
     }
 
     public function scopeForCategory($query, ?string $cat)
     {
-        if (! $cat) return $query;
+        if (! $cat) {
+            return $query;
+        }
+
         return $query->where('category', $cat);
     }
 
     public function scopeForBranch($query, ?int $branchId)
     {
-        if (! $branchId) return $query;
+        if (! $branchId) {
+            return $query;
+        }
+
         return $query->where('branch_id', $branchId);
     }
 
@@ -112,7 +121,10 @@ class DisbursementEntry extends Model
 
     public function scopeForAccessPeriod($query, ?string $period)
     {
-        if (! $period) return $query;
+        if (! $period) {
+            return $query;
+        }
+
         return $query->where('access_file_period', $period);
     }
 }

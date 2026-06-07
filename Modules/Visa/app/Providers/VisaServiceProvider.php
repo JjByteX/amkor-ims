@@ -2,12 +2,14 @@
 
 namespace Modules\Visa\Providers;
 
-use Nwidart\Modules\Support\ModuleServiceProvider;
 use Illuminate\Console\Scheduling\Schedule;
+use Modules\Visa\Console\Commands\SendVisaPaymentReminders;
+use Nwidart\Modules\Support\ModuleServiceProvider;
 
 class VisaServiceProvider extends ModuleServiceProvider
 {
     protected string $name = 'Visa';
+
     protected string $nameLower = 'visa';
 
     protected array $providers = [
@@ -19,7 +21,7 @@ class VisaServiceProvider extends ModuleServiceProvider
      * Artisan commands provided by this module.
      */
     protected array $commands = [
-        \Modules\Visa\Console\Commands\SendVisaPaymentReminders::class,
+        SendVisaPaymentReminders::class,
     ];
 
     /**

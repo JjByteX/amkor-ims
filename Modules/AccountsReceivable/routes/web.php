@@ -18,13 +18,13 @@ use Modules\AccountsReceivable\Http\Controllers\AccountsReceivableController;
 Route::middleware(['auth'])->group(function () {
 
     // ── CRUD ────────────────────────────────────────────────────────────────
-    Route::get('ar',              [AccountsReceivableController::class, 'index'])->name('ar.index');
-    Route::get('ar/create',       [AccountsReceivableController::class, 'create'])->name('ar.create');
-    Route::post('ar',             [AccountsReceivableController::class, 'store'])->name('ar.store');
-    Route::get('ar/{ar}',         [AccountsReceivableController::class, 'show'])->name('ar.show');
-    Route::get('ar/{ar}/edit',    [AccountsReceivableController::class, 'edit'])->name('ar.edit');
-    Route::put('ar/{ar}',         [AccountsReceivableController::class, 'update'])->name('ar.update');
-    Route::delete('ar/{ar}',      [AccountsReceivableController::class, 'destroy'])->name('ar.destroy');
+    Route::get('ar', [AccountsReceivableController::class, 'index'])->name('ar.index');
+    Route::get('ar/create', [AccountsReceivableController::class, 'create'])->name('ar.create');
+    Route::post('ar', [AccountsReceivableController::class, 'store'])->name('ar.store');
+    Route::get('ar/{ar}', [AccountsReceivableController::class, 'show'])->name('ar.show');
+    Route::get('ar/{ar}/edit', [AccountsReceivableController::class, 'edit'])->name('ar.edit');
+    Route::put('ar/{ar}', [AccountsReceivableController::class, 'update'])->name('ar.update');
+    Route::delete('ar/{ar}', [AccountsReceivableController::class, 'destroy'])->name('ar.destroy');
 
     // ── Approval (parallel COO + GSM) ────────────────────────────────────────
     Route::post('ar/{ar}/approve-coo', [AccountsReceivableController::class, 'approveCoo'])->name('ar.approve-coo');
@@ -35,6 +35,6 @@ Route::middleware(['auth'])->group(function () {
 
     // ── Post-approval actions (unlock only when both COO + GSM approved) ──────
     Route::post('ar/{ar}/endorse-disbursement', [AccountsReceivableController::class, 'endorseToDisbursement'])->name('ar.endorse-disbursement');
-    Route::post('ar/{ar}/process-refund',       [AccountsReceivableController::class, 'processRefund'])->name('ar.process-refund');
-    Route::post('ar/{ar}/endorse-documents',    [AccountsReceivableController::class, 'endorseDocuments'])->name('ar.endorse-documents');
+    Route::post('ar/{ar}/process-refund', [AccountsReceivableController::class, 'processRefund'])->name('ar.process-refund');
+    Route::post('ar/{ar}/endorse-documents', [AccountsReceivableController::class, 'endorseDocuments'])->name('ar.endorse-documents');
 });

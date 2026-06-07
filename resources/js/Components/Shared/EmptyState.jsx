@@ -19,15 +19,15 @@ export default function EmptyState({
 }) {
     return (
         <div className={`flex flex-col items-center justify-center gap-3 py-12 px-4 text-center ${className}`}>
-            <div className="text-gray-300 dark:text-gray-600">
+            <div className="text-[var(--color-text-muted)] opacity-45">
                 {icon ?? <FileX size={40} strokeWidth={1.5} />}
             </div>
             <div>
-                <p className="font-heading font-semibold text-[var(--color-text)] text-base">
+                <p className="font-heading font-bold text-[var(--color-text)] text-base">
                     {title}
                 </p>
                 {description && (
-                    <p className="font-body text-[13px] text-gray-400 mt-1">
+                    <p className="font-body text-[13px] text-[var(--color-text-muted)] mt-1">
                         {description}
                     </p>
                 )}

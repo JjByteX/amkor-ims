@@ -41,40 +41,40 @@ class Bill extends Model
     ];
 
     protected $casts = [
-        'amount'       => 'decimal:2',
-        'due_date'     => 'date',
+        'amount' => 'decimal:2',
+        'due_date' => 'date',
         'payment_date' => 'date',
-        'checked_at'   => 'datetime',
-        'approved_at'  => 'datetime',
-        'released_at'  => 'datetime',
+        'checked_at' => 'datetime',
+        'approved_at' => 'datetime',
+        'released_at' => 'datetime',
     ];
 
     // ─── Constants ──────────────────────────────────────────────────────────
 
     public const BILL_TYPES = [
-        'utility'    => 'Utility',
+        'utility' => 'Utility',
         'membership' => 'Membership / Renewal',
-        'permit'     => 'Permit',
-        'premium'    => 'Premium Payment',
-        'supplies'   => 'Office Supplies',
-        'other'      => 'Other',
+        'permit' => 'Permit',
+        'premium' => 'Premium Payment',
+        'supplies' => 'Office Supplies',
+        'other' => 'Other',
     ];
 
     public const PAYMENT_MODES = [
-        'credit_card'  => 'Credit Card',
+        'credit_card' => 'Credit Card',
         'bank_deposit' => 'Bank Deposit',
-        'cash'         => 'Cash',
+        'cash' => 'Cash',
     ];
 
     public const STATUSES = [
         'pending' => 'Pending',
-        'paid'    => 'Paid',
+        'paid' => 'Paid',
         'overdue' => 'Overdue',
     ];
 
     public const APPROVAL_STATUSES = [
-        'pending'  => 'Pending',
-        'checked'  => 'Checked',
+        'pending' => 'Pending',
+        'checked' => 'Checked',
         'approved' => 'Approved',
         'released' => 'Released',
     ];
@@ -132,23 +132,32 @@ class Bill extends Model
 
     public function scopeSearch($query, ?string $term)
     {
-        if (! $term) return $query;
+        if (! $term) {
+            return $query;
+        }
+
         return $query->where(function ($q) use ($term) {
             $q->where('name', 'ilike', "%{$term}%")
-              ->orWhere('provider', 'ilike', "%{$term}%")
-              ->orWhere('account_no', 'ilike', "%{$term}%");
+                ->orWhere('provider', 'ilike', "%{$term}%")
+                ->orWhere('account_no', 'ilike', "%{$term}%");
         });
     }
 
     public function scopeForType($query, ?string $type)
     {
-        if (! $type) return $query;
+        if (! $type) {
+            return $query;
+        }
+
         return $query->where('bill_type', $type);
     }
 
     public function scopeForStatus($query, ?string $status)
     {
-        if (! $status) return $query;
+        if (! $status) {
+            return $query;
+        }
+
         return $query->where('status', $status);
     }
 
@@ -159,7 +168,10 @@ class Bill extends Model
 
     public function scopeForBranch($query, ?int $branchId)
     {
-        if (! $branchId) return $query;
+        if (! $branchId) {
+            return $query;
+        }
+
         return $query->where('branch_id', $branchId);
     }
 }

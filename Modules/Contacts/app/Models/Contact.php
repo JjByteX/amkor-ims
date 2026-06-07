@@ -2,10 +2,11 @@
 
 namespace Modules\Contacts\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Branch;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Contact extends Model
 {
@@ -37,10 +38,10 @@ class Contact extends Model
 
     // Valid contact types
     public const TYPES = [
-        'corporate'  => 'Corporate Account',
-        'sub_agent'  => 'Sub-Agent / Travel Agency',
-        'supplier'   => 'Supplier / Operator',
-        'bank'       => 'Bank',
+        'corporate' => 'Corporate Account',
+        'sub_agent' => 'Sub-Agent / Travel Agency',
+        'supplier' => 'Supplier / Operator',
+        'bank' => 'Bank',
     ];
 
     // Valid currencies
@@ -50,7 +51,7 @@ class Contact extends Model
 
     public function branch(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Branch::class);
+        return $this->belongsTo(Branch::class);
     }
 
     public function createdBy(): BelongsTo
@@ -77,13 +78,15 @@ class Contact extends Model
 
     public function scopeSearch($query, ?string $term)
     {
-        if (! $term) return $query;
+        if (! $term) {
+            return $query;
+        }
 
         return $query->where(function ($q) use ($term) {
             $q->where('name', 'ilike', "%{$term}%")
-              ->orWhere('contact_person', 'ilike', "%{$term}%")
-              ->orWhere('email', 'ilike', "%{$term}%")
-              ->orWhere('tin', 'ilike', "%{$term}%");
+                ->orWhere('contact_person', 'ilike', "%{$term}%")
+                ->orWhere('email', 'ilike', "%{$term}%")
+                ->orWhere('tin', 'ilike', "%{$term}%");
         });
     }
 

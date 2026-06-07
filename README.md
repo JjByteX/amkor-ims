@@ -32,9 +32,96 @@ Before cloning this project, your machine must have the following:
 |---|---|---|
 | PHP | **8.4.x** | 8.2 and 8.3 will fail — package minimums require 8.4 |
 | Composer | 2.x | — |
-| Node.js | 18+ | — |
+| Node.js | **20.19+ or 22.12+** | Required by Vite 7 |
 | npm | 9+ | — |
 | PostgreSQL | 14+ | — |
+
+---
+
+## Run This PC
+
+These commands are for the local Windows setup at `C:\xampp\htdocs\amkor-ims`.
+Use `C:\php84\php.exe` so the project does not accidentally run with XAMPP PHP.
+
+### 1. Check installed tools
+
+```powershell
+cd C:\xampp\htdocs\amkor-ims
+
+C:\php84\php.exe -v
+composer -V
+node -v     # Must be 20.19+ or 22.12+
+npm -v
+C:\pgsql\bin\psql.exe --version
+```
+
+### 2. Install or refresh dependencies
+
+```powershell
+composer install
+npm install
+```
+
+### 3. Create the PostgreSQL database
+
+Run this once. If the database already exists, PostgreSQL will report that and you can continue.
+
+```powershell
+C:\pgsql\bin\psql.exe -U postgres -h 127.0.0.1 -p 5432 -c "CREATE DATABASE amkor_ims;"
+```
+
+### 4. Prepare Laravel
+
+```powershell
+C:\php84\php.exe artisan key:generate
+C:\php84\php.exe artisan migrate
+C:\php84\php.exe artisan db:seed
+```
+
+### 5. Run the system
+
+Open three PowerShell terminals.
+
+**Terminal 1 — Laravel server**
+
+```powershell
+cd C:\xampp\htdocs\amkor-ims
+C:\php84\php.exe artisan serve
+```
+
+**Terminal 2 — Vite frontend assets**
+
+```powershell
+cd C:\xampp\htdocs\amkor-ims
+npm run dev
+```
+
+**Terminal 3 — Laravel Reverb WebSocket**
+
+```powershell
+cd C:\xampp\htdocs\amkor-ims
+C:\php84\php.exe artisan reverb:start
+```
+
+Open:
+
+```text
+http://localhost:8000
+```
+
+Seeded login:
+
+```text
+Email: jrt@amkor.ph
+Password: AmkorIMS2026!
+```
+
+### 6. Verify before committing
+
+```powershell
+npm run build
+C:\php84\php.exe artisan test
+```
 
 ---
 
@@ -218,6 +305,13 @@ php artisan module:make {ModuleName}
 - All Excel exports via `maatwebsite/excel`
 - No hard deletes on financial records — soft deletes only
 - Lucide Icons is the only icon library — do not install others
+
+## Phase Completion Notes
+
+- Phase 3 Reservation & Booking is implemented as an Inertia workflow with reservation lifecycle tracking, branch scoping, financial references, and accounting-forward events.
+- Phase 10 HR, Attendance, and Marketing are implemented.
+- Phase 11 Sales Summary aggregates operational records from Reservation, Ormoc, Visa, and Accounts Receivable, with monthly sales targets and Excel export.
+- Phase 12 Notifications provides database-backed in-app notifications, unread counts, notification center actions, and queued email delivery hooks for workflow notices.
 
 ---
 

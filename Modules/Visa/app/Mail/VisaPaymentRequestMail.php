@@ -33,7 +33,7 @@ class VisaPaymentRequestMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: '[Amkor IMS] Visa Payment Request — ' . $this->application->customer_name,
+            subject: '[Amkor IMS] Visa Payment Request — '.$this->application->customer_name,
         );
     }
 
@@ -42,12 +42,12 @@ class VisaPaymentRequestMail extends Mailable
         return new Content(
             view: 'visa::emails.payment-request',
             with: [
-                'application'     => $this->application,
+                'application' => $this->application,
                 'requestedByName' => $this->requestedByName,
-                'dueDate'         => $this->application->payment_due_date?->format('F j, Y'),
-                'visaType'        => $this->application->visa_type,
-                'customerName'    => $this->application->customer_name,
-                'amount'          => number_format($this->application->net_payable, 2),
+                'dueDate' => $this->application->payment_due_date?->format('F j, Y'),
+                'visaType' => $this->application->visa_type,
+                'customerName' => $this->application->customer_name,
+                'amount' => number_format($this->application->net_payable, 2),
             ],
         );
     }

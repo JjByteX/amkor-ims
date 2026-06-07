@@ -34,13 +34,13 @@ class VisaController extends Controller
 
     public function index(Request $request): Response
     {
-        $user   = $request->user();
-        $role   = $user?->getRoleNames()->first();
+        $user = $request->user();
+        $role = $user?->getRoleNames()->first();
         $search = $request->get('search');
-        $agent  = $request->get('agent');
+        $agent = $request->get('agent');
         $status = $request->get('status');
-        $month  = $request->get('month');   // YYYY-MM
-        $year   = (int) $request->get('year', now()->year);
+        $month = $request->get('month');   // YYYY-MM
+        $year = (int) $request->get('year', now()->year);
 
         $query = VisaApplication::with(['branch', 'createdBy'])
             ->latest('date');
@@ -61,7 +61,7 @@ class VisaController extends Controller
         }
 
         if ($month) {
-            [$y, $m] = explode('-', $month . '-01');
+            [$y, $m] = explode('-', $month.'-01');
             $query->forMonth((int) $y, (int) $m);
         }
 
@@ -69,10 +69,10 @@ class VisaController extends Controller
 
         return Inertia::render('Visa/Index', [
             'applications' => $applications,
-            'filters'      => compact('search', 'agent', 'status', 'month', 'year'),
-            'statuses'     => VisaApplication::STATUSES,
-            'agentCodes'   => VisaApplication::AGENT_CODES,
-            'canWrite'     => $this->canWrite($request),
+            'filters' => compact('search', 'agent', 'status', 'month', 'year'),
+            'statuses' => VisaApplication::STATUSES,
+            'agentCodes' => VisaApplication::AGENT_CODES,
+            'canWrite' => $this->canWrite($request),
         ]);
     }
 
@@ -83,9 +83,9 @@ class VisaController extends Controller
         $this->requireWriteAccess($request);
 
         return Inertia::render('Visa/Create', [
-            'visaTypes'    => VisaApplication::VISA_TYPES,
-            'agentCodes'   => VisaApplication::AGENT_CODES,
-            'statuses'     => VisaApplication::STATUSES,
+            'visaTypes' => VisaApplication::VISA_TYPES,
+            'agentCodes' => VisaApplication::AGENT_CODES,
+            'statuses' => VisaApplication::STATUSES,
             'paymentModes' => VisaApplication::PAYMENT_MODES,
         ]);
     }
@@ -99,8 +99,8 @@ class VisaController extends Controller
         $data = $request->validated();
         $data['created_by'] = $request->user()->id;
         $data['updated_by'] = $request->user()->id;
-        $data['branch_id']  = $request->user()->branch_id;
-        $data['status']     = $data['status'] ?? 'pending';
+        $data['branch_id'] = $request->user()->branch_id;
+        $data['status'] = $data['status'] ?? 'pending';
 
         // Auto-compute income if not supplied
         if (empty($data['income']) && ! empty($data['selling_price']) && ! empty($data['net_payable'])) {
@@ -127,11 +127,11 @@ class VisaController extends Controller
         $visa->load(['branch', 'createdBy', 'updatedBy', 'orEndorsedBy']);
 
         return Inertia::render('Visa/Show', [
-            'application'  => $visa,
-            'statuses'     => VisaApplication::STATUSES,
+            'application' => $visa,
+            'statuses' => VisaApplication::STATUSES,
             'paymentModes' => VisaApplication::PAYMENT_MODES,
-            'canWrite'     => $this->canWrite($request),
-            'canEndorse'   => $role === 'visa_documentation_officer' && $visa->or_number && ! $visa->isEndorsed(),
+            'canWrite' => $this->canWrite($request),
+            'canEndorse' => $role === 'visa_documentation_officer' && $visa->or_number && ! $visa->isEndorsed(),
         ]);
     }
 
@@ -142,10 +142,10 @@ class VisaController extends Controller
         $this->requireWriteAccess($request);
 
         return Inertia::render('Visa/Edit', [
-            'application'  => $visa,
-            'visaTypes'    => VisaApplication::VISA_TYPES,
-            'agentCodes'   => VisaApplication::AGENT_CODES,
-            'statuses'     => VisaApplication::STATUSES,
+            'application' => $visa,
+            'visaTypes' => VisaApplication::VISA_TYPES,
+            'agentCodes' => VisaApplication::AGENT_CODES,
+            'statuses' => VisaApplication::STATUSES,
             'paymentModes' => VisaApplication::PAYMENT_MODES,
         ]);
     }
@@ -191,15 +191,15 @@ class VisaController extends Controller
         $this->requireWriteAccess($request);
 
         $request->validate([
-            'status' => ['required', 'in:' . implode(',', array_keys(VisaApplication::STATUSES))],
+            'status' => ['required', 'in:'.implode(',', array_keys(VisaApplication::STATUSES))],
         ]);
 
         $visa->update([
-            'status'     => $request->status,
+            'status' => $request->status,
             'updated_by' => $request->user()->id,
         ]);
 
-        return back()->with('flash', ['type' => 'success', 'message' => 'Status updated to ' . VisaApplication::STATUSES[$request->status] . '.']);
+        return back()->with('flash', ['type' => 'success', 'message' => 'Status updated to '.VisaApplication::STATUSES[$request->status].'.']);
     }
 
     // ─── Update notes ─────────────────────────────────────────────────────────
@@ -211,7 +211,7 @@ class VisaController extends Controller
         $request->validate(['notes' => ['nullable', 'string']]);
 
         $visa->update([
-            'notes'      => $request->notes,
+            'notes' => $request->notes,
             'updated_by' => $request->user()->id,
         ]);
 
@@ -250,9 +250,9 @@ class VisaController extends Controller
         }
 
         $visa->update([
-            'payment_request_sent'    => true,
+            'payment_request_sent' => true,
             'payment_request_sent_at' => now(),
-            'updated_by'              => $request->user()->id,
+            'updated_by' => $request->user()->id,
         ]);
 
         return back()->with('flash', ['type' => 'success', 'message' => 'Payment request queued for Disbursement Officer.']);
@@ -269,9 +269,9 @@ class VisaController extends Controller
         ]);
 
         $visa->update([
-            'or_number'      => $request->or_number,
+            'or_number' => $request->or_number,
             'or_received_at' => now(),
-            'updated_by'     => $request->user()->id,
+            'updated_by' => $request->user()->id,
         ]);
 
         return back()->with('flash', ['type' => 'success', 'message' => 'OR number recorded.']);

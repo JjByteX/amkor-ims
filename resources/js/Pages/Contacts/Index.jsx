@@ -4,6 +4,8 @@ import { Plus, Search, Building2, Users, Truck, Landmark, Pencil, Trash2, Eye } 
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
 import DataTable from '../../Components/Shared/DataTable';
+import FilterStrip, { FilterField } from '../../Components/Shared/FilterStrip';
+import PageStack from '../../Components/Shared/PageStack';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Badge from '../../Components/UI/Badge';
@@ -130,7 +132,7 @@ function ContactsIndex({ contacts, filters, canWrite, typeCounts }) {
     ];
 
     return (
-        <div className="flex flex-col flex-1 min-h-0" style={{ gap: "var(--space-section)" }}>
+        <PageStack>
 
             <PageHeader
                 title="Contacts & Directory"
@@ -168,10 +170,10 @@ function ContactsIndex({ contacts, filters, canWrite, typeCounts }) {
                             ].join(' ')}
                             style={{
                                 fontSize     : 'var(--font-size-small)',
-                                paddingLeft  : 'var(--space-2)',
-                                paddingRight : 'var(--space-2)',
-                                paddingTop   : 'var(--space-2)',
-                                paddingBottom: 'var(--space-2)',
+                                paddingLeft  : '18px',
+                                paddingRight : '18px',
+                                paddingTop   : '14px',
+                                paddingBottom: '14px',
                             }}
                         >
                             <Icon size={15} />
@@ -194,71 +196,39 @@ function ContactsIndex({ contacts, filters, canWrite, typeCounts }) {
                 })}
             </div>
 
-            {/* Search bar */}
-            <div className="flex items-center max-w-sm" style={{ gap: 'var(--space-2)' }}>
-                <Input
-                    placeholder="Search by name, email, or TIN…"
-                    value={searchInput}
-                    onChange={(e) => setSearchInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && applySearch()}
-                    icon={Search}
-                />
-                {filters.search && (
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                            setSearchInput('');
-                            router.get(route('contacts.index'), { type: activeTab, search: '', active: 'all' });
-                        }}
-                    >
-                        Clear
-                    </Button>
-                )}
-            </div>
-
-            {/* Table */}
             <DataTable
                 columns={columns}
                 rows={contacts.data}
                 keyField="id"
                 onRowClick={(row) => router.get(route('contacts.show', row.id))}
                 empty={`No ${TABS.find(t => t.key === activeTab)?.label ?? 'contacts'} found.`}
+                pagination={contacts}
+                onPageChange={(page) => router.get(route('contacts.index'), { type: activeTab, search: searchInput, active: filters.active, page }, { preserveScroll: true, preserveState: true })}
+                toolbar={
+                    <FilterStrip>
+                        <FilterField grow>
+                            <Input
+                                placeholder="Search by name, email, or TIN..."
+                                value={searchInput}
+                                onChange={(e) => setSearchInput(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && applySearch()}
+                                icon={Search}
+                            />
+                        </FilterField>
+                        {filters.search && (
+                            <Button
+                                variant="ghost"
+                                onClick={() => {
+                                    setSearchInput('');
+                                    router.get(route('contacts.index'), { type: activeTab, search: '', active: 'all' });
+                                }}
+                            >
+                                Clear
+                            </Button>
+                        )}
+                    </FilterStrip>
+                }
             />
-
-            {/* Pagination */}
-            {contacts.last_page > 1 && (
-                <div
-                    className="flex items-center justify-between font-body text-gray-400"
-                    style={{ fontSize: 'var(--font-size-small)' }}
-                >
-                    <span>
-                        Showing {contacts.from}–{contacts.to} of {contacts.total}
-                    </span>
-                    <div className="flex" style={{ gap: 'var(--space-1)' }}>
-                        {contacts.links
-                            .filter((l) => l.url)
-                            .map((link, i) => (
-                                <button
-                                    key={i}
-                                    onClick={() => router.get(link.url)}
-                                    className={[
-                                        'font-semibold transition-colors',
-                                        link.active
-                                            ? 'bg-[var(--color-primary)] text-white'
-                                            : 'bg-gray-100 dark:bg-gray-700 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-600',
-                                    ].join(' ')}
-                                    style={{
-                                        padding      : '4px 10px',
-                                        borderRadius: "var(--radius-md)",
-                                        fontSize     : 'var(--font-size-small)',
-                                    }}
-                                    dangerouslySetInnerHTML={{ __html: link.label }}
-                                />
-                            ))}
-                    </div>
-                </div>
-            )}
 
             <ConfirmDialog
                 open={!!deleteTarget}
@@ -269,7 +239,7 @@ function ContactsIndex({ contacts, filters, canWrite, typeCounts }) {
                 description={`Remove "${deleteTarget?.name}"? This can be restored by an administrator if needed.`}
                 confirmLabel="Remove"
             />
-        </div>
+        </PageStack>
     );
 }
 

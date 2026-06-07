@@ -21,7 +21,7 @@ return new class extends Migration
 
             // Approval workflow: draft → submitted → approved → published → archived
             $table->enum('status', ['draft', 'submitted', 'approved', 'published', 'archived'])
-                  ->default('draft');
+                ->default('draft');
 
             // File attachment handled by spatie/laravel-media-library — no path stored here
             $table->string('platform')->nullable();     // facebook, tiktok, instagram, etc.

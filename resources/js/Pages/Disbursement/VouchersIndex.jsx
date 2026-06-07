@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
-import { Plus, Search, Eye, Trash2 } from 'lucide-react';
+import { Plus, Search, Eye, Trash2, BanknoteArrowUp, ClipboardList, FileClock, CircleCheckBig } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
 import DataTable from '../../Components/Shared/DataTable';
+import FilterStrip, { FilterField } from '../../Components/Shared/FilterStrip';
+import PageStack from '../../Components/Shared/PageStack';
+import StatCard from '../../Components/Shared/StatCard';
+import StatGrid from '../../Components/Shared/StatGrid';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
 import Badge from '../../Components/UI/Badge';
-import Card from '../../Components/UI/Card';
 import ConfirmDialog from '../../Components/Shared/ConfirmDialog';
 import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
 
@@ -144,7 +147,7 @@ export default function VouchersIndex({
 
     return (
         <AppShell>
-            <div className="flex flex-col flex-1 min-h-0" style={{ gap: "var(--space-section)" }}>
+            <PageStack>
 
                 <PageHeader
                     title="Cash &amp; Check Vouchers"
@@ -175,85 +178,64 @@ export default function VouchersIndex({
                     </div>
                 )}
 
-                {/* Summary cards */}
                 {summary && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-2)' }}>
-                        <Card>
-                            <p style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)', opacity: 0.6 }}>Total Amount</p>
-                            <p className="font-heading" style={{ fontSize: 'var(--font-size-heading)', color: 'var(--color-text)', marginTop: 4 }}>
-                                <CurrencyDisplay amount={summary.total_amount ?? 0} currency="PHP" />
-                            </p>
-                        </Card>
-                        <Card>
-                            <p style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)', opacity: 0.6 }}>Total Vouchers</p>
-                            <p className="font-heading" style={{ fontSize: 'var(--font-size-heading)', color: 'var(--color-text)', marginTop: 4 }}>
-                                {summary.total_count ?? 0}
-                            </p>
-                        </Card>
-                        <Card>
-                            <p style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)', opacity: 0.6 }}>Pending</p>
-                            <p className="font-heading" style={{ fontSize: 'var(--font-size-heading)', color: 'var(--color-warning)', marginTop: 4 }}>
-                                {summary.pending_count ?? 0}
-                            </p>
-                        </Card>
-                        <Card>
-                            <p style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)', opacity: 0.6 }}>Approved</p>
-                            <p className="font-heading" style={{ fontSize: 'var(--font-size-heading)', color: 'var(--color-success)', marginTop: 4 }}>
-                                {summary.approved_count ?? 0}
-                            </p>
-                        </Card>
-                    </div>
+                    <StatGrid>
+                        <StatCard icon={BanknoteArrowUp} label="Total Amount" value={<CurrencyDisplay amount={summary.total_amount ?? 0} currency="PHP" />} />
+                        <StatCard icon={ClipboardList} label="Total Vouchers" value={summary.total_count ?? 0} />
+                        <StatCard icon={FileClock} label="Pending" value={summary.pending_count ?? 0} tone="warning" />
+                        <StatCard icon={CircleCheckBig} label="Approved" value={summary.approved_count ?? 0} tone="success" />
+                    </StatGrid>
                 )}
-
-                {/* Filters */}
-                <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', alignItems: 'center' }}>
-                    <div style={{ flex: '1 1 220px' }}>
-                        <Input
-                            value={searchInput}
-                            onChange={(e) => setSearchInput(e.target.value)}
-                            onKeyDown={handleSearchKey}
-                            icon={<Search size={16} />}
-                            placeholder="Voucher #, payee, details..."
-                        />
-                    </div>
-                    <div style={{ flex: '0 0 160px' }}>
-                        <Select
-                            value={filters.type ?? ''}
-                            onChange={(e) => applyFilter({ type: e.target.value || undefined })}
-                            options={[
-                                { value: '', label: 'All Types' },
-                                ...Object.entries(types).map(([v, l]) => ({ value: v, label: l })),
-                            ]}
-                        />
-                    </div>
-                    <div style={{ flex: '0 0 160px' }}>
-                        <Select
-                            value={filters.approval ?? ''}
-                            onChange={(e) => applyFilter({ approval_status: e.target.value || undefined })}
-                            options={[
-                                { value: '', label: 'All Statuses' },
-                                ...Object.entries(approvalStatuses).map(([v, l]) => ({ value: v, label: l })),
-                            ]}
-                        />
-                    </div>
-                    <div style={{ flex: '0 0 140px' }}>
-                        <Input
-                            type="month"
-                            value={filters.month ?? ''}
-                            onChange={(e) => applyFilter({ month: e.target.value || undefined })}
-                        />
-                    </div>
-                    <Button variant="ghost" size="sm" onClick={clearFilters}>Clear</Button>
-                </div>
 
                 <DataTable
                     columns={columns}
                     rows={vouchers.data ?? []}
                     pagination={vouchers}
                     onPageChange={(page) => applyFilter({ page })}
+                    toolbar={
+                        <FilterStrip>
+                            <FilterField grow>
+                                <Input
+                                    value={searchInput}
+                                    onChange={(e) => setSearchInput(e.target.value)}
+                                    onKeyDown={handleSearchKey}
+                                    icon={Search}
+                                    placeholder="Voucher #, payee, details..."
+                                />
+                            </FilterField>
+                            <FilterField>
+                                <Select
+                                    value={filters.type ?? ''}
+                                    onChange={(e) => applyFilter({ type: e.target.value || undefined })}
+                                    options={[
+                                        { value: '', label: 'All Types' },
+                                        ...Object.entries(types).map(([v, l]) => ({ value: v, label: l })),
+                                    ]}
+                                />
+                            </FilterField>
+                            <FilterField>
+                                <Select
+                                    value={filters.approval ?? ''}
+                                    onChange={(e) => applyFilter({ approval_status: e.target.value || undefined })}
+                                    options={[
+                                        { value: '', label: 'All Statuses' },
+                                        ...Object.entries(approvalStatuses).map(([v, l]) => ({ value: v, label: l })),
+                                    ]}
+                                />
+                            </FilterField>
+                            <FilterField width={150}>
+                                <Input
+                                    type="month"
+                                    value={filters.month ?? ''}
+                                    onChange={(e) => applyFilter({ month: e.target.value || undefined })}
+                                />
+                            </FilterField>
+                            <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                        </FilterStrip>
+                    }
                 />
 
-            </div>
+            </PageStack>
 
             <ConfirmDialog
                 open={!!deleteTarget}
