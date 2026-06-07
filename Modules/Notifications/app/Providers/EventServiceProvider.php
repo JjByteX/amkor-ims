@@ -11,7 +11,14 @@ class EventServiceProvider extends ServiceProvider
      *
      * @var array<string, array<int, string>>
      */
-    protected $listen = [];
+    protected $listen = [
+        \Modules\Reservation\Events\ReservationBookingConfirmed::class => [
+            \Modules\Notifications\Listeners\SendReservationBookingConfirmedNotification::class,
+        ],
+        \Modules\Reservation\Events\ReservationForwardedToAccounting::class => [
+            \Modules\Notifications\Listeners\SendReservationForwardedToAccountingNotification::class,
+        ],
+    ];
 
     /**
      * Indicates if events should be discovered.

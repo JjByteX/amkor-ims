@@ -26,6 +26,7 @@ export default function Card({
     compact   = false,
     as        = 'div',
     style     = {},
+    ...rest
 }) {
     const Tag = as;
 
@@ -47,6 +48,7 @@ export default function Card({
                 ].join(','),
                 ...style,
             }}
+            {...rest}
         >
             {children}
         </Tag>

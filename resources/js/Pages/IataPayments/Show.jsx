@@ -253,8 +253,7 @@ export default function IataPaymentsShow({ payment, statuses, approvalStatuses, 
             <Modal open={notifyOpen} onClose={() => setNotifyOpen(false)} title="Notify Operator">
                 <form onSubmit={doNotify} className="flex flex-col" style={{ gap: 'var(--space-2)' }}>
                     <p className="font-body text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-body)' }}>
-                        Record that <strong>{payment.operator_name}</strong> has been notified of the payment?
-                        Email delivery is wired in Phase 12.
+                        Send and record the payment notification for <strong>{payment.operator_name}</strong>?
                     </p>
                     <div className="flex justify-end" style={{ gap: 'var(--space-1)' }}>
                         <Button variant="ghost" onClick={() => setNotifyOpen(false)} type="button">Cancel</Button>

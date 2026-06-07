@@ -9,6 +9,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Cashbond\Models\CashbondPortal;
 use Modules\Cashbond\Models\CashbondReload;
+use Modules\Notifications\Services\NotificationDispatcher;
 
 class CashbondController extends Controller
 {
@@ -216,14 +217,24 @@ class CashbondController extends Controller
         $this->requirePreparer($request);
         if (! $reload->released_at) return back()->with('flash', ['type' => 'error', 'message' => 'Must be released before notifying supplier.']);
 
-        // Notification stub — Phase 12 wires email
+        $reload->loadMissing('portal');
+
+        app(NotificationDispatcher::class)->notifyRoles(
+            ['general_manager', 'admin_auditor', 'accounting_officer'],
+            'Cashbond supplier notification recorded',
+            "{$reload->reload_no} for {$reload->portal?->name} has been marked as supplier-notified.",
+            "/cashbond/reloads/{$reload->id}",
+            'success',
+            true,
+        );
+
         $reload->update([
             'supplier_notified'    => true,
             'supplier_notified_at' => now(),
             'updated_by'           => $request->user()->id,
         ]);
 
-        return back()->with('flash', ['type' => 'success', 'message' => 'Supplier notification recorded. (Email wired in Phase 12.)']);
+        return back()->with('flash', ['type' => 'success', 'message' => 'Supplier notification sent and recorded.']);
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────

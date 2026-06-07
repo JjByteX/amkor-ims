@@ -187,6 +187,7 @@ export default function Sidebar() {
     const user      = auth?.user;
     const role      = user?.role ?? '';
     const roleLabel = ROLE_LABELS[role] ?? role;
+    const unreadNotifications = auth?.unread_notifications ?? 0;
 
     /* ── Collapsed state ─────────────────────────────────────────────────────── */
     const [collapsed, setCollapsed] = useState(() => {
@@ -362,8 +363,9 @@ export default function Sidebar() {
                             style={{ borderRadius: 'var(--radius-md)' }}
                         >
                             <Bell size={20} />
-                            {/* Unread dot — Phase 12 */}
-                            {/* <span className="absolute top-2 right-2 w-2 h-2 bg-[var(--color-error)] rounded-full" /> */}
+                            {unreadNotifications > 0 && (
+                                <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-[var(--color-error)]" />
+                            )}
                         </Link>
 
                         {/* Avatar — opens profile menu */}
@@ -444,8 +446,11 @@ export default function Sidebar() {
                             title="Notifications"
                         >
                             <Bell size={16} />
-                            {/* Unread dot — Phase 12 */}
-                            {/* <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[var(--color-error)] rounded-full" /> */}
+                            {unreadNotifications > 0 && (
+                                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-error)] px-1 text-[10px] font-bold text-white">
+                                    {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                                </span>
+                            )}
                         </div>
                     </button>
                 )}

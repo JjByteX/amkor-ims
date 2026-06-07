@@ -1,7 +1,6 @@
 import { router, usePage } from '@inertiajs/react';
 import { Sun, Moon, Bell, LogOut } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import Badge from '../UI/Badge';
 
 /** Map role slugs to human-readable labels */
 const ROLE_LABELS = {
@@ -22,6 +21,7 @@ const ROLE_LABELS = {
 export default function Header() {
     const { auth } = usePage().props;
     const user     = auth?.user;
+    const unreadNotifications = auth?.unread_notifications ?? 0;
 
     /* ── Dark mode ─────────────────────────────────────────────────────────── */
     const [dark, setDark] = useState(() => {
@@ -102,12 +102,14 @@ export default function Header() {
                 {/* Notifications bell */}
                 <button
                     title="Notifications"
+                    onClick={() => router.visit('/notifications')}
                     className="relative flex items-center justify-center w-10 h-10 text-gray-400 hover:text-[var(--color-text)] hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
                     style={{ borderRadius: 'var(--radius-md)' }}
                 >
                     <Bell size={20} />
-                    {/* Unread dot — modules will wire real count in Phase 12 */}
-                    {/* <span className="absolute top-2 right-2 w-2 h-2 bg-[var(--color-error)] rounded-full" /> */}
+                    {unreadNotifications > 0 && (
+                        <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-[var(--color-error)]" />
+                    )}
                 </button>
 
                 {/* Logout */}

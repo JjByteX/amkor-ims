@@ -1,8 +1,4 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Modules\Reservation\Http\Controllers\ReservationController;
-
-Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
-    Route::apiResource('reservations', ReservationController::class)->names('reservation');
-});
+// Reservation is an Inertia module. Add API routes only for workflows that
+// cannot be served through web routes.

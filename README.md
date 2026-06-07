@@ -219,6 +219,13 @@ php artisan module:make {ModuleName}
 - No hard deletes on financial records — soft deletes only
 - Lucide Icons is the only icon library — do not install others
 
+## Phase Completion Notes
+
+- Phase 3 Reservation & Booking is implemented as an Inertia workflow with reservation lifecycle tracking, branch scoping, financial references, and accounting-forward events.
+- Phase 10 HR, Attendance, and Marketing are implemented.
+- Phase 11 Sales Summary aggregates operational records from Reservation, Ormoc, Visa, and Accounts Receivable, with monthly sales targets and Excel export.
+- Phase 12 Notifications provides database-backed in-app notifications, unread counts, notification center actions, and queued email delivery hooks for workflow notices.
+
 ---
 
 ## Branch & Role Structure

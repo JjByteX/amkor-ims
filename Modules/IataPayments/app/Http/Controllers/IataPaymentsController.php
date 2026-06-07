@@ -9,6 +9,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Contacts\Models\Contact;
 use Modules\IataPayments\Models\IataPayment;
+use Modules\Notifications\Services\NotificationDispatcher;
 
 class IataPaymentsController extends Controller
 {
@@ -265,14 +266,37 @@ class IataPaymentsController extends Controller
         $this->requirePreparer($request);
         if (! $payment->released_at) return back()->with('flash', ['type' => 'error', 'message' => 'Must be released before notifying operator.']);
 
-        // Notification stub — Phase 12 wires email
+        $payment->loadMissing('contact');
+
+        if ($payment->contact?->email) {
+            app(NotificationDispatcher::class)->email(
+                $payment->contact->email,
+                "Payment confirmation for {$payment->payment_no}",
+                "Hello {$payment->operator_name},",
+                [
+                    "This confirms that Amkor Travel & Tours has released payment for {$payment->payment_no}.",
+                    'Amount: PHP '.number_format((float) $payment->amount, 2),
+                    'Payment date: '.($payment->payment_date?->format('M d, Y') ?? now()->format('M d, Y')),
+                    'Thank you.',
+                ],
+            );
+        }
+
+        app(NotificationDispatcher::class)->notifyRoles(
+            ['general_manager', 'admin_auditor', 'accounting_officer'],
+            'IATA operator notified',
+            "{$payment->operator_name} notification recorded for {$payment->payment_no}.",
+            "/iata/{$payment->id}",
+            'success',
+        );
+
         $payment->update([
             'operator_notified'    => true,
             'operator_notified_at' => now(),
             'updated_by'           => $request->user()->id,
         ]);
 
-        return back()->with('flash', ['type' => 'success', 'message' => 'Operator notification recorded. (Email wired in Phase 12.)']);
+        return back()->with('flash', ['type' => 'success', 'message' => 'Operator notification sent and recorded.']);
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────

@@ -44,6 +44,9 @@ class HandleInertiaRequests extends Middleware
                     'must_change_password'  => $user->must_change_password,
                     'permissions'           => $user->getAllPermissions()->pluck('name'),
                 ] : null,
+                'unread_notifications' => $user
+                    ? $user->unreadNotifications()->whereNull('archived_at')->count()
+                    : 0,
             ],
 
             'ziggy' => fn () => [
@@ -57,6 +60,8 @@ class HandleInertiaRequests extends Middleware
                 'error'   => fn () => $request->session()->get('error'),
                 'warning' => fn () => $request->session()->get('warning'),
                 'info'    => fn () => $request->session()->get('info'),
+                'type'    => fn () => $request->session()->get('flash.type'),
+                'message' => fn () => $request->session()->get('flash.message'),
             ],
         ];
     }
