@@ -14,141 +14,165 @@ import NavItem from './NavItem';
 
 /* ─────────────────────────────────────────────────────────────────────────────
    Nav structure definition
-   Each entry: { key, href, icon, label, roles: string[] | 'all' }
+   Each section: { key, label, items: [{ key, href, icon, label, roles }] }
    ───────────────────────────────────────────────────────────────────────────── */
-const NAV_ITEMS = [
+const NAV_SECTIONS = [
     {
-        key  : 'dashboard',
-        href : '/dashboard',
-        icon : <LayoutDashboard size={20} />,
-        label: 'Dashboard',
-        roles: 'all',
+        key  : 'main',
+        label: 'Main',
+        items: [
+            {
+                key  : 'dashboard',
+                href : '/dashboard',
+                icon : <LayoutDashboard size={20} />,
+                label: 'Dashboard',
+                roles: 'all',
+            },
+            {
+                key  : 'contacts',
+                href : '/contacts',
+                icon : <BookUser size={20} />,
+                label: 'Contacts',
+                roles: 'all',
+            },
+            {
+                key  : 'notifications',
+                href : '/notifications',
+                icon : <Bell size={20} />,
+                label: 'Notifications',
+                roles: 'all',
+            },
+        ],
     },
     {
-        key  : 'reservation',
-        href : '/reservation',
-        icon : <BookOpen size={20} />,
-        label: 'Reservation & Booking',
-        roles: ['general_manager', 'resa_officer', 'ormoc_branch_officer', 'accounting_officer', 'admin_auditor', 'chief_operations_officer', 'general_sales_manager'],
+        key  : 'operations',
+        label: 'Operations',
+        items: [
+            {
+                key  : 'reservation',
+                href : '/reservation',
+                icon : <BookOpen size={20} />,
+                label: 'Reservation & Booking',
+                roles: ['general_manager', 'resa_officer', 'ormoc_branch_officer', 'accounting_officer', 'admin_auditor', 'chief_operations_officer', 'general_sales_manager'],
+            },
+            {
+                key  : 'reservation-sales',
+                href : '/reservation-sales',
+                icon : <TrendingUp size={20} />,
+                label: 'RESA Sales Report',
+                roles: ['general_manager', 'resa_officer', 'ormoc_branch_officer', 'accounting_officer', 'admin_auditor', 'chief_operations_officer', 'general_sales_manager'],
+            },
+            {
+                key  : 'visa',
+                href : '/visa',
+                icon : <FileSearch size={20} />,
+                label: 'Visa & Documentation',
+                roles: ['general_manager', 'visa_documentation_officer', 'disbursement_officer', 'admin_auditor'],
+            },
+            {
+                key  : 'ormoc',
+                href : '/ormoc',
+                icon : <Globe size={20} />,
+                label: 'Ormoc Branch',
+                roles: ['general_manager', 'ormoc_branch_officer'],
+            },
+            {
+                key  : 'sales',
+                href : '/sales',
+                icon : <TrendingUp size={20} />,
+                label: 'Sales Summary',
+                roles: ['general_manager', 'chief_operations_officer', 'general_sales_manager', 'accounting_officer', 'admin_auditor', 'resa_officer', 'ormoc_branch_officer', 'visa_documentation_officer'],
+            },
+        ],
     },
     {
-        key  : 'reservation-sales',
-        href : '/reservation-sales',
-        icon : <TrendingUp size={20} />,
-        label: 'RESA Sales Report',
-        roles: ['general_manager', 'resa_officer', 'ormoc_branch_officer', 'accounting_officer', 'admin_auditor', 'chief_operations_officer', 'general_sales_manager'],
+        key  : 'finance',
+        label: 'Finance',
+        items: [
+            {
+                key  : 'ar',
+                href : '/ar',
+                icon : <Receipt size={20} />,
+                label: 'Accounts Receivable',
+                roles: ['general_manager', 'chief_operations_officer', 'general_sales_manager', 'accounting_officer', 'admin_auditor', 'resa_officer', 'ormoc_branch_officer', 'visa_documentation_officer'],
+            },
+            {
+                key  : 'payables',
+                href : '/payables',
+                icon : <DollarSign size={20} />,
+                label: 'Accounts Payable',
+                roles: ['general_manager', 'accounting_officer', 'disbursement_officer', 'admin_auditor'],
+            },
+            {
+                key  : 'disbursement',
+                href : '/disbursement',
+                icon : <Wallet size={20} />,
+                label: 'Disbursement Ledger',
+                roles: ['general_manager', 'disbursement_officer', 'admin_auditor'],
+            },
+            {
+                key  : 'cashbond',
+                href : '/cashbond',
+                icon : <ShieldCheck size={20} />,
+                label: 'Cashbond Monitoring',
+                roles: ['general_manager', 'disbursement_officer', 'admin_auditor'],
+            },
+            {
+                key  : 'bills',
+                href : '/bills',
+                icon : <FileText size={20} />,
+                label: 'Bills & On-Ques',
+                roles: ['general_manager', 'hr_admin_officer', 'disbursement_officer', 'admin_auditor'],
+            },
+            {
+                key  : 'creditcard',
+                href : '/credit-cards',
+                icon : <CreditCard size={20} />,
+                label: 'Credit Cards',
+                roles: ['general_manager', 'hr_admin_officer', 'disbursement_officer', 'admin_auditor'],
+            },
+            {
+                key  : 'iata',
+                href : '/iata',
+                icon : <Banknote size={20} />,
+                label: 'IATA Payments',
+                roles: ['general_manager', 'disbursement_officer', 'admin_auditor'],
+            },
+            {
+                key  : 'bir',
+                href : '/bir',
+                icon : <FileText size={20} />,
+                label: 'BIR / Compliance',
+                roles: ['general_manager', 'disbursement_officer', 'accounting_officer', 'admin_auditor'],
+            },
+        ],
     },
     {
-        key  : 'visa',
-        href : '/visa',
-        icon : <FileSearch size={20} />,
-        label: 'Visa & Documentation',
-        roles: ['general_manager', 'visa_documentation_officer', 'disbursement_officer', 'admin_auditor'],
-    },
-    {
-        key  : 'ormoc',
-        href : '/ormoc',
-        icon : <Globe size={20} />,
-        label: 'Ormoc Branch',
-        roles: ['general_manager', 'ormoc_branch_officer'],
-    },
-    {
-        key  : 'sales',
-        href : '/sales',
-        icon : <TrendingUp size={20} />,
-        label: 'Sales Summary',
-        roles: ['general_manager', 'chief_operations_officer', 'general_sales_manager', 'accounting_officer', 'admin_auditor', 'resa_officer', 'ormoc_branch_officer', 'visa_documentation_officer'],
-    },
-    {
-        key  : 'ar',
-        href : '/ar',
-        icon : <Receipt size={20} />,
-        label: 'Accounts Receivable',
-        roles: ['general_manager', 'chief_operations_officer', 'general_sales_manager', 'accounting_officer', 'admin_auditor', 'resa_officer', 'ormoc_branch_officer', 'visa_documentation_officer'],
-    },
-    {
-        key  : 'payables',
-        href : '/payables',
-        icon : <DollarSign size={20} />,
-        label: 'Accounts Payable',
-        roles: ['general_manager', 'accounting_officer', 'disbursement_officer', 'admin_auditor'],
-    },
-    {
-        key  : 'disbursement',
-        href : '/disbursement',
-        icon : <Wallet size={20} />,
-        label: 'Disbursement Ledger',
-        roles: ['general_manager', 'disbursement_officer', 'admin_auditor'],
-    },
-    {
-        key  : 'cashbond',
-        href : '/cashbond',
-        icon : <ShieldCheck size={20} />,
-        label: 'Cashbond Monitoring',
-        roles: ['general_manager', 'disbursement_officer', 'admin_auditor'],
-    },
-    {
-        key  : 'bills',
-        href : '/bills',
-        icon : <FileText size={20} />,
-        label: 'Bills & On-Ques',
-        roles: ['general_manager', 'hr_admin_officer', 'disbursement_officer', 'admin_auditor'],
-    },
-    {
-        key  : 'creditcard',
-        href : '/credit-cards',
-        icon : <CreditCard size={20} />,
-        label: 'Credit Cards',
-        roles: ['general_manager', 'hr_admin_officer', 'disbursement_officer', 'admin_auditor'],
-    },
-    {
-        key  : 'iata',
-        href : '/iata',
-        icon : <Banknote size={20} />,
-        label: 'IATA Payments',
-        roles: ['general_manager', 'disbursement_officer', 'admin_auditor'],
-    },
-    {
-        key  : 'bir',
-        href : '/bir',
-        icon : <FileText size={20} />,
-        label: 'BIR / Compliance',
-        roles: ['general_manager', 'disbursement_officer', 'accounting_officer', 'admin_auditor'],
-    },
-    {
-        key  : 'hr',
-        href : '/hr',
-        icon : <Users size={20} />,
-        label: 'HR & Records',
-        roles: ['general_manager', 'hr_admin_officer'],
-    },
-    {
-        key  : 'attendance',
-        href : '/attendance',
-        icon : <Clock size={20} />,
-        label: 'Attendance',
-        roles: ['general_manager', 'hr_admin_officer', 'resa_officer', 'ormoc_branch_officer', 'visa_documentation_officer', 'accounting_officer', 'disbursement_officer', 'admin_auditor', 'liaison_officer', 'marketing_officer'],
-    },
-    {
-        key  : 'marketing',
-        href : '/marketing',
-        icon : <Megaphone size={20} />,
-        label: 'Marketing',
-        roles: ['general_manager', 'chief_operations_officer', 'marketing_officer'],
-    },
-    {
-        key  : 'contacts',
-        href : '/contacts',
-        icon : <BookUser size={20} />,
-        label: 'Contacts',
-        roles: 'all',
-    },
-    {
-        key  : 'notifications',
-        href : '/notifications',
-        icon : <Bell size={20} />,
-        label: 'Notifications',
-        roles: 'all',
+        key  : 'admin',
+        label: 'Admin',
+        items: [
+            {
+                key  : 'hr',
+                href : '/hr',
+                icon : <Users size={20} />,
+                label: 'HR & Records',
+                roles: ['general_manager', 'hr_admin_officer'],
+            },
+            {
+                key  : 'attendance',
+                href : '/attendance',
+                icon : <Clock size={20} />,
+                label: 'Attendance',
+                roles: ['general_manager', 'hr_admin_officer', 'resa_officer', 'ormoc_branch_officer', 'visa_documentation_officer', 'accounting_officer', 'disbursement_officer', 'admin_auditor', 'liaison_officer', 'marketing_officer'],
+            },
+            {
+                key  : 'marketing',
+                href : '/marketing',
+                icon : <Megaphone size={20} />,
+                label: 'Marketing',
+                roles: ['general_manager', 'chief_operations_officer', 'marketing_officer'],
+            },
+        ],
     },
 ];
 
@@ -245,9 +269,12 @@ export default function Sidebar() {
         router.post(route('auth.logout'));
     };
 
-    const visibleItems = NAV_ITEMS.filter(
-        (item) => item.roles === 'all' || item.roles.includes(role)
-    );
+    const navSections = NAV_SECTIONS.map((section) => ({
+        ...section,
+        items: section.items.filter(
+            (item) => item.roles === 'all' || item.roles.includes(role)
+        ),
+    })).filter((section) => section.items.length > 0);
 
     /* ── Shared border style (matches --border-container token) ─────────────── */
     const borderColor = 'var(--color-border)';
@@ -325,15 +352,34 @@ export default function Sidebar() {
                 className="flex-1 overflow-y-auto overflow-x-hidden"
                 style={{ padding: 'var(--space-1) var(--space-2)' }}
             >
-                <ul className={`flex flex-col gap-0.5 ${collapsed ? 'items-center' : ''}`}>
-                    {visibleItems.map((item) => (
-                        <NavItem
-                            key={item.key}
-                            href={item.href}
-                            icon={item.icon}
-                            label={item.label}
-                            collapsed={collapsed}
-                        />
+                <ul className={`flex flex-col ${collapsed ? 'items-center gap-0.5' : 'gap-1'}`}>
+                    {navSections.map((section) => (
+                        <li key={section.key} className="w-full">
+                            {!collapsed && (
+                                <p
+                                    className="px-2 pb-1 pt-3 font-body font-semibold uppercase"
+                                    style={{
+                                        color        : 'var(--color-text-muted)',
+                                        fontSize     : '10px',
+                                        lineHeight   : 1.2,
+                                        letterSpacing: 0,
+                                    }}
+                                >
+                                    {section.label}
+                                </p>
+                            )}
+                            <ul className={`flex flex-col gap-0.5 ${collapsed ? 'items-center' : ''}`}>
+                                {section.items.map((item) => (
+                                    <NavItem
+                                        key={item.key}
+                                        href={item.href}
+                                        icon={item.icon}
+                                        label={item.label}
+                                        collapsed={collapsed}
+                                    />
+                                ))}
+                            </ul>
+                        </li>
                     ))}
                 </ul>
             </nav>
