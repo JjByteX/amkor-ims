@@ -5,6 +5,7 @@ use Modules\Reservation\Http\Controllers\ReservationController;
 
 Route::middleware(['auth'])->group(function () {
     Route::get('reservation', [ReservationController::class, 'index'])->name('reservation.index');
+    Route::get('reservation/sales-report', [ReservationController::class, 'salesReport'])->name('reservation.sales-report');
     Route::get('reservation/create', [ReservationController::class, 'create'])->name('reservation.create');
     Route::post('reservation', [ReservationController::class, 'store'])->name('reservation.store');
     Route::get('reservation/{booking}', [ReservationController::class, 'show'])->name('reservation.show');
