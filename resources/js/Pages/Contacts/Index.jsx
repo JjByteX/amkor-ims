@@ -9,14 +9,8 @@ import PageStack from '../../Components/Shared/PageStack';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Badge from '../../Components/UI/Badge';
+import SegmentedControl from '../../Components/UI/SegmentedControl';
 import ConfirmDialog from '../../Components/Shared/ConfirmDialog';
-
-const TABS = [
-    { key: 'corporate', label: 'Corporate Accounts', icon: Building2 },
-    { key: 'sub_agent', label: 'Sub-Agents',         icon: Users     },
-    { key: 'supplier',  label: 'Suppliers',          icon: Truck     },
-    { key: 'bank',      label: 'Banks',              icon: Landmark  },
-];
 
 const STATUS_MAP = {
     true  : { variant: 'success', label: 'Active'   },
@@ -31,6 +25,20 @@ function ContactsIndex({ contacts, filters, canWrite, typeCounts }) {
     const [searchInput,  setSearchInput ] = useState(filters.search ?? '');
 
     const activeTab = filters.type ?? 'corporate';
+
+    // Build tabs with live counts from typeCounts prop
+    const TABS = [
+        { key: 'corporate', label: 'Corporate Accounts', icon: Building2, count: typeCounts?.corporate ?? 0 },
+        { key: 'sub_agent', label: 'Sub-Agents',         icon: Users,     count: typeCounts?.sub_agent ?? 0 },
+        { key: 'supplier',  label: 'Suppliers',          icon: Truck,     count: typeCounts?.supplier  ?? 0 },
+        { key: 'bank',      label: 'Banks',              icon: Landmark,  count: typeCounts?.bank      ?? 0 },
+    ];
+
+    // Only show count badge when > 0
+    const tabsForControl = TABS.map((t) => ({
+        ...t,
+        count: t.count > 0 ? t.count : undefined,
+    }));
 
     function switchTab(type) {
         router.get(route('contacts.index'), { type, search: '', active: 'all' }, { preserveState: false });
@@ -150,52 +158,6 @@ function ContactsIndex({ contacts, filters, canWrite, typeCounts }) {
                 }
             />
 
-            {/* Tabs */}
-            <div className="flex items-center border-b border-gray-100 dark:border-gray-700" style={{ gap: 'var(--space-1)' }}>
-                {TABS.map((tab) => {
-                    const Icon     = tab.icon;
-                    const isActive = tab.key === activeTab;
-                    const count    = typeCounts?.[tab.key] ?? 0;
-
-                    return (
-                        <button
-                            key={tab.key}
-                            onClick={() => switchTab(tab.key)}
-                            className={[
-                                'flex items-center gap-2 font-semibold font-body',
-                                'border-b-2 -mb-px transition-colors duration-150',
-                                isActive
-                                    ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
-                                    : 'border-transparent text-gray-400 hover:text-[var(--color-text)]',
-                            ].join(' ')}
-                            style={{
-                                fontSize     : 'var(--font-size-small)',
-                                paddingLeft  : '18px',
-                                paddingRight : '18px',
-                                paddingTop   : '14px',
-                                paddingBottom: '14px',
-                            }}
-                        >
-                            <Icon size={15} />
-                            {tab.label}
-                            {count > 0 && (
-                                <span
-                                    className={[
-                                        'inline-flex items-center justify-center px-1.5 font-semibold min-w-[18px]',
-                                        isActive
-                                            ? 'bg-[var(--color-primary)] text-white'
-                                            : 'bg-gray-100 dark:bg-gray-700 text-gray-500',
-                                    ].join(' ')}
-                                    style={{ fontSize: 11, borderRadius: 'var(--radius-md)' }}
-                                >
-                                    {count}
-                                </span>
-                            )}
-                        </button>
-                    );
-                })}
-            </div>
-
             <DataTable
                 columns={columns}
                 rows={contacts.data}
@@ -206,6 +168,11 @@ function ContactsIndex({ contacts, filters, canWrite, typeCounts }) {
                 onPageChange={(page) => router.get(route('contacts.index'), { type: activeTab, search: searchInput, active: filters.active, page }, { preserveScroll: true, preserveState: true })}
                 toolbar={
                     <FilterStrip>
+                        <SegmentedControl
+                            tabs={tabsForControl}
+                            activeKey={activeTab}
+                            onChange={switchTab}
+                        />
                         <FilterField grow>
                             <Input
                                 placeholder="Search by name, email, or TIN..."

@@ -2,12 +2,11 @@ import { isValidElement } from 'react';
 
 /**
  * Input — 40px height, 8px radius, exact 13px label, exact 16px input text.
- * icon prop: accepts either a Lucide component reference (icon={Mail})
- *            or a pre-rendered JSX element (icon={<Mail size={16} />}).
- *            Both patterns work identically.
  *
- * Border uses var(--color-border) so it automatically matches cards,
- * sidebar, and table containers in both light and dark mode.
+ * icon      : left icon — Lucide component ref or pre-rendered JSX element
+ * rightIcon : right icon — same format; used for password toggle etc.
+ *             When rightIcon is a button/interactive element, pass it as JSX
+ *             (pointer-events are enabled on the right slot).
  */
 export default function Input({
     label       = '',
@@ -18,6 +17,7 @@ export default function Input({
     placeholder = '',
     disabled    = false,
     icon        = null,
+    rightIcon   = null,
     id,
     required    = false,
     className   = '',
@@ -27,7 +27,7 @@ export default function Input({
 }) {
     const inputId = id ?? (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
 
-    // Normalise icon: accept both a component reference and a pre-rendered element
+    // Normalise left icon
     let iconNode = null;
     if (icon) {
         if (isValidElement(icon)) {
@@ -35,6 +35,17 @@ export default function Input({
         } else {
             const Icon = icon;
             iconNode = <Icon size={16} />;
+        }
+    }
+
+    // Normalise right icon
+    let rightIconNode = null;
+    if (rightIcon) {
+        if (isValidElement(rightIcon)) {
+            rightIconNode = rightIcon;
+        } else {
+            const RIcon = rightIcon;
+            rightIconNode = <RIcon size={16} />;
         }
     }
 
@@ -79,12 +90,11 @@ export default function Input({
                     style={{
                         height      : 'var(--height-input)',
                         borderRadius: 'var(--radius-md)',
-                        /* Use the same --border-container token as cards/sidebar/table */
                         border      : error
-                            ? `1.5px solid var(--color-error)`
+                            ? '1.5px solid var(--color-error)'
                             : 'var(--border-container)',
                         paddingLeft : iconNode ? 'calc(var(--space-2) + 18px + 8px)' : 'var(--space-2)',
-                        paddingRight: 'var(--space-2)',
+                        paddingRight: rightIconNode ? 'calc(var(--space-2) + 18px + 8px)' : 'var(--space-2)',
                         fontSize    : 'var(--font-size-body)',
                         fontFamily  : 'var(--font-body)',
                         fontWeight  : 500,
@@ -95,8 +105,10 @@ export default function Input({
                         boxShadow   : 'none',
                     }}
                     onFocus={(e) => {
-                        e.currentTarget.style.borderColor = error ? 'var(--color-error)' : 'var(--color-primary)';
-                        e.currentTarget.style.boxShadow = 'var(--ring-focus)';
+                        e.currentTarget.style.border = error
+                            ? '2px solid var(--color-error)'
+                            : '2px solid var(--color-primary)';
+                        e.currentTarget.style.boxShadow = 'none';
                         onFocus?.(e);
                     }}
                     onBlur={(e) => {
@@ -108,6 +120,14 @@ export default function Input({
                     }}
                     {...rest}
                 />
+                {rightIconNode && (
+                    <span
+                        className="absolute inset-y-0 right-0 flex items-center"
+                        style={{ paddingRight: 'var(--space-1)', color: 'var(--color-text-muted)' }}
+                    >
+                        {rightIconNode}
+                    </span>
+                )}
             </div>
 
             {error && (

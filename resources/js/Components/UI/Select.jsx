@@ -68,8 +68,10 @@ export default function Select({
                         boxShadow    : 'none',
                     }}
                     onFocus={(e) => {
-                        e.currentTarget.style.borderColor = error ? 'var(--color-error)' : 'var(--color-primary)';
-                        e.currentTarget.style.boxShadow = 'var(--ring-focus)';
+                        e.currentTarget.style.border = error
+                            ? '2px solid var(--color-error)'
+                            : '2px solid var(--color-primary)';
+                        e.currentTarget.style.boxShadow = 'none';
                         onFocus?.(e);
                     }}
                     onBlur={(e) => {

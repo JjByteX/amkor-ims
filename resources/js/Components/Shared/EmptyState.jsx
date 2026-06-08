@@ -3,6 +3,9 @@ import { FileX } from 'lucide-react';
 /**
  * EmptyState — centered placeholder shown when a list/table is empty.
  *
+ * The translateY nudge is applied by the DataTable wrapper, not here,
+ * so this component renders cleanly in any context (tables, cards, etc).
+ *
  * Props:
  *   icon        : ReactNode   (Lucide icon — defaults to FileX)
  *   title       : string
@@ -18,7 +21,7 @@ export default function EmptyState({
     className   = '',
 }) {
     return (
-        <div className={`flex flex-col items-center justify-center gap-3 py-12 px-4 text-center ${className}`}>
+        <div className={`flex flex-col items-center justify-center gap-3 px-4 text-center ${className}`}>
             <div className="text-[var(--color-text-muted)] opacity-45">
                 {icon ?? <FileX size={40} strokeWidth={1.5} />}
             </div>

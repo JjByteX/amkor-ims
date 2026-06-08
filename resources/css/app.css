@@ -34,7 +34,7 @@
     --font-size-small:      13px;
     --font-weight-normal:   400;
     --font-weight-semibold: 600;
-    --font-weight-bold:     700;
+    --font-weight-bold:     800;
     --line-height-tight:    1.2;
     --line-height-body:     1.45;
 
@@ -51,12 +51,18 @@
     --space-card:    20px;             /* premium surface internal padding    */
     --space-section: var(--space-2);   /* 16px — vertical gap between sections */
 
-    /* --- Sidebar inner padding (sides only) ---
-       12px = divisible by 4, gives breathing room without being as wide as --space-2.
-       Nav items still get their own left/right px-2 (8px) on top of this, so
-       icon/text never touches the sidebar edge.
+    /* --- Sidebar spacing ---
+       --space-sidebar-x : horizontal padding on the <nav> element (sides only).
+                           8px gives a tighter feel while keeping the sidebar compact.
+       --sidebar-logo-pl : left-padding of the logo/header area — matches the
+                           nav item paddingLeft (14px) so the logo icon sits flush
+                           with the group label text and nav icons below it.
     */
-    --space-sidebar-x: 12px;
+    --space-sidebar-x:  8px;
+    --sidebar-logo-pl:  14px;
+    --nav-item-gap:     4px;   /* vertical gap between nav items */
+    --nav-label-gap:    6px;   /* gap between a group label and its first item */
+    --nav-section-gap: 10px;   /* extra space after last item before next group label */
 
     /* --- Border Radius --- */
     --radius-md: 8px;
@@ -75,7 +81,12 @@
     --border-container: 1px solid #DDE3EA;
     --color-border:     #DDE3EA;
     --color-border-soft:#EEF2F6;
-    --ring-focus:       0 0 0 3px color-mix(in srgb, var(--color-primary) 16%, transparent);
+
+    /* --- Table header --- */
+    --color-table-header-bg:     #fafafa;
+    --border-table-header:       1px solid var(--color-border);
+    --ring-focus:           none;    /* focus uses 2px solid border, not a shadow ring */
+    --border-focus-width:   2px;     /* focused input/select/button border width */
 
     /* --- Hover surface tint --- */
     --color-hover: rgba(0, 0, 0, 0.04);
@@ -117,8 +128,12 @@
     --border-container: 1px solid #2a2a2a;
     --color-border:     #2a2a2a;
     --color-border-soft:#202020;
+
+    /* --- Table header --- */
+    --color-table-header-bg:     #1a1a1a;
+    --border-table-header:       1px solid var(--color-border);
     --color-hover:      rgba(255, 255, 255, 0.05);
-    --ring-focus:       0 0 0 3px color-mix(in srgb, var(--color-primary) 24%, transparent);
+    --ring-focus:       none;
 }
 
 /* ============================================================
@@ -221,12 +236,14 @@ button, input, select, textarea {
     visibility: visible;
 }
 
+/* ── Sidebar logo color — set via color token on the parent span/div in Sidebar.jsx ── */
+
+
 /* ============================================================
    COLLAPSED LOGO → EXPAND ICON ON HOVER
    The sidebar logo wrapper gets .sidebar-logo-toggle class.
-   Inside it: .sidebar-logo-brand (AT mark) and .sidebar-logo-expand (icon).
-   On hover the brand hides and the expand icon shows — pure CSS, no JS,
-   no animation (matches the instant tooltip behaviour).
+   Inside it: .sidebar-logo-brand (logo img) and .sidebar-logo-expand (icon).
+   On hover the brand hides and the expand icon shows — pure CSS, no JS.
    ============================================================ */
 .sidebar-logo-toggle .sidebar-logo-expand {
     display: none;
