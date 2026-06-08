@@ -25,6 +25,7 @@ function ContactsIndex({ contacts, filters, canWrite, typeCounts }) {
     const [searchInput,  setSearchInput ] = useState(filters.search ?? '');
 
     const activeTab = filters.type ?? 'corporate';
+    const isBankTab = activeTab === 'bank';
 
     // Build tabs with live counts from typeCounts prop
     const TABS = [
@@ -76,7 +77,7 @@ function ContactsIndex({ contacts, filters, canWrite, typeCounts }) {
             label : 'Contact Person',
             render: (row) => (
                 <span className="font-body text-gray-500" style={{ fontSize: 'var(--font-size-small)' }}>
-                    {row.contact_person ?? '—'}
+                    {row.contact_person ?? (isBankTab ? 'N/A' : '—')}
                 </span>
             ),
         },
@@ -85,7 +86,7 @@ function ContactsIndex({ contacts, filters, canWrite, typeCounts }) {
             label : 'Number',
             render: (row) => (
                 <span className="font-body text-gray-500" style={{ fontSize: 'var(--font-size-small)' }}>
-                    {row.contact_number ?? '—'}
+                    {row.contact_number ?? (isBankTab ? 'N/A' : '—')}
                 </span>
             ),
         },
@@ -94,7 +95,7 @@ function ContactsIndex({ contacts, filters, canWrite, typeCounts }) {
             label : 'Email',
             render: (row) => (
                 <span className="font-body text-gray-500" style={{ fontSize: 'var(--font-size-small)' }}>
-                    {row.email ?? '—'}
+                    {row.email ?? (isBankTab ? 'N/A' : '—')}
                 </span>
             ),
         },

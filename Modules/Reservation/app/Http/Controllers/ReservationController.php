@@ -57,7 +57,7 @@ class ReservationController extends Controller
 
         return Inertia::render('Reservation/Index', [
             'bookings' => $query->paginate(25)->withQueryString(),
-            'summary' => (clone $query)->toBase()->selectRaw("
+            'summary' => (clone $query)->toBase()->reorder()->selectRaw("
                 COUNT(*) as total,
                 COUNT(CASE WHEN status = 'confirmed' THEN 1 END) as confirmed,
                 COALESCE(SUM(selling_price), 0) as gross,
@@ -107,7 +107,7 @@ class ReservationController extends Controller
 
         return Inertia::render('Reservation/SalesReport', [
             'bookings' => $query->paginate(25)->withQueryString(),
-            'summary' => (clone $query)->toBase()->selectRaw("
+            'summary' => (clone $query)->toBase()->reorder()->selectRaw("
                 COUNT(*) as total,
                 COUNT(CASE WHEN status = 'confirmed' THEN 1 END) as confirmed,
                 COALESCE(SUM(selling_price), 0) as gross,

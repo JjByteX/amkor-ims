@@ -22,7 +22,7 @@ class DashboardCollector
             return true;
         }
 
-        return in_array($this->user->role, (array) $roles, true);
+        return in_array($this->user->getRoleNames()->first(), (array) $roles, true);
     }
 
     public function addCard(
