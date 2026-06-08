@@ -2,8 +2,8 @@
 
 namespace Modules\Notifications\Providers;
 
-use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use App\Events\DashboardSummaryRequested;
+use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Modules\Notifications\Listeners\ContributeDashboardSummary;
 use Modules\Notifications\Listeners\SendReservationBookingConfirmedNotification;
 use Modules\Notifications\Listeners\SendReservationForwardedToAccountingNotification;

@@ -29,14 +29,20 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        // Render Inertia 403 for authorization failures
+        // Render Inertia error pages for authorization and not-found failures
         $exceptions->respond(function (Response $response, Throwable $e, Request $request) {
-            if ($response->getStatusCode() === 403 && $request->header('X-Inertia')) {
-                return Inertia::render('Errors/403')
-                    ->toResponse($request)
-                    ->setStatusCode(403);
+            if (! $request->header('X-Inertia')) {
+                return $response;
             }
 
-            return $response;
+            return match ($response->getStatusCode()) {
+                403 => Inertia::render('Errors/403')
+                    ->toResponse($request)
+                    ->setStatusCode(403),
+                404 => Inertia::render('Errors/404')
+                    ->toResponse($request)
+                    ->setStatusCode(404),
+                default => $response,
+            };
         });
     })->create();
