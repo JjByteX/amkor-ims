@@ -22,11 +22,15 @@ import EmptyState from './EmptyState';
  * wrapper is also flex-1 with overflow-y-auto so only the rows scroll —
  * the page never overflows.
  *
+ * Empty/loading state centering
+ * ──────────────────────────────
+ * When there are no rows the scroll wrapper switches to flex-col so the
+ * sticky-thead table (shrink-0) and the empty state filler div (flex-1)
+ * sit as siblings. The filler div uses flex centre + translateY(-8px) to
+ * sit slightly above dead-centre — no table height tricks, no scroll.
+ *
  * Pagination row is always rendered below the table (shrink-0), outside
  * the scrollable area.
- *
- * Table wrapper shares the same --border-container token as Card
- * so borders are always consistent across the system.
  *
  * Props:
  *   columns    : Array<{ key, label, render?, width? }>
@@ -84,6 +88,8 @@ export default function DataTable({
         ? totalPages > 1
         : (pageSize > 0 && rows.length > pageSize);
 
+    const isEmpty = !loading && paginated.length === 0;
+
     return (
         /*
           flex-1 — stretches to fill leftover height in a flex-col parent.
@@ -93,11 +99,6 @@ export default function DataTable({
         */
         <div className={`flex flex-col flex-1 min-h-0 ${className}`} style={{ gap: 'var(--space-2)' }}>
 
-            {/*
-              flex-1 + min-h-0 + overflow-y-auto:
-              The table wrapper grows to fill available height and scrolls
-              internally.  The page itself stays fixed at 100vh.
-            */}
             <div
                 className="flex flex-col flex-1 min-h-0 w-full overflow-hidden bg-[var(--color-card)]"
                 style={{
@@ -119,14 +120,27 @@ export default function DataTable({
                     </div>
                 )}
 
-                <div className="flex-1 min-h-0 w-full overflow-x-auto overflow-y-auto">
-                    <table className="w-full border-collapse">
-                        {/* Sticky header — stays visible while rows scroll */}
-                        <thead className="sticky top-0 z-10 bg-[var(--color-card)]">
+                {/*
+                  When rows are present: normal overflow-y-auto scroll container.
+                  When empty/loading: flex-col so the thead (shrink-0) and the
+                  empty-state filler (flex-1) stack without any table height tricks.
+                  overflow-hidden prevents any phantom scrollbar.
+                */}
+                <div
+                    className="flex-1 min-h-0 w-full overflow-x-auto"
+                    style={{
+                        overflowY  : isEmpty || loading ? 'hidden' : 'auto',
+                        display    : 'flex',
+                        flexDirection: 'column',
+                    }}
+                >
+                    {/* ── Header-only table — always rendered, sticky ── */}
+                    <table className="w-full border-collapse" style={{ flexShrink: 0 }}>
+                        <thead className="sticky top-0 z-10" style={{ background: 'var(--color-table-header-bg)' }}>
                             <tr
                                 style={{
                                     height      : 'var(--height-table-header)',
-                                    borderBottom: '1px solid var(--color-border-soft)',
+                                    borderBottom: 'var(--border-table-header)',
                                 }}
                             >
                                 {columns.map((col) => (
@@ -149,24 +163,10 @@ export default function DataTable({
                             </tr>
                         </thead>
 
-                        <tbody>
-                            {loading ? (
-                                <tr>
-                                    <td colSpan={columns.length} className="py-12 text-center">
-                                        <LoadingSpinner size="md" />
-                                    </td>
-                                </tr>
-                            ) : paginated.length === 0 ? (
-                                <tr>
-                                    <td colSpan={columns.length} className="py-12 text-center">
-                                        {typeof empty === 'string'
-                                            ? <EmptyState title={emptyTitle ?? emptyMessage ?? empty} description={emptyDescription} icon={emptyIcon} />
-                                            : empty
-                                        }
-                                    </td>
-                                </tr>
-                            ) : (
-                                paginated.map((row) => (
+                        {/* Rows — only rendered when there's data */}
+                        {!isEmpty && !loading && (
+                            <tbody>
+                                {paginated.map((row) => (
                                     <tr
                                         key={row[keyField] ?? JSON.stringify(row)}
                                         onClick={onRowClick ? () => onRowClick(row) : undefined}
@@ -198,10 +198,35 @@ export default function DataTable({
                                             </td>
                                         ))}
                                     </tr>
-                                ))
-                            )}
-                        </tbody>
+                                ))}
+                            </tbody>
+                        )}
                     </table>
+
+                    {/*
+                      Empty / loading filler — sibling to the table, not inside it.
+                      flex-1 fills all space below the thead so the content is
+                      truly centred in the remaining body area.
+                      translateY(-8px) nudges slightly above dead-centre (divisible by 8).
+                    */}
+                    {(isEmpty || loading) && (
+                        <div
+                            style={{
+                                flex           : 1,
+                                display        : 'flex',
+                                alignItems     : 'center',
+                                justifyContent : 'center',
+                                transform      : 'translateY(-8px)',
+                            }}
+                        >
+                            {loading
+                                ? <LoadingSpinner size="md" />
+                                : (typeof empty === 'string'
+                                    ? <EmptyState title={emptyTitle ?? emptyMessage ?? empty} description={emptyDescription} icon={emptyIcon} />
+                                    : empty)
+                            }
+                        </div>
+                    )}
                 </div>
             </div>
 

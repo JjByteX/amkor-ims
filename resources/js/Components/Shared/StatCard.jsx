@@ -35,7 +35,7 @@ export default function StatCard({
     const toneColor = color ?? tones[tone] ?? tone;
 
     return (
-        <Card compact className={className} style={{ minHeight: 86 }}>
+        <Card compact className={className}>
             <div className="flex h-full items-center gap-3">
                 {iconNode && (
                     <div
@@ -44,7 +44,6 @@ export default function StatCard({
                             borderRadius: 'var(--radius-md)',
                             background: 'color-mix(in srgb, var(--color-primary) 9%, var(--color-card))',
                             color: toneColor === 'var(--color-text)' ? 'var(--color-primary)' : toneColor,
-                            border: '1px solid color-mix(in srgb, var(--color-primary) 14%, var(--color-border))',
                         }}
                     >
                         {iconNode}

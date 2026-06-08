@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { router } from '@inertiajs/react';
-import { Archive, Check, CheckCheck, Trash2 } from 'lucide-react';
+import { Archive, Check, CheckCheck, Search, Trash2 } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
 import DataTable from '../../Components/Shared/DataTable';
@@ -7,14 +8,34 @@ import FilterStrip, { FilterField } from '../../Components/Shared/FilterStrip';
 import PageStack from '../../Components/Shared/PageStack';
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
-import Select from '../../Components/UI/Select';
+import Input from '../../Components/UI/Input';
+import SegmentedControl from '../../Components/UI/SegmentedControl';
 
 const date = (v) => v ? new Date(v).toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '-';
 const levelVariant = { success: 'success', warning: 'warning', error: 'error', info: 'info' };
 
+const STATUS_TABS = [
+    { key: '',         label: 'Inbox'    },
+    { key: 'unread',   label: 'Unread'   },
+    { key: 'archived', label: 'Archived' },
+];
+
 export default function NotificationsIndex({ notifications, filters, unreadCount }) {
+    const [searchInput, setSearchInput] = useState(filters.search ?? '');
+
+    const activeStatus = filters.status ?? '';
+
     function apply(overrides = {}) {
         router.get(route('notifications.index'), { ...filters, ...overrides }, { preserveState: true, preserveScroll: true });
+    }
+
+    function applySearch() {
+        apply({ search: searchInput, page: 1 });
+    }
+
+    function switchStatus(status) {
+        setSearchInput('');
+        apply({ status, search: '', page: 1 });
     }
 
     const columns = [
@@ -80,17 +101,34 @@ export default function NotificationsIndex({ notifications, filters, unreadCount
                     onPageChange={(page) => apply({ page })}
                     toolbar={
                         <FilterStrip>
-                            <FilterField width={180}>
-                                <Select
-                                    value={filters.status ?? ''}
-                                    onChange={(e) => apply({ status: e.target.value })}
-                                    options={[
-                                        { value: '', label: 'Inbox' },
-                                        { value: 'unread', label: 'Unread' },
-                                        { value: 'archived', label: 'Archived' },
-                                    ]}
+                            {/* Status segmented control — goes first */}
+                            <SegmentedControl
+                                tabs={STATUS_TABS}
+                                activeKey={activeStatus}
+                                onChange={switchStatus}
+                            />
+
+                            {/* Search — goes after the segmented control */}
+                            <FilterField grow>
+                                <Input
+                                    placeholder="Search notifications..."
+                                    value={searchInput}
+                                    onChange={(e) => setSearchInput(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && applySearch()}
+                                    icon={Search}
                                 />
                             </FilterField>
+                            {filters.search && (
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => {
+                                        setSearchInput('');
+                                        apply({ search: '', page: 1 });
+                                    }}
+                                >
+                                    Clear
+                                </Button>
+                            )}
                         </FilterStrip>
                     }
                 />

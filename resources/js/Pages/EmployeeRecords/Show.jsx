@@ -323,7 +323,7 @@ export default function EmployeeShow({ employee, statuses, departments, canManag
                                 <thead>
                                     <tr style={{ background: 'var(--color-bg)' }}>
                                         {['Date', 'Item', 'Size', 'Qty', 'Notes'].map((h) => (
-                                            <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600, color: 'var(--color-text)', borderBottom: '2px solid rgba(0,0,0,0.08)' }}>
+                                            <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600, color: 'var(--color-text)', borderBottom: 'var(--border-table-header)', background: 'var(--color-table-header-bg)' }}>
                                                 {h}
                                             </th>
                                         ))}
