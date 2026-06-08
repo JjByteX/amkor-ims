@@ -56,13 +56,6 @@ const NAV_SECTIONS = [
                 roles: ['general_manager', 'resa_officer', 'ormoc_branch_officer', 'accounting_officer', 'admin_auditor', 'chief_operations_officer', 'general_sales_manager'],
             },
             {
-                key  : 'reservation-sales',
-                href : '/reservation-sales',
-                icon : <ChartNoAxesCombined size={20} />,
-                label: 'RESA Sales Report',
-                roles: ['general_manager', 'resa_officer', 'ormoc_branch_officer', 'accounting_officer', 'admin_auditor', 'chief_operations_officer', 'general_sales_manager'],
-            },
-            {
                 key  : 'visa',
                 href : '/visa',
                 icon : <FileCheck2 size={20} />,

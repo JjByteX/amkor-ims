@@ -2,8 +2,8 @@
 
 namespace Modules\Disbursement\Providers;
 
-use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use App\Events\DashboardSummaryRequested;
+use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Modules\Disbursement\Listeners\ContributeDashboardSummary;
 
 class EventServiceProvider extends ServiceProvider

@@ -82,7 +82,7 @@ class AttendanceDatabaseSeeder extends Seeder
                     'minutes_undertime' => $minutesUndertime,
                     'status' => $status,
                     'leave_type' => $leaveType,
-                    'ip_address' => '192.168.1.' . rand(10, 250),
+                    'ip_address' => '192.168.1.'.rand(10, 250),
                     'device_info' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
                     'hr_override' => false,
                     'branch_id' => $branchId,

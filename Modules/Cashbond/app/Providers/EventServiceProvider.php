@@ -2,8 +2,8 @@
 
 namespace Modules\Cashbond\Providers;
 
-use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use App\Events\DashboardSummaryRequested;
+use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Modules\Cashbond\Listeners\ContributeDashboardSummary;
 
 class EventServiceProvider extends ServiceProvider

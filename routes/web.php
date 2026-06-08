@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
+use Illuminate\Support\Facades\Route;
 
 // Root → redirect to dashboard (AppShell handles the login guard)
 Route::get('/', function () {
