@@ -74,6 +74,58 @@ class ReservationController extends Controller
         ]);
     }
 
+    public function salesReport(Request $request): Response
+    {
+        if (! ($request->user()?->can('reservation.view_sales_report') || $request->user()?->can('reservation.view_sales_report_own'))) {
+            abort(403);
+        }
+
+        $search = $request->string('search')->toString();
+        $status = $request->string('status')->toString();
+        $agent = $request->string('agent')->toString();
+        $serviceType = $request->string('service_type')->toString();
+        $month = $request->string('month')->toString();
+
+        $query = ReservationBooking::with(['branch'])
+            ->latest('date')
+            ->search($search)
+            ->forStatus($status)
+            ->forAgent($agent);
+
+        if ($serviceType !== '') {
+            $query->where('service_type', $serviceType);
+        }
+
+        $this->scopeBranch($request, $query);
+
+        if (! $request->user()?->can('reservation.view_sales_report')) {
+            $query->where('created_by', $request->user()->id);
+        }
+
+        if ($month !== '') {
+            [$year, $monthNumber] = array_map('intval', explode('-', $month.'-01'));
+            $query->whereYear('date', $year)->whereMonth('date', $monthNumber);
+        }
+
+        $summaryQuery = (clone $query)->toBase();
+
+        return Inertia::render('Reservation/SalesReport', [
+            'bookings' => $query->paginate(25)->withQueryString(),
+            'summary' => [
+                'total' => (clone $summaryQuery)->count(),
+                'confirmed' => (clone $summaryQuery)->where('status', 'confirmed')->count(),
+                'gross' => (float) (clone $summaryQuery)->sum('selling_price'),
+                'income' => (float) (clone $summaryQuery)->sum('income'),
+                'pax' => (int) (clone $summaryQuery)->sum('pax_count'),
+            ],
+            'filters' => compact('search', 'status', 'agent', 'serviceType', 'month'),
+            'statuses' => ReservationBooking::STATUSES,
+            'serviceTypes' => ReservationBooking::SERVICE_TYPES,
+            'paymentModes' => ReservationBooking::PAYMENT_MODES,
+            'agentCodes' => ReservationBooking::AGENT_CODES,
+        ]);
+    }
+
     public function create(Request $request): Response
     {
         $this->requireWriter($request);
