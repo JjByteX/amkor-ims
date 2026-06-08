@@ -48,6 +48,8 @@ class AuthDatabaseSeeder extends Seeder
             'reservation.input_sales',
             'reservation.issue_ar',
             'reservation.forward_documents',
+            'reservation.view_sales_report',
+            'reservation.view_sales_report_own',
 
             // Visa & Documentation
             'visa.view',
@@ -196,6 +198,7 @@ class AuthDatabaseSeeder extends Seeder
                 'ar.view', 'ar.approve',
                 'marketing.view', 'marketing.approve_material', 'marketing.monitor_analytics', 'marketing.view_expense_report',
                 'sales.view_own', 'sales.view_consolidated', 'sales.view_progress', 'sales.export',
+                'reservation.view_sales_report',
                 'contacts.view',
                 'documents.view',
                 'notifications.view', 'notifications.receive',
@@ -204,6 +207,7 @@ class AuthDatabaseSeeder extends Seeder
             'general_sales_manager' => [
                 'ar.view', 'ar.approve',
                 'sales.view_own', 'sales.view_consolidated', 'sales.view_progress', 'sales.export',
+                'reservation.view_sales_report',
                 'contacts.view',
                 'documents.view',
                 'notifications.view', 'notifications.receive',
@@ -211,6 +215,7 @@ class AuthDatabaseSeeder extends Seeder
 
             'accounting_officer' => [
                 'reservation.view', 'reservation.issue_soa', 'reservation.issue_ar', 'reservation.forward_documents',
+                'reservation.view_sales_report',
                 'ar.view', 'ar.issue_receipt', 'ar.check_documents', 'ar.endorse_disbursement', 'ar.process_refund', 'ar.report_audit',
                 'payables.view', 'payables.request_payment', 'payables.prepare_voucher', 'payables.prepare_deposit_slip',
                 'disbursement.view', 'disbursement.record',
@@ -237,6 +242,7 @@ class AuthDatabaseSeeder extends Seeder
 
             'admin_auditor' => [
                 'reservation.view',
+                'reservation.view_sales_report',
                 'visa.view', 'visa.audit_voucher',
                 'ar.view', 'ar.process_refund', 'ar.report_audit',
                 'payables.view', 'payables.audit_voucher',
@@ -274,6 +280,7 @@ class AuthDatabaseSeeder extends Seeder
             'resa_officer' => [
                 'reservation.view', 'reservation.create_inquiry', 'reservation.confirm_booking',
                 'reservation.issue_soa', 'reservation.issue_po', 'reservation.input_sales', 'reservation.issue_ar', 'reservation.forward_documents',
+                'reservation.view_sales_report_own',
                 'ar.view', 'ar.originate', 'ar.issue_receipt', 'ar.submit_documents',
                 'sales.view_own',
                 'contacts.view',
@@ -285,6 +292,7 @@ class AuthDatabaseSeeder extends Seeder
             'ormoc_branch_officer' => [
                 'reservation.view', 'reservation.create_inquiry', 'reservation.confirm_booking',
                 'reservation.issue_soa', 'reservation.issue_po', 'reservation.escalate_international', 'reservation.input_sales', 'reservation.issue_ar', 'reservation.forward_documents',
+                'reservation.view_sales_report_own',
                 'ar.view', 'ar.originate', 'ar.issue_receipt', 'ar.submit_documents',
                 'sales.view_own',
                 'contacts.view',
