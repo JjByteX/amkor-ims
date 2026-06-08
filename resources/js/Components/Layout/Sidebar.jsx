@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { usePage, Link, router } from '@inertiajs/react';
+import { createPortal } from 'react-dom';
 import {
-    PanelLeftClose, PanelLeftOpen,
+    PanelLeftOpen,
     Gauge,
     PlaneTakeoff, FileCheck2, MapPinned,
     ChartNoAxesCombined,
@@ -11,6 +12,8 @@ import {
     Sun, Moon, LogOut,
 } from 'lucide-react';
 import NavItem from './NavItem';
+import AmkorLogo from '../UI/AmkorLogo';
+import Tooltip from './Tooltip';
 
 /* ─────────────────────────────────────────────────────────────────────────────
    Nav structure definition
@@ -195,19 +198,99 @@ const ROLE_LABELS = {
 };
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Shared inline styles (avoids repetition)
+   ProfileMenu — portal-rendered popup that escapes the sidebar clip context.
    ───────────────────────────────────────────────────────────────────────────── */
-const iconBtnBase = [
-    'flex items-center justify-center',
-    'w-10 h-10',
-    'text-gray-400 hover:text-[var(--color-text)]',
-    'hover:bg-black/5 dark:hover:bg-white/6',
-    'transition-colors duration-0',  /* instant — no hover animation */
-].join(' ');
+function ProfileMenu({ triggerRef, onClose, dark, onToggleDark, onLogout, borderColor }) {
+    const menuRef = useRef(null);
+    const [style, setStyle] = useState({});
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Sidebar
-   ───────────────────────────────────────────────────────────────────────────── */
+    useEffect(() => {
+        if (!triggerRef.current) return;
+        const rect = triggerRef.current.getBoundingClientRect();
+        // Fixed width so the popup doesn't resize when the sidebar is collapsed.
+        // Anchor from rect.left so the menu always opens rightward — using
+        // rect.right - MENU_WIDTH would go off-screen when collapsed (rect.right ≈ 64px).
+        const MENU_WIDTH = 216; // --width-sidebar (240) minus 2 × --space-2 (16px each side)
+        setStyle({
+            position    : 'fixed',
+            left        : rect.left,
+            width       : MENU_WIDTH,
+            bottom      : window.innerHeight - rect.top + 8,
+            zIndex      : 99999,
+        });
+    }, [triggerRef]);
+
+    // Close on outside click
+    useEffect(() => {
+        function handler(e) {
+            if (
+                menuRef.current    && !menuRef.current.contains(e.target) &&
+                triggerRef.current && !triggerRef.current.contains(e.target)
+            ) {
+                onClose();
+            }
+        }
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [onClose, triggerRef]);
+
+    return createPortal(
+        <div
+            ref={menuRef}
+            className="bg-[var(--color-card)]"
+            style={{
+                ...style,
+                borderRadius : 'var(--radius-lg)',
+                border       : 'var(--border-container)',
+                boxShadow    : '0 18px 48px -28px rgba(15,23,42,0.32), var(--shadow-card)',
+                padding      : '6px',
+            }}
+        >
+            {/* Dark mode toggle */}
+            <button
+                onClick={() => { onToggleDark(); onClose(); }}
+                className={[
+                    'w-full flex items-center gap-3',
+                    'h-10 px-3',
+                    'font-body text-[var(--color-text)]',
+                    'hover:bg-black/5 dark:hover:bg-white/6',
+                    'transition-colors duration-0',
+                ].join(' ')}
+                style={{ fontSize: '13px', borderRadius: 'var(--radius-md)', fontWeight: 500 }}
+            >
+                {dark
+                    ? <Sun  size={15} className="shrink-0 text-gray-400" />
+                    : <Moon size={15} className="shrink-0 text-gray-400" />
+                }
+                <span>{dark ? 'Light mode' : 'Dark mode'}</span>
+            </button>
+
+            {/* Divider */}
+            <div style={{ margin: '4px 0', height: '1px', background: borderColor }} />
+
+            {/* Sign out */}
+            <button
+                onClick={onLogout}
+                className={[
+                    'w-full flex items-center gap-3',
+                    'h-10 px-3',
+                    'font-body text-[var(--color-error)]',
+                    'hover:bg-red-50 dark:hover:bg-red-900/15',
+                    'transition-colors duration-0',
+                ].join(' ')}
+                style={{ fontSize: '13px', borderRadius: 'var(--radius-md)', fontWeight: 500 }}
+            >
+                <LogOut size={15} className="shrink-0" />
+                <span>Sign out</span>
+            </button>
+        </div>,
+        document.body
+    );
+}
+
+/* AmkorLogo is imported from Components/UI/AmkorLogo.jsx */
+
+
 export default function Sidebar() {
     const { auth } = usePage().props;
     const user      = auth?.user;
@@ -247,23 +330,11 @@ export default function Sidebar() {
     }, [dark]);
 
     /* ── Profile menu ────────────────────────────────────────────────────────── */
-    const [menuOpen, setMenuOpen]   = useState(false);
-    const menuRef                   = useRef(null);
-    const triggerRef                = useRef(null);
+    const [menuOpen, setMenuOpen] = useState(false);
+    const triggerRef              = useRef(null);
 
-    useEffect(() => {
-        if (!menuOpen) return;
-        function handler(e) {
-            if (
-                menuRef.current    && !menuRef.current.contains(e.target) &&
-                triggerRef.current && !triggerRef.current.contains(e.target)
-            ) {
-                setMenuOpen(false);
-            }
-        }
-        document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
-    }, [menuOpen]);
+    /* ── Avatar tooltip ──────────────────────────────────────────────────────── */
+    const [avatarTip, setAvatarTip] = useState(false);
 
     /* ── Logout ──────────────────────────────────────────────────────────────── */
     const handleLogout = () => {
@@ -278,7 +349,7 @@ export default function Sidebar() {
         ),
     })).filter((section) => section.items.length > 0);
 
-    /* ── Shared border style (matches --border-container token) ─────────────── */
+    /* ── Shared border style ─────────────────────────────────────────────────── */
     const borderColor = 'var(--color-border)';
 
     return (
@@ -288,7 +359,7 @@ export default function Sidebar() {
                 'h-screen sticky top-0',
                 'bg-[var(--color-card)]',
                 'transition-[width] duration-200 ease-in-out',
-                'shrink-0 overflow-visible',   /* overflow-visible so popup isn't clipped */
+                'shrink-0 overflow-visible',
                 'relative',
             ].join(' ')}
             style={{
@@ -297,34 +368,42 @@ export default function Sidebar() {
                 boxShadow   : 'var(--shadow-card)',
             }}
         >
-            {/* ── Top area: logo row (expanded) OR expand button (collapsed) ──── */}
+            {/* ── Top area: logo (always visible; hover → expand icon when collapsed) */}
             <div
                 className="flex items-center shrink-0"
                 style={{
                     height       : 'var(--height-header)',
-                    padding      : '0 var(--space-2)',
                     borderBottom : `1px solid ${borderColor}`,
                 }}
             >
                 {collapsed ? (
-                    /* Collapsed header: only the expand/open button, centred */
-                    <div className="flex items-center justify-center w-full">
+                    /* ── COLLAPSED HEADER ──────────────────────────────────────────
+                       Full-width centering, no padding so the logo never gets
+                       clipped. On hover: logo hides, expand icon appears (CSS).     */
+                    <div className="flex items-center justify-center w-full h-full">
                         <button
                             onClick={() => setCollapsed(false)}
                             data-tooltip="Expand sidebar"
-                            className={iconBtnBase}
-                            style={{ borderRadius: 'var(--radius-md)' }}
+                            className="sidebar-logo-toggle flex items-center justify-center text-gray-400 hover:text-[var(--color-text)] transition-colors duration-0"
+                            style={{ borderRadius: 'var(--radius-md)', width: 40, height: 40 }}
                         >
-                            <PanelLeftOpen size={20} />
+                            {/* Brand mark — always visible, hidden on hover via CSS */}
+                            <span className="sidebar-logo-brand flex items-center justify-center" style={{ width: 40, height: 40, color: 'var(--color-primary)' }}>
+                                <AmkorLogo size={40} />
+                            </span>
+                            {/* Expand icon — hidden by default, shown on hover via CSS */}
+                            <span className="sidebar-logo-expand items-center justify-center">
+                                <PanelLeftOpen size={20} />
+                            </span>
                         </button>
                     </div>
                 ) : (
-                    /* Expanded header: brand left, collapse button right */
-                    <>
+                    /* ── EXPANDED HEADER ───────────────────────────────────────────
+                       Brand left, collapse button right.                             */
+                    <div className="flex items-center w-full" style={{ paddingLeft: 'var(--sidebar-logo-pl)', paddingRight: 'var(--space-1)' }}>
                         <div className="flex items-center gap-3 flex-1 min-w-0">
-                            {/* Brand mark — full-circle intentional (brand identity) */}
-                            <div className="w-8 h-8 rounded-full bg-[var(--color-primary)] flex items-center justify-center shrink-0">
-                                <span className="text-white text-xs font-bold font-heading">AT</span>
+                            <div className="flex items-center justify-center shrink-0" style={{ width: 40, height: 40, color: 'var(--color-primary)' }}>
+                                <AmkorLogo size={40} />
                             </div>
                             <div className="min-w-0">
                                 <p className="text-sm font-heading font-semibold text-[var(--color-text)] truncate leading-tight">
@@ -335,32 +414,31 @@ export default function Sidebar() {
                                 </p>
                             </div>
                         </div>
-
-                        {/* Collapse button — top right */}
                         <button
                             onClick={() => setCollapsed(true)}
-                            className={iconBtnBase}
+                            className="flex items-center justify-center w-10 h-10 text-gray-400 hover:text-[var(--color-text)] hover:bg-black/5 dark:hover:bg-white/6 transition-colors duration-0"
                             style={{ borderRadius: 'var(--radius-md)' }}
                             title="Collapse sidebar"
                         >
-                            <PanelLeftClose size={20} />
+                            <PanelLeftOpen size={20} style={{ transform: 'scaleX(-1)' }} />
                         </button>
-                    </>
+                    </div>
                 )}
             </div>
 
             {/* ── Nav ─────────────────────────────────────────────────────────── */}
             <nav
                 className="flex-1 overflow-y-auto overflow-x-hidden"
-                style={{ padding: 'var(--space-1) var(--space-2)' }}
+                style={{ padding: 'var(--space-1) var(--space-sidebar-x)' }}
             >
-                <ul className={`flex flex-col ${collapsed ? 'items-center gap-0.5' : 'gap-1'}`}>
+                <ul className={`flex flex-col ${collapsed ? 'items-center' : ''}`} style={{ gap: 'var(--nav-item-gap)' }}>
                     {navSections.map((section) => (
                         <li key={section.key} className="w-full">
                             {!collapsed && (
                                 <p
-                                    className="px-2 pb-1 pt-3 font-body font-semibold uppercase"
+                                    className="pt-3 font-body font-semibold uppercase"
                                     style={{
+                                        paddingLeft  : '10px',
                                         color        : 'var(--color-text-muted)',
                                         fontSize     : '11px',
                                         lineHeight   : 1.2,
@@ -370,16 +448,23 @@ export default function Sidebar() {
                                     {section.label}
                                 </p>
                             )}
-                            <ul className={`flex flex-col gap-0.5 ${collapsed ? 'items-center' : ''}`}>
+                            <ul
+                                className={`flex flex-col ${collapsed ? 'items-center' : ''}`}
+                                style={{
+                                    gap         : 'var(--nav-item-gap)',
+                                    marginTop   : collapsed ? 0 : 'var(--nav-label-gap)',
+                                    marginBottom: collapsed ? 0 : 'var(--nav-section-gap)',
+                                }}
+                            >
                                 {section.items.map((item) => (
-                        <NavItem
-                            key={item.key}
-                            href={item.href}
-                            activeOn={item.activeOn}
-                            inactiveOn={item.inactiveOn}
-                            icon={item.icon}
-                            label={item.label}
-                            collapsed={collapsed}
+                                    <NavItem
+                                        key={item.key}
+                                        href={item.href}
+                                        activeOn={item.activeOn}
+                                        inactiveOn={item.inactiveOn}
+                                        icon={item.icon}
+                                        label={item.label}
+                                        collapsed={collapsed}
                                     />
                                 ))}
                             </ul>
@@ -392,46 +477,34 @@ export default function Sidebar() {
             <div
                 className="shrink-0"
                 style={{
-                    padding    : 'var(--space-1) var(--space-2)',
-                    borderTop  : 'var(--border-container)',
+                    padding   : 'var(--space-1) var(--space-sidebar-x)',
+                    borderTop : 'var(--border-container)',
                 }}
             >
                 {collapsed ? (
-                    /* Collapsed account row: Bell on top, avatar below */
+                    /* ── COLLAPSED ACCOUNT ROW ─────────────────────────────────────
+                       CHANGE 2: Bell removed. Notifications is already in the Main
+                       nav section. Only the avatar button remains.                   */
                     <div className="flex flex-col items-center gap-1">
-                        {/* Notifications bell */}
-                        <Link
-                            href="/notifications"
-                            data-tooltip="Notifications"
-                            className={[
-                                'relative flex items-center justify-center',
-                                'w-10 h-10',
-                                'text-gray-400 hover:text-[var(--color-text)]',
-                                'hover:bg-black/5 dark:hover:bg-white/6',
-                                'transition-colors duration-0',
-                            ].join(' ')}
-                            style={{ borderRadius: 'var(--radius-md)' }}
-                        >
-                            <Bell size={20} />
-                            {unreadNotifications > 0 && (
-                                <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-[var(--color-error)]" />
-                            )}
-                        </Link>
-
-                        {/* Avatar — opens profile menu */}
                         <button
                             ref={triggerRef}
                             onClick={() => setMenuOpen((v) => !v)}
-                            data-tooltip={user?.name ?? 'Account'}
+                            onMouseEnter={() => setAvatarTip(true)}
+                            onMouseLeave={() => setAvatarTip(false)}
                             className="w-8 h-8 rounded-full bg-[var(--color-primary)] flex items-center justify-center hover:opacity-85 transition-opacity duration-0"
                         >
                             <span className="text-white text-xs font-bold font-heading">
                                 {user?.name?.charAt(0)?.toUpperCase() ?? '?'}
                             </span>
                         </button>
+                        {avatarTip && !menuOpen && (
+                            <Tooltip label={user?.name ?? 'Account'} anchorRef={triggerRef} />
+                        )}
                     </div>
                 ) : (
-                    /* Expanded account row: avatar + name/role + bell */
+                    /* ── EXPANDED ACCOUNT ROW ──────────────────────────────────────
+                       CHANGE 2: Bell removed from the account row entirely.
+                       Notifications lives in the Main nav section already.           */
                     <button
                         ref={triggerRef}
                         onClick={() => setMenuOpen((v) => !v)}
@@ -471,95 +544,20 @@ export default function Sidebar() {
                                 {roleLabel}
                             </p>
                         </div>
-
-                        {/* Notifications bell — separate click target */}
-                        <div
-                            role="button"
-                            tabIndex={0}
-                            className={[
-                                'relative flex items-center justify-center shrink-0',
-                                'w-8 h-8',
-                                'text-gray-400 hover:text-[var(--color-text)]',
-                                'hover:bg-black/8 dark:hover:bg-white/8',
-                                'transition-colors duration-0',
-                            ].join(' ')}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                router.visit('/notifications');
-                            }}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                    e.stopPropagation();
-                                    router.visit('/notifications');
-                                }
-                            }}
-                            style={{ borderRadius: 'var(--radius-md)' }}
-                            title="Notifications"
-                        >
-                            <Bell size={16} />
-                            {unreadNotifications > 0 && (
-                                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-error)] px-1 text-[10px] font-bold text-white">
-                                    {unreadNotifications > 9 ? '9+' : unreadNotifications}
-                                </span>
-                            )}
-                        </div>
                     </button>
                 )}
             </div>
 
-            {/* ── Profile popup menu ───────────────────────────────────────────── */}
+            {/* ── Profile popup menu — rendered as a portal ────────────────────── */}
             {menuOpen && (
-                <div
-                    ref={menuRef}
-                    className="absolute bg-[var(--color-card)] z-50"
-                    style={{
-                        left         : 'var(--space-2)',
-                        right        : 'var(--space-2)',
-                        bottom       : collapsed ? '106px' : '68px',
-                        borderRadius : 'var(--radius-lg)',
-                        border       : 'var(--border-container)',
-                        boxShadow    : '0 18px 48px -28px rgba(15,23,42,0.32), var(--shadow-card)',
-                        padding      : '6px',
-                    }}
-                >
-                    {/* Dark mode toggle */}
-                    <button
-                        onClick={() => { setDark((d) => !d); setMenuOpen(false); }}
-                        className={[
-                            'w-full flex items-center gap-3',
-                            'h-10 px-3',
-                            'font-body text-[var(--color-text)]',
-                            'hover:bg-black/5 dark:hover:bg-white/6',
-                            'transition-colors duration-0',
-                        ].join(' ')}
-                        style={{ fontSize: '13px', borderRadius: 'var(--radius-md)', fontWeight: 500 }}
-                    >
-                        {dark
-                            ? <Sun  size={15} className="shrink-0 text-gray-400" />
-                            : <Moon size={15} className="shrink-0 text-gray-400" />
-                        }
-                        <span>{dark ? 'Light mode' : 'Dark mode'}</span>
-                    </button>
-
-                    {/* Divider */}
-                    <div style={{ margin: '4px 0', height: '1px', background: borderColor }} />
-
-                    {/* Sign out */}
-                    <button
-                        onClick={handleLogout}
-                        className={[
-                            'w-full flex items-center gap-3',
-                            'h-10 px-3',
-                            'font-body text-[var(--color-error)]',
-                            'hover:bg-red-50 dark:hover:bg-red-900/15',
-                            'transition-colors duration-0',
-                        ].join(' ')}
-                        style={{ fontSize: '13px', borderRadius: 'var(--radius-md)', fontWeight: 500 }}
-                    >
-                        <LogOut size={15} className="shrink-0" />
-                        <span>Sign out</span>
-                    </button>
-                </div>
+                <ProfileMenu
+                    triggerRef={triggerRef}
+                    onClose={() => setMenuOpen(false)}
+                    dark={dark}
+                    onToggleDark={() => setDark((d) => !d)}
+                    onLogout={handleLogout}
+                    borderColor={borderColor}
+                />
             )}
         </aside>
     );

@@ -1,22 +1,19 @@
+import { useState } from 'react';
 import { useForm } from '@inertiajs/react';
-import { Mail, Lock } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Alert from '../../Components/UI/Alert';
 import Card from '../../Components/UI/Card';
+import AmkorLogo from '../../Components/UI/AmkorLogo';
 
-/**
- * Login page — no layout wrapper (public route).
- * Renders at /login.
- *
- * Card uses --radius-lg (16px) matching Card component.
- * Logo mark uses rounded-full (brand identity exception).
- */
 export default function Login({ timedOut = false }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         email   : '',
         password: '',
     });
+
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -24,6 +21,21 @@ export default function Login({ timedOut = false }) {
             onFinish: () => reset('password'),
         });
     };
+
+    const PasswordToggle = (
+        <button
+            type="button"
+            onClick={() => setShowPassword(v => !v)}
+            style={{
+                background: 'none', border: 'none', padding: 0,
+                cursor: 'pointer', display: 'flex', alignItems: 'center',
+                color: 'var(--color-text-muted)', lineHeight: 1,
+            }}
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+        >
+            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+        </button>
+    );
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-[var(--color-bg)] px-4 py-8 sm:px-6">
@@ -33,9 +45,8 @@ export default function Login({ timedOut = false }) {
             >
                 {/* Logo + company name */}
                 <div className="flex flex-col items-center gap-3 text-center">
-                    {/* Brand mark — intentionally full-circle (brand identity only) */}
-                    <div className="w-14 h-14 rounded-full bg-[var(--color-primary)] flex items-center justify-center">
-                        <span className="text-white text-xl font-bold font-heading">AT</span>
+                    <div style={{ color: 'var(--color-primary)' }}>
+                        <AmkorLogo size={56} />
                     </div>
                     <div>
                         <h1
@@ -50,14 +61,12 @@ export default function Login({ timedOut = false }) {
                     </div>
                 </div>
 
-                {/* Session timeout banner */}
                 {timedOut && (
                     <Alert variant="warning" title="Session expired">
                         Your session timed out after inactivity. Please sign in again.
                     </Alert>
                 )}
 
-                {/* Form */}
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
                     <Input
                         label="Email address"
@@ -71,15 +80,15 @@ export default function Login({ timedOut = false }) {
                         autoComplete="email"
                         autoFocus
                     />
-
                     <Input
                         label="Password"
-                        type="password"
+                        type={showPassword ? 'text' : 'password'}
                         value={data.password}
                         onChange={(e) => setData('password', e.target.value)}
                         error={errors.password}
                         placeholder="••••••••••"
                         icon={Lock}
+                        rightIcon={PasswordToggle}
                         required
                         autoComplete="current-password"
                     />
@@ -97,10 +106,6 @@ export default function Login({ timedOut = false }) {
                         Sign In
                     </Button>
                 </form>
-
-                <p className="text-center font-body text-[12px] text-[var(--color-text-muted)]">
-                    Contact your administrator if you cannot access your account.
-                </p>
             </Card>
         </div>
     );

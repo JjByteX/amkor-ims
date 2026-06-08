@@ -1,15 +1,14 @@
 import { useForm } from '@inertiajs/react';
-import { ArrowLeft } from 'lucide-react';
+import { Save, X } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
-import Card from '../../Components/UI/Card';
+import { FormLayout, FormCard, FormRow, FormActions } from '../../Components/Shared/FormLayout';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
 import Textarea from '../../Components/UI/Textarea';
 
 export default function VisaCreate({ visaTypes, agentCodes, statuses, paymentModes }) {
-
     const { data, setData, post, processing, errors } = useForm({
         agent_code      : '',
         date            : new Date().toISOString().slice(0, 10),
@@ -29,15 +28,11 @@ export default function VisaCreate({ visaTypes, agentCodes, statuses, paymentMod
         payment_due_date: '',
     });
 
-    // Auto-compute income when SP or NP changes
     function handleFinancialChange(field, value) {
         const next = { ...data, [field]: value };
         const sp   = parseFloat(next.selling_price) || 0;
         const np   = parseFloat(next.net_payable)   || 0;
-        setData({
-            ...next,
-            income: sp && np ? (sp - np).toFixed(2) : next.income,
-        });
+        setData({ ...next, income: sp && np ? (sp - np).toFixed(2) : next.income });
     }
 
     function submit(e) {
@@ -45,36 +40,34 @@ export default function VisaCreate({ visaTypes, agentCodes, statuses, paymentMod
         post(route('visa.store'));
     }
 
-    const agentOptions    = agentCodes.map((c) => ({ value: c, label: c }));
-    const visaTypeOptions = visaTypes.map((t) => ({ value: t, label: t }));
-    const statusOptions   = Object.entries(statuses).map(([v, l]) => ({ value: v, label: l }));
-    const paymentOptions  = Object.entries(paymentModes).map(([v, l]) => ({ value: v, label: l }));
+    const agentOptions   = agentCodes.map((c) => ({ value: c, label: c }));
+    const visaOptions    = visaTypes.map((t) => ({ value: t, label: t }));
+    const statusOptions  = Object.entries(statuses).map(([v, l]) => ({ value: v, label: l }));
+    const paymentOptions = Object.entries(paymentModes).map(([v, l]) => ({ value: v, label: l }));
 
     return (
         <AppShell>
-            <div className="flex flex-col gap-[var(--space-3)]" style={{ padding: 'var(--space-4)' }}>
+            <form
+                onSubmit={submit}
+                className="flex min-h-0 flex-1 flex-col overflow-y-auto"
+                style={{ gap: 'var(--space-2)' }}
+            >
+                <FormLayout split="2fr 3fr">
+                    <PageHeader
+                        breadcrumb={[{ label: 'Visa & Documentation', href: route('visa.index') }]}
+                        title="New Application"
+                        subtitle="Record a visa or documentation service"
+                        actions={
+                            <>
+                                <Button type="button" variant="ghost" icon={X} onClick={() => history.back()}>Cancel</Button>
+                                <Button type="submit" icon={Save} loading={processing}>Save Application</Button>
+                            </>
+                        }
+                    />
 
-                <PageHeader
-                    title="New Visa Application"
-                    actions={
-                        <Button
-                            variant="ghost"
-                            icon={ArrowLeft}
-                            onClick={() => history.back()}
-                        >
-                            Back
-                        </Button>
-                    }
-                />
-
-                <form onSubmit={submit} className="flex flex-col gap-[var(--space-3)]">
-
-                    {/* ── Client & Agent ─────────────────────────────────────── */}
-                    <Card>
-                        <div className="font-heading text-[var(--color-text)] mb-[var(--space-3)]" style={{ fontSize: 'var(--font-size-heading)' }}>
-                            Application Details
-                        </div>
-                        <div className="grid grid-cols-1 gap-[var(--space-2)] md:grid-cols-2 lg:grid-cols-3">
+                    {/* Card 1 — Client & Service */}
+                    <FormCard title="Client & Service">
+                        <FormRow>
                             <Select
                                 label="Agent *"
                                 options={[{ value: '', label: 'Select agent...' }, ...agentOptions]}
@@ -89,38 +82,35 @@ export default function VisaCreate({ visaTypes, agentCodes, statuses, paymentMod
                                 onChange={(e) => setData('date', e.target.value)}
                                 error={errors.date}
                             />
+                        </FormRow>
+                        <Input
+                            label="Customer Name *"
+                            placeholder="Full name of applicant"
+                            value={data.customer_name}
+                            onChange={(e) => setData('customer_name', e.target.value)}
+                            error={errors.customer_name}
+                        />
+                        <FormRow>
                             <Input
                                 label="Agency"
-                                placeholder="Travel agency name (if applicable)"
+                                placeholder="Travel agency (if applicable)"
                                 value={data.agency}
                                 onChange={(e) => setData('agency', e.target.value)}
                                 error={errors.agency}
                             />
-                            <div className="md:col-span-2">
-                                <Input
-                                    label="Customer Name *"
-                                    placeholder="Full name of applicant"
-                                    value={data.customer_name}
-                                    onChange={(e) => setData('customer_name', e.target.value)}
-                                    error={errors.customer_name}
-                                />
-                            </div>
                             <Select
                                 label="Visa / Service Type *"
-                                options={[{ value: '', label: 'Select type...' }, ...visaTypeOptions]}
+                                options={[{ value: '', label: 'Select type...' }, ...visaOptions]}
                                 value={data.visa_type}
                                 onChange={(e) => setData('visa_type', e.target.value)}
                                 error={errors.visa_type}
                             />
-                        </div>
-                    </Card>
+                        </FormRow>
+                    </FormCard>
 
-                    {/* ── Financials ──────────────────────────────────────────── */}
-                    <Card>
-                        <div className="font-heading text-[var(--color-text)] mb-[var(--space-3)]" style={{ fontSize: 'var(--font-size-heading)' }}>
-                            Financials
-                        </div>
-                        <div className="grid grid-cols-1 gap-[var(--space-2)] md:grid-cols-3">
+                    {/* Card 2 — Pricing, Payment & References */}
+                    <FormCard title="Pricing, Payment & References">
+                        <FormRow>
                             <Input
                                 label="Selling Price (SP)"
                                 type="number"
@@ -137,23 +127,16 @@ export default function VisaCreate({ visaTypes, agentCodes, statuses, paymentMod
                                 onChange={(e) => handleFinancialChange('net_payable', e.target.value)}
                                 error={errors.net_payable}
                             />
-                            <Input
-                                label="Income (auto-computed)"
-                                type="number"
-                                placeholder="SP − NP"
-                                value={data.income}
-                                onChange={(e) => setData('income', e.target.value)}
-                                error={errors.income}
-                            />
-                        </div>
-                    </Card>
-
-                    {/* ── Status & Payment ────────────────────────────────────── */}
-                    <Card>
-                        <div className="font-heading text-[var(--color-text)] mb-[var(--space-3)]" style={{ fontSize: 'var(--font-size-heading)' }}>
-                            Status & Payment
-                        </div>
-                        <div className="grid grid-cols-1 gap-[var(--space-2)] md:grid-cols-2 lg:grid-cols-3">
+                        </FormRow>
+                        <Input
+                            label="Income (auto-computed)"
+                            type="number"
+                            placeholder="SP − NP"
+                            value={data.income}
+                            onChange={(e) => setData('income', e.target.value)}
+                            error={errors.income}
+                        />
+                        <FormRow>
                             <Select
                                 label="Status"
                                 options={statusOptions}
@@ -168,6 +151,8 @@ export default function VisaCreate({ visaTypes, agentCodes, statuses, paymentMod
                                 onChange={(e) => setData('mode_of_payment', e.target.value)}
                                 error={errors.mode_of_payment}
                             />
+                        </FormRow>
+                        <FormRow>
                             <Input
                                 label="Payment Date"
                                 type="date"
@@ -182,74 +167,28 @@ export default function VisaCreate({ visaTypes, agentCodes, statuses, paymentMod
                                 onChange={(e) => setData('payment_due_date', e.target.value)}
                                 error={errors.payment_due_date}
                             />
-                        </div>
-                    </Card>
-
-                    {/* ── Reference Numbers ───────────────────────────────────── */}
-                    <Card>
-                        <div className="font-heading text-[var(--color-text)] mb-[var(--space-3)]" style={{ fontSize: 'var(--font-size-heading)' }}>
-                            Reference Numbers
-                        </div>
-                        <div className="grid grid-cols-1 gap-[var(--space-2)] md:grid-cols-3">
-                            <Input
-                                label="SOA #"
-                                placeholder="SOA number"
-                                value={data.soa_number}
-                                onChange={(e) => setData('soa_number', e.target.value)}
-                                error={errors.soa_number}
-                            />
-                            <Input
-                                label="SI #"
-                                placeholder="Service Invoice number"
-                                value={data.si_number}
-                                onChange={(e) => setData('si_number', e.target.value)}
-                                error={errors.si_number}
-                            />
-                            <Input
-                                label="AR #"
-                                placeholder="Acknowledgement Receipt number"
-                                value={data.ar_number}
-                                onChange={(e) => setData('ar_number', e.target.value)}
-                                error={errors.ar_number}
-                            />
-                        </div>
-                    </Card>
-
-                    {/* ── Notes ───────────────────────────────────────────────── */}
-                    <Card>
-                        <div className="font-heading text-[var(--color-text)] mb-[var(--space-3)]" style={{ fontSize: 'var(--font-size-heading)' }}>
-                            Notes
-                        </div>
+                        </FormRow>
+                        <FormRow>
+                            <Input label="SOA #" placeholder="SOA number" value={data.soa_number} onChange={(e) => setData('soa_number', e.target.value)} error={errors.soa_number} />
+                            <Input label="SI #" placeholder="Service Invoice #" value={data.si_number} onChange={(e) => setData('si_number', e.target.value)} error={errors.si_number} />
+                        </FormRow>
+                        <Input label="AR #" placeholder="Acknowledgement Receipt #" value={data.ar_number} onChange={(e) => setData('ar_number', e.target.value)} error={errors.ar_number} />
                         <Textarea
-                            label="Notes (replaces yellow Excel highlighting)"
+                            label="Notes"
                             placeholder="Any follow-ups, flags, or special instructions..."
                             value={data.notes}
                             onChange={(e) => setData('notes', e.target.value)}
-                            rows={4}
+                            rows={3}
                             error={errors.notes}
                         />
-                    </Card>
+                    </FormCard>
 
-                    {/* ── Actions ─────────────────────────────────────────────── */}
-                    <div className="flex justify-end gap-[var(--space-2)]">
-                        <Button
-                            variant="ghost"
-                            type="button"
-                            onClick={() => history.back()}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            variant="primary"
-                            type="submit"
-                            loading={processing}
-                        >
-                            Save Application
-                        </Button>
-                    </div>
-
-                </form>
-            </div>
+                    <FormActions>
+                        <Button type="button" variant="ghost" icon={X} onClick={() => history.back()}>Cancel</Button>
+                        <Button type="submit" icon={Save} loading={processing}>Save Application</Button>
+                    </FormActions>
+                </FormLayout>
+            </form>
         </AppShell>
     );
 }

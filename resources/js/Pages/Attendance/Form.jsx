@@ -1,50 +1,12 @@
 import { useForm, router } from '@inertiajs/react';
-import { ArrowLeft, Save, AlertTriangle, Shield } from 'lucide-react';
+import { ArrowLeft, Save, Shield } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
-import Card from '../../Components/UI/Card';
+import { FormLayout, FormCard, FormRow, FormActions } from '../../Components/Shared/FormLayout';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
 import Textarea from '../../Components/UI/Textarea';
-
-// ── Field helpers ─────────────────────────────────────────────────────────────
-
-function FieldGroup({ label, error, children, required }) {
-    return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <label className="font-body" style={{
-                fontSize: 'var(--font-size-small)',
-                color: 'var(--color-text)',
-                fontWeight: 600,
-            }}>
-                {label}{required && <span style={{ color: 'var(--color-error)', marginLeft: 2 }}>*</span>}
-            </label>
-            {children}
-            {error && (
-                <span className="font-body" style={{ fontSize: 11, color: 'var(--color-error)' }}>
-                    {error}
-                </span>
-            )}
-        </div>
-    );
-}
-
-function SectionTitle({ children }) {
-    return (
-        <div className="font-heading font-semibold" style={{
-            fontSize: 'var(--font-size-heading)',
-            color: 'var(--color-text)',
-            paddingBottom: 'var(--space-1)',
-            borderBottom: '1px solid rgba(0,0,0,0.07)',
-            marginBottom: 'var(--space-2)',
-        }}>
-            {children}
-        </div>
-    );
-}
-
-// ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function AttendanceForm({ record, employees, branches, statuses, leaveTypes }) {
     const isEdit = !!record;
@@ -75,9 +37,12 @@ export default function AttendanceForm({ record, employees, branches, statuses, 
 
     return (
         <AppShell>
-            <form onSubmit={handleSubmit}>
-                <div className="flex flex-col flex-1 min-h-0" style={{ gap: 'var(--space-section)' }}>
-
+            <form
+                onSubmit={handleSubmit}
+                className="flex min-h-0 flex-1 flex-col overflow-y-auto"
+                style={{ gap: 'var(--space-2)' }}
+            >
+                <FormLayout columns={2}>
                     <PageHeader
                         title={isEdit ? 'Edit Attendance Record' : 'Add Attendance Record'}
                         subtitle="HR override — all changes are flagged in the audit trail"
@@ -101,135 +66,118 @@ export default function AttendanceForm({ record, employees, branches, statuses, 
                         }
                     />
 
-                    {/* HR override notice */}
-                    <div style={{
-                        display: 'flex', alignItems: 'flex-start', gap: 'var(--space-1)',
-                        padding: 'var(--space-2) var(--space-3)',
-                        background: 'rgba(59,130,246,0.08)',
-                        border: '1px solid var(--color-info)',
-                        borderRadius: 'var(--radius-md)',
-                        color: 'var(--color-info)',
-                        fontSize: 'var(--font-size-small)',
-                    }}>
-                        <Shield size={16} style={{ flexShrink: 0, marginTop: 1 }} />
-                        <span className="font-body">
-                            This form is for HR corrections only. All changes are logged as HR overrides in the audit trail.
-                            Employee self clock-in/out is done from the main attendance page.
-                        </span>
-                    </div>
-
-                    <Card>
-                        <SectionTitle>Record Details</SectionTitle>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-3)' }}>
-
-                            <FieldGroup label="Employee" required error={errors.employee_id}>
-                                <Select
-                                    options={[
-                                        { value: '', label: 'Select employee…' },
-                                        ...employees.map((e) => ({ value: e.id, label: e.name })),
-                                    ]}
-                                    value={data.employee_id}
-                                    onChange={(e) => setData('employee_id', e.target.value)}
-                                />
-                            </FieldGroup>
-
-                            <FieldGroup label="Work Date" required error={errors.work_date}>
-                                <Input
-                                    type="date"
-                                    value={data.work_date}
-                                    onChange={(e) => setData('work_date', e.target.value)}
-                                />
-                            </FieldGroup>
-
-                            <FieldGroup label="Branch" error={errors.branch_id}>
-                                <Select
-                                    options={[
-                                        { value: '', label: 'Select branch…' },
-                                        ...branches.map((b) => ({ value: b.id, label: b.name })),
-                                    ]}
-                                    value={data.branch_id}
-                                    onChange={(e) => setData('branch_id', e.target.value)}
-                                />
-                            </FieldGroup>
-
-                            <FieldGroup label="Status" required error={errors.status}>
-                                <Select
-                                    options={Object.entries(statuses).map(([v, l]) => ({ value: v, label: l }))}
-                                    value={data.status}
-                                    onChange={(e) => setData('status', e.target.value)}
-                                />
-                            </FieldGroup>
-
-                            {requiresLeaveType && (
-                                <FieldGroup label="Leave Type" required error={errors.leave_type}>
-                                    <Select
-                                        options={[
-                                            { value: '', label: 'Select type…' },
-                                            ...Object.entries(leaveTypes).map(([v, l]) => ({ value: v, label: l })),
-                                        ]}
-                                        value={data.leave_type}
-                                        onChange={(e) => setData('leave_type', e.target.value)}
-                                    />
-                                </FieldGroup>
-                            )}
+                    {/* Card 1 — Record Details + Override */}
+                    <FormCard title="Record Details">
+                        {/* HR notice */}
+                        <div style={{
+                            display: 'flex', alignItems: 'flex-start', gap: 'var(--space-1)',
+                            padding: 'var(--space-2)',
+                            background: 'rgba(59,130,246,0.08)',
+                            border: '1px solid var(--color-info)',
+                            borderRadius: 'var(--radius-md)',
+                            color: 'var(--color-info)',
+                            fontSize: 'var(--font-size-small)',
+                            marginBottom: 'var(--space-1)',
+                        }}>
+                            <Shield size={16} style={{ flexShrink: 0, marginTop: 1 }} />
+                            <span className="font-body">
+                                HR corrections only. All changes are logged as HR overrides in the audit trail.
+                            </span>
                         </div>
-                    </Card>
 
-                    <Card>
-                        <SectionTitle>Time In / Time Out</SectionTitle>
+                        <Select
+                            label="Employee *"
+                            options={[
+                                { value: '', label: 'Select employee…' },
+                                ...employees.map((e) => ({ value: e.id, label: e.name })),
+                            ]}
+                            value={data.employee_id}
+                            onChange={(e) => setData('employee_id', e.target.value)}
+                            error={errors.employee_id}
+                        />
+                        <FormRow>
+                            <Input
+                                label="Work Date *"
+                                type="date"
+                                value={data.work_date}
+                                onChange={(e) => setData('work_date', e.target.value)}
+                                error={errors.work_date}
+                            />
+                            <Select
+                                label="Branch"
+                                options={[
+                                    { value: '', label: 'Select branch…' },
+                                    ...branches.map((b) => ({ value: b.id, label: b.name })),
+                                ]}
+                                value={data.branch_id}
+                                onChange={(e) => setData('branch_id', e.target.value)}
+                                error={errors.branch_id}
+                            />
+                        </FormRow>
+                        <Select
+                            label="Status *"
+                            options={Object.entries(statuses).map(([v, l]) => ({ value: v, label: l }))}
+                            value={data.status}
+                            onChange={(e) => setData('status', e.target.value)}
+                            error={errors.status}
+                        />
+                        {requiresLeaveType && (
+                            <Select
+                                label="Leave Type *"
+                                options={[
+                                    { value: '', label: 'Select type…' },
+                                    ...Object.entries(leaveTypes).map(([v, l]) => ({ value: v, label: l })),
+                                ]}
+                                value={data.leave_type}
+                                onChange={(e) => setData('leave_type', e.target.value)}
+                                error={errors.leave_type}
+                            />
+                        )}
+                        <Textarea
+                            label="Override Reason *"
+                            placeholder="Explain why this record is being manually entered or corrected…"
+                            value={data.override_reason}
+                            onChange={(e) => setData('override_reason', e.target.value)}
+                            error={errors.override_reason}
+                            rows={3}
+                        />
+                        <Textarea
+                            label="Remarks (optional)"
+                            placeholder="Any additional notes…"
+                            value={data.remarks}
+                            onChange={(e) => setData('remarks', e.target.value)}
+                            error={errors.remarks}
+                            rows={2}
+                        />
+                    </FormCard>
 
-                        <div className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)', opacity: 0.6, marginBottom: 'var(--space-2)' }}>
+                    {/* Card 2 — Time In / Time Out */}
+                    <FormCard title="Time In / Time Out">
+                        <div className="font-body" style={{
+                            fontSize: 'var(--font-size-small)',
+                            color: 'var(--color-text-muted)',
+                            marginBottom: 'var(--space-1)',
+                        }}>
                             Standard hours: <strong>8:00 AM – 5:00 PM</strong>.
-                            Minutes late and undertime will be computed automatically when saved.
+                            Minutes late and undertime are computed automatically when saved.
                         </div>
+                        <Input
+                            label="Time In"
+                            type="time"
+                            value={data.time_in}
+                            onChange={(e) => setData('time_in', e.target.value)}
+                            error={errors.time_in}
+                        />
+                        <Input
+                            label="Time Out"
+                            type="time"
+                            value={data.time_out}
+                            onChange={(e) => setData('time_out', e.target.value)}
+                            error={errors.time_out}
+                        />
+                    </FormCard>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-3)' }}>
-
-                            <FieldGroup label="Time In" error={errors.time_in}>
-                                <Input
-                                    type="time"
-                                    value={data.time_in}
-                                    onChange={(e) => setData('time_in', e.target.value)}
-                                />
-                            </FieldGroup>
-
-                            <FieldGroup label="Time Out" error={errors.time_out}>
-                                <Input
-                                    type="time"
-                                    value={data.time_out}
-                                    onChange={(e) => setData('time_out', e.target.value)}
-                                />
-                            </FieldGroup>
-                        </div>
-                    </Card>
-
-                    <Card>
-                        <SectionTitle>Override Details</SectionTitle>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 'var(--space-3)' }}>
-                            <FieldGroup label="Override Reason" required error={errors.override_reason}>
-                                <Textarea
-                                    placeholder="Explain why this record is being manually entered or corrected…"
-                                    value={data.override_reason}
-                                    onChange={(e) => setData('override_reason', e.target.value)}
-                                    rows={3}
-                                />
-                            </FieldGroup>
-
-                            <FieldGroup label="Remarks (optional)" error={errors.remarks}>
-                                <Textarea
-                                    placeholder="Any additional notes…"
-                                    value={data.remarks}
-                                    onChange={(e) => setData('remarks', e.target.value)}
-                                    rows={2}
-                                />
-                            </FieldGroup>
-                        </div>
-                    </Card>
-
-                    {/* Submit footer */}
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-1)', paddingBottom: 'var(--space-4)' }}>
+                    <FormActions>
                         <Button
                             type="button"
                             variant="ghost"
@@ -243,8 +191,8 @@ export default function AttendanceForm({ record, employees, branches, statuses, 
                         <Button type="submit" icon={Save} loading={processing}>
                             {isEdit ? 'Save Changes' : 'Create Record'}
                         </Button>
-                    </div>
-                </div>
+                    </FormActions>
+                </FormLayout>
             </form>
         </AppShell>
     );

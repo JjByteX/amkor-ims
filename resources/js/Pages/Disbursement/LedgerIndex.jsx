@@ -34,6 +34,8 @@ export default function LedgerIndex({
     const { flash } = usePage().props;
     const [searchInput, setSearchInput] = useState(filters.search ?? '');
 
+    const hasActiveFilters = filters.search || filters.category || filters.month || searchInput;
+
     function applyFilter(overrides = {}) {
         router.get(
             route('disbursement.ledger.index'),
@@ -217,7 +219,9 @@ export default function LedgerIndex({
                                     onChange={(e) => applyFilter({ month: e.target.value || undefined })}
                                 />
                             </FilterField>
-                            <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                            {hasActiveFilters && (
+                                <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                            )}
                         </FilterStrip>
                     }
                 />

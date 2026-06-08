@@ -59,6 +59,8 @@ export default function APIndex({
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [deleting,     setDeleting    ] = useState(false);
 
+    const hasActiveFilters = filters.search || filters.status || filters.currency || filters.month;
+
     function applyFilter(overrides = {}) {
         router.get(
             route('ap.index'),
@@ -297,7 +299,9 @@ export default function APIndex({
                                     onChange={(e) => applyFilter({ month: e.target.value || undefined })}
                                 />
                             </FilterField>
-                            <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                            {hasActiveFilters && (
+                                <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                            )}
                         </FilterStrip>
                     }
                 />

@@ -49,7 +49,7 @@ function MonthlyCard({ summary, months, documentTypes }) {
             <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--font-size-small)' }}>
                     <thead>
-                        <tr style={{ background: 'var(--color-bg)' }}>
+                        <tr style={{ background: 'var(--color-table-header-bg)' }}>
                             <th style={thStyle}>Month</th>
                             {Object.keys(documentTypes).map((type) => (
                                 <th key={type} style={thStyle} colSpan={2}>
@@ -57,7 +57,7 @@ function MonthlyCard({ summary, months, documentTypes }) {
                                 </th>
                             ))}
                         </tr>
-                        <tr style={{ background: 'var(--color-bg)' }}>
+                        <tr style={{ background: 'var(--color-table-header-bg)' }}>
                             <th style={thStyle}></th>
                             {Object.keys(documentTypes).map((type) => (
                                 <>
@@ -98,7 +98,7 @@ const thStyle = {
     fontWeight  : 600,
     color       : 'var(--color-text)',
     textAlign   : 'left',
-    borderBottom: '2px solid rgba(0,0,0,0.08)',
+    borderBottom: 'var(--border-table-header)',
     whiteSpace  : 'nowrap',
 };
 

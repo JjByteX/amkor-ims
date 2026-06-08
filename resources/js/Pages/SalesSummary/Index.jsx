@@ -88,9 +88,8 @@ export default function SalesSummaryIndex({ rows, totals, departments, targets, 
                                         <Select value={filters.branch_id ?? ''} onChange={(e) => apply({ branch_id: e.target.value })} options={[{ value: '', label: 'All branches' }, ...branches.map((branch) => ({ value: branch.id, label: branch.name }))]} />
                                     </FilterField>
                                     <FilterField width={160}>
-                                        <Input value={agent} onChange={(e) => setAgent(e.target.value)} placeholder="Agent code" />
+                                        <Input value={agent} onChange={(e) => setAgent(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && apply()} placeholder="Agent code" />
                                     </FilterField>
-                                    <Button variant="secondary" onClick={() => apply()}>Apply</Button>
                                 </FilterStrip>
                             }
                         />

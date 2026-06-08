@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import { ChevronDown } from 'lucide-react';
+import Tooltip from './Tooltip';
 
 /**
  * NavItem — sidebar navigation link.
@@ -38,19 +39,22 @@ export default function NavItem({ href, icon, label, activeOn = [], inactiveOn =
 
     const [open, setOpen] = useState(childActive);
 
+    /* ── Portal tooltip state ───────────────────────────────────────────────── */
+    const [tipVisible, setTipVisible] = useState(false);
+    const anchorRef = useRef(null);
+
     /* ── Shared item dimensions ─────────────────────────────────────────────── */
-    // px-2 (8px) on top of the sidebar's --space-sidebar-x (12px) = 20px total
-    // from sidebar edge. Keeps icon/text well clear of the wall.
     const itemStyle = {
         borderRadius: 'var(--radius-md)',
-        height      : '40px',
+        height      : '34px',
     };
 
-    /* ── Collapsed: icon centred + CSS tooltip ──────────────────────────────── */
+    /* ── Collapsed: icon centred + portal tooltip ───────────────────────────── */
     if (collapsed) {
         return (
-            <li data-tooltip={label}>
+            <li>
                 <Link
+                    ref={anchorRef}
                     href={href ?? '#'}
                     className="flex items-center justify-center"
                     style={{
@@ -59,9 +63,12 @@ export default function NavItem({ href, icon, label, activeOn = [], inactiveOn =
                         background: isActive || childActive ? 'var(--color-primary)' : 'transparent',
                         color     : isActive || childActive ? '#ffffff' : 'var(--color-text-muted)',
                     }}
+                    onMouseEnter={() => setTipVisible(true)}
+                    onMouseLeave={() => setTipVisible(false)}
                 >
                     <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>{icon}</span>
                 </Link>
+                {tipVisible && <Tooltip label={label} anchorRef={anchorRef} />}
             </li>
         );
     }
@@ -75,9 +82,9 @@ export default function NavItem({ href, icon, label, activeOn = [], inactiveOn =
                     className="flex items-center w-full"
                     style={{
                         ...itemStyle,
-                        gap        : '12px',
-                        paddingLeft: '14px',
-                        paddingRight: '14px',
+                        gap        : '10px',
+                        paddingLeft: '10px',
+                        paddingRight: '10px',
                         fontSize   : 'var(--font-size-small)',
                         fontFamily : 'var(--font-body)',
                         fontWeight : isActive ? 'var(--font-weight-semibold)' : 'var(--font-weight-normal)',
@@ -112,9 +119,9 @@ export default function NavItem({ href, icon, label, activeOn = [], inactiveOn =
                 className="w-full flex items-center"
                 style={{
                     ...itemStyle,
-                        gap        : '12px',
-                        paddingLeft: '14px',
-                        paddingRight: '14px',
+                        gap        : '10px',
+                        paddingLeft: '10px',
+                        paddingRight: '10px',
                     fontSize   : 'var(--font-size-small)',
                     fontFamily : 'var(--font-body)',
                     fontWeight : childActive ? 'var(--font-weight-semibold)' : 'var(--font-weight-normal)',

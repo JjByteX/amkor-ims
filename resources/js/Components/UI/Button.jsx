@@ -39,6 +39,8 @@ export default function Button({
         isDisabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : '',
     ].join(' ');
 
+    const hasIcon = loading || !!icon;
+
     const sizes = {
         default : hasContent ? 'px-4' : 'px-0',
         sm      : hasContent ? 'px-3.5' : 'px-0',
@@ -86,14 +88,21 @@ export default function Button({
                 boxShadow    : 'none',
                 gap          : '8px',
                 maxWidth     : '100%',
+                // Extra horizontal breathing room when an icon is present so the
+                // icon doesn't sit flush against the button edge (Tailwind classes
+                // may not be compiled for dynamically-added values).
+                ...(hasContent && hasIcon ? { paddingLeft: '20px', paddingRight: '20px' } : {}),
                 '--tw-ring-color': 'var(--color-primary)',
                 ...style,
             }}
             onFocus={(e) => {
-                e.currentTarget.style.boxShadow = 'var(--ring-focus)';
+                e.currentTarget.style.outline = '2px solid var(--color-primary)';
+                e.currentTarget.style.outlineOffset = '2px';
+                e.currentTarget.style.boxShadow = 'none';
                 onFocus?.(e);
             }}
             onBlur={(e) => {
+                e.currentTarget.style.outline = 'none';
                 e.currentTarget.style.boxShadow = style.boxShadow ?? 'none';
                 onBlur?.(e);
             }}

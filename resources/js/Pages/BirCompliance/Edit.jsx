@@ -1,8 +1,8 @@
 import { router, usePage, useForm } from '@inertiajs/react';
-import { Save, ArrowLeft, AlertCircle } from 'lucide-react';
+import { Save, X, AlertCircle } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
-import Card from '../../Components/UI/Card';
+import { FormLayout, FormCard, FormRow, FormActions } from '../../Components/Shared/FormLayout';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
@@ -13,8 +13,6 @@ const php = (v) =>
     v != null ? '₱ ' + Number(v).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
 
 export default function BirEdit({ transaction, documentTypes, sourceTypes, paymentModes, vatRate, whtRate, atpNumber, months }) {
-    const { flash } = usePage().props;
-
     const { data, setData, put, processing, errors } = useForm({
         document_type    : transaction.document_type     ?? 'AR',
         document_number  : transaction.document_number   ?? '',
@@ -54,289 +52,138 @@ export default function BirEdit({ transaction, documentTypes, sourceTypes, payme
 
     return (
         <AppShell>
-            <div className="flex flex-col flex-1 min-h-0" style={{ gap: 'var(--space-section)' }}>
+            <form
+                onSubmit={handleSubmit}
+                className="flex min-h-0 flex-1 flex-col overflow-y-auto"
+                style={{ gap: 'var(--space-2)' }}
+            >
+                <FormLayout split="5fr 7fr 5fr">
+                    <PageHeader
+                        breadcrumb={[{ label: 'BIR Compliance', href: route('bir.index') }]}
+                        title={`Edit — ${transaction.document_number ?? 'Transaction'}`}
+                        subtitle={`${documentTypes[transaction.document_type] ?? transaction.document_type} · ${transaction.client_name}`}
+                        actions={
+                            <>
+                                <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('bir.show', transaction.id))}>Cancel</Button>
+                                <Button type="submit" variant="primary" icon={Save} loading={processing}>Save Changes</Button>
+                            </>
+                        }
+                    />
 
-                {flash?.message && (
-                    <div className="rounded font-body" style={{
-                        padding     : 'var(--space-2)',
-                        background  : flash.type === 'success' ? 'var(--color-success)' : flash.type === 'error' ? 'var(--color-error)' : 'var(--color-warning)',
-                        color       : '#fff',
-                        fontSize    : 'var(--font-size-small)',
-                        borderRadius: 'var(--radius-md)',
-                    }}>
-                        {flash.message}
-                    </div>
-                )}
+                    {/* Card 1 — Document & Client */}
+                    <FormCard title="Document & Client">
+                        <FormRow>
+                            <Select
+                                label="Document Type *"
+                                value={data.document_type}
+                                onChange={(e) => setData('document_type', e.target.value)}
+                                error={errors.document_type}
+                                options={Object.entries(documentTypes).map(([v, l]) => ({ value: v, label: `${v} — ${l}` }))}
+                            />
+                            <Input
+                                label="Document Number"
+                                value={data.document_number}
+                                onChange={(e) => setData('document_number', e.target.value)}
+                                error={errors.document_number}
+                            />
+                        </FormRow>
+                        <FormRow>
+                            <Select
+                                label="Source"
+                                value={data.source_type}
+                                onChange={(e) => setData('source_type', e.target.value)}
+                                error={errors.source_type}
+                                options={Object.entries(sourceTypes).map(([v, l]) => ({ value: v, label: l }))}
+                            />
+                            <Input
+                                label="Transaction Date *"
+                                type="date"
+                                value={data.transaction_date}
+                                onChange={(e) => setData('transaction_date', e.target.value)}
+                                error={errors.transaction_date}
+                            />
+                        </FormRow>
+                        {isSOA && (
+                            <Input label="Due Date" type="date" value={data.due_date} onChange={(e) => setData('due_date', e.target.value)} error={errors.due_date} />
+                        )}
+                        {isSI && (
+                            <div className="flex items-center font-body" style={{ padding: '8px 12px', background: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: 'var(--radius-md)', fontSize: 'var(--font-size-small)', color: '#92400E', gap: 'var(--space-1)' }}>
+                                <AlertCircle size={14} />
+                                Service Invoice — BIR ATP No. {atpNumber} will be printed.
+                            </div>
+                        )}
+                        <Input label="Client Name *" value={data.client_name} onChange={(e) => setData('client_name', e.target.value)} error={errors.client_name} />
+                        <FormRow>
+                            <Input label="TIN" value={data.tin} onChange={(e) => setData('tin', e.target.value)} error={errors.tin} placeholder="000-000-000-00000" />
+                            <Input label="Business Style" value={data.business_style} onChange={(e) => setData('business_style', e.target.value)} error={errors.business_style} />
+                        </FormRow>
+                        <Textarea label="Address" value={data.address} onChange={(e) => setData('address', e.target.value)} error={errors.address} rows={2} />
+                    </FormCard>
 
-                <PageHeader
-                    title={`Edit — ${transaction.document_number ?? 'Transaction'}`}
-                    subtitle={`${documentTypes[transaction.document_type] ?? transaction.document_type} · ${transaction.client_name}`}
-                    actions={
-                        <Button
-                            variant="ghost"
-                            icon={ArrowLeft}
-                            onClick={() => router.get(route('bir.show', transaction.id))}
-                        >
-                            Back
-                        </Button>
-                    }
-                />
-
-                <form onSubmit={handleSubmit}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--space-3)' }}>
-
-                        {/* Left column */}
-                        <div className="flex flex-col" style={{ gap: 'var(--space-3)' }}>
-
-                            {/* Document details */}
-                            <Card>
-                                <div className="font-heading font-semibold text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-body)', marginBottom: 'var(--space-2)' }}>
-                                    Document Details
+                    {/* Card 2 — Amounts & Notes */}
+                    <FormCard title="Amounts & Notes">
+                        <Input label="Gross Amount (VAT-inclusive) *" type="number" step="0.01" min="0" value={data.gross_amount} onChange={(e) => setData('gross_amount', e.target.value)} error={errors.gross_amount} />
+                        {isSI && (
+                            <FormRow>
+                                <Checkbox label="VAT Exempt" checked={data.is_vat_exempt} onChange={(e) => { setData('is_vat_exempt', e.target.checked); if (e.target.checked) setData('is_vat_zero_rated', false); }} />
+                                <Checkbox label="VAT Zero-Rated" checked={data.is_vat_zero_rated} onChange={(e) => { setData('is_vat_zero_rated', e.target.checked); if (e.target.checked) setData('is_vat_exempt', false); }} />
+                            </FormRow>
+                        )}
+                        <FormRow>
+                            <Input label="SC/PWD Discount" type="number" step="0.01" min="0" value={data.sc_pwd_discount} onChange={(e) => setData('sc_pwd_discount', e.target.value)} error={errors.sc_pwd_discount} />
+                            <Input label={`Withholding Tax${isSI ? ` (${(whtRate * 100).toFixed(0)}%)` : ''}`} type="number" step="0.01" min="0" value={data.withholding_tax} onChange={(e) => setData('withholding_tax', e.target.value)} error={errors.withholding_tax} />
+                        </FormRow>
+                        {/* Live preview */}
+                        {gross > 0 && (
+                            <div style={{ background: 'var(--color-bg)', borderRadius: 'var(--radius-md)', padding: 'var(--space-2)' }}>
+                                <div className="font-heading font-semibold text-gray-400" style={{ fontSize: 'var(--font-size-small)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 'var(--space-1)' }}>
+                                    Computed Preview
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-2)' }}>
-                                    <Select
-                                        label="Document Type *"
-                                        value={data.document_type}
-                                        onChange={(e) => setData('document_type', e.target.value)}
-                                        error={errors.document_type}
-                                        options={Object.entries(documentTypes).map(([v, l]) => ({ value: v, label: `${v} — ${l}` }))}
-                                    />
-                                    <Input
-                                        label="Document Number"
-                                        value={data.document_number}
-                                        onChange={(e) => setData('document_number', e.target.value)}
-                                        error={errors.document_number}
-                                    />
-                                    <Select
-                                        label="Source"
-                                        value={data.source_type}
-                                        onChange={(e) => setData('source_type', e.target.value)}
-                                        error={errors.source_type}
-                                        options={Object.entries(sourceTypes).map(([v, l]) => ({ value: v, label: l }))}
-                                    />
-                                    <Input
-                                        label="Transaction Date *"
-                                        type="date"
-                                        value={data.transaction_date}
-                                        onChange={(e) => setData('transaction_date', e.target.value)}
-                                        error={errors.transaction_date}
-                                    />
-                                    {isSOA && (
-                                        <Input
-                                            label="Due Date"
-                                            type="date"
-                                            value={data.due_date}
-                                            onChange={(e) => setData('due_date', e.target.value)}
-                                            error={errors.due_date}
-                                        />
-                                    )}
+                                <div className="flex flex-col">
+                                    {[
+                                        { label: 'Gross Amount', value: php(gross) },
+                                        ...(isSI && !data.is_vat_exempt && !data.is_vat_zero_rated
+                                            ? [{ label: 'VATAble Sales', value: php(vatExclusive) }, { label: `VAT (${vatRate}%)`, value: php(vatAmount) }]
+                                            : []),
+                                        ...(discount > 0 ? [{ label: 'SC/PWD Discount', value: `- ${php(discount)}` }] : []),
+                                        ...(wht > 0      ? [{ label: 'Withholding Tax',  value: `- ${php(wht)}` }]     : []),
+                                    ].map((row) => (
+                                        <div key={row.label} className="flex justify-between font-body" style={{ padding: '4px 0', fontSize: 'var(--font-size-small)', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+                                            <span className="text-gray-400">{row.label}</span>
+                                            <span className="text-[var(--color-text)]">{row.value}</span>
+                                        </div>
+                                    ))}
                                 </div>
-
-                                {isSI && (
-                                    <div className="flex items-center font-body" style={{
-                                        marginTop   : 'var(--space-2)',
-                                        padding     : '8px 12px',
-                                        background  : '#FEF3C7',
-                                        border      : '1px solid #F59E0B',
-                                        borderRadius: 'var(--radius-md)',
-                                        fontSize    : 'var(--font-size-small)',
-                                        color       : '#92400E',
-                                        gap         : 'var(--space-1)',
-                                    }}>
-                                        <AlertCircle size={14} />
-                                        Service Invoice — BIR ATP No. {atpNumber} will be printed.
-                                    </div>
-                                )}
-                            </Card>
-
-                            {/* Client */}
-                            <Card>
-                                <div className="font-heading font-semibold text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-body)', marginBottom: 'var(--space-2)' }}>
-                                    Client Information
+                                <div className="flex justify-between font-heading font-semibold" style={{ padding: '8px 0', fontSize: 'var(--font-size-body)', color: 'var(--color-primary)', borderTop: '2px solid var(--color-primary)', marginTop: 4 }}>
+                                    <span>Net Amount Due</span>
+                                    <span>{php(netDue)}</span>
                                 </div>
-                                <div className="flex flex-col" style={{ gap: 'var(--space-2)' }}>
-                                    <Input
-                                        label="Client Name *"
-                                        value={data.client_name}
-                                        onChange={(e) => setData('client_name', e.target.value)}
-                                        error={errors.client_name}
-                                    />
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-2)' }}>
-                                        <Input
-                                            label="TIN"
-                                            value={data.tin}
-                                            onChange={(e) => setData('tin', e.target.value)}
-                                            error={errors.tin}
-                                            placeholder="000-000-000-00000"
-                                        />
-                                        <Input
-                                            label="Business Style"
-                                            value={data.business_style}
-                                            onChange={(e) => setData('business_style', e.target.value)}
-                                            error={errors.business_style}
-                                        />
-                                    </div>
-                                    <Textarea
-                                        label="Address"
-                                        value={data.address}
-                                        onChange={(e) => setData('address', e.target.value)}
-                                        error={errors.address}
-                                        rows={2}
-                                    />
-                                </div>
-                            </Card>
+                            </div>
+                        )}
+                        <Textarea label="Particulars / Description" value={data.particulars} onChange={(e) => setData('particulars', e.target.value)} error={errors.particulars} rows={3} />
+                        <Textarea label="Remarks (internal)" value={data.remarks} onChange={(e) => setData('remarks', e.target.value)} error={errors.remarks} rows={2} />
+                    </FormCard>
 
-                            {/* Particulars */}
-                            <Card>
-                                <div className="font-heading font-semibold text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-body)', marginBottom: 'var(--space-2)' }}>
-                                    Particulars
-                                </div>
-                                <div className="flex flex-col" style={{ gap: 'var(--space-2)' }}>
-                                    <Textarea
-                                        label="Particulars / Description"
-                                        value={data.particulars}
-                                        onChange={(e) => setData('particulars', e.target.value)}
-                                        error={errors.particulars}
-                                        rows={3}
-                                    />
-                                    <Textarea
-                                        label="Remarks (internal)"
-                                        value={data.remarks}
-                                        onChange={(e) => setData('remarks', e.target.value)}
-                                        error={errors.remarks}
-                                        rows={2}
-                                    />
-                                </div>
-                            </Card>
+                    {/* Card 3 — Payment Details */}
+                    <FormCard title="Payment Details">
+                        <Select
+                            label="Mode of Payment"
+                            value={data.mode_of_payment}
+                            onChange={(e) => setData('mode_of_payment', e.target.value)}
+                            error={errors.mode_of_payment}
+                            options={Object.entries(paymentModes).map(([v, l]) => ({ value: v, label: l }))}
+                        />
+                        {data.mode_of_payment === 'check' && (
+                            <Input label="Check Number" value={data.check_number} onChange={(e) => setData('check_number', e.target.value)} error={errors.check_number} />
+                        )}
+                    </FormCard>
 
-                            {/* Payment */}
-                            <Card>
-                                <div className="font-heading font-semibold text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-body)', marginBottom: 'var(--space-2)' }}>
-                                    Payment Details
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-2)' }}>
-                                    <Select
-                                        label="Mode of Payment"
-                                        value={data.mode_of_payment}
-                                        onChange={(e) => setData('mode_of_payment', e.target.value)}
-                                        error={errors.mode_of_payment}
-                                        options={Object.entries(paymentModes).map(([v, l]) => ({ value: v, label: l }))}
-                                    />
-                                    {data.mode_of_payment === 'check' && (
-                                        <Input
-                                            label="Check Number"
-                                            value={data.check_number}
-                                            onChange={(e) => setData('check_number', e.target.value)}
-                                            error={errors.check_number}
-                                        />
-                                    )}
-                                </div>
-                            </Card>
-                        </div>
-
-                        {/* Right column — amounts */}
-                        <div className="flex flex-col" style={{ gap: 'var(--space-3)' }}>
-                            <Card>
-                                <div className="font-heading font-semibold text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-body)', marginBottom: 'var(--space-2)' }}>
-                                    Amount
-                                </div>
-                                <div className="flex flex-col" style={{ gap: 'var(--space-2)' }}>
-                                    <Input
-                                        label="Gross Amount (VAT-inclusive) *"
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        value={data.gross_amount}
-                                        onChange={(e) => setData('gross_amount', e.target.value)}
-                                        error={errors.gross_amount}
-                                    />
-
-                                    {isSI && (
-                                        <>
-                                            <Checkbox
-                                                label="VAT Exempt"
-                                                checked={data.is_vat_exempt}
-                                                onChange={(e) => {
-                                                    setData('is_vat_exempt', e.target.checked);
-                                                    if (e.target.checked) setData('is_vat_zero_rated', false);
-                                                }}
-                                            />
-                                            <Checkbox
-                                                label="VAT Zero-Rated"
-                                                checked={data.is_vat_zero_rated}
-                                                onChange={(e) => {
-                                                    setData('is_vat_zero_rated', e.target.checked);
-                                                    if (e.target.checked) setData('is_vat_exempt', false);
-                                                }}
-                                            />
-                                        </>
-                                    )}
-
-                                    <Input
-                                        label="SC/PWD Discount"
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        value={data.sc_pwd_discount}
-                                        onChange={(e) => setData('sc_pwd_discount', e.target.value)}
-                                        error={errors.sc_pwd_discount}
-                                    />
-                                    <Input
-                                        label={`Withholding Tax${isSI ? ` (${(whtRate * 100).toFixed(0)}%)` : ''}`}
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        value={data.withholding_tax}
-                                        onChange={(e) => setData('withholding_tax', e.target.value)}
-                                        error={errors.withholding_tax}
-                                    />
-                                </div>
-                            </Card>
-
-                            {/* Live preview */}
-                            {gross > 0 && (
-                                <Card compact style={{ background: 'var(--color-bg)' }}>
-                                    <div className="font-heading font-semibold text-gray-400" style={{ fontSize: 'var(--font-size-small)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 'var(--space-1)' }}>
-                                        Computed Preview
-                                    </div>
-                                    <div className="flex flex-col">
-                                        {[
-                                            { label: 'Gross Amount',           value: php(gross) },
-                                            ...(isSI && !data.is_vat_exempt && !data.is_vat_zero_rated
-                                                ? [
-                                                    { label: `VATAble Sales`,     value: php(vatExclusive) },
-                                                    { label: `VAT (${vatRate}%)`, value: php(vatAmount) },
-                                                  ]
-                                                : []),
-                                            ...(discount > 0 ? [{ label: 'SC/PWD Discount', value: `- ${php(discount)}` }] : []),
-                                            ...(wht > 0      ? [{ label: 'Withholding Tax',  value: `- ${php(wht)}` }]     : []),
-                                        ].map((row) => (
-                                            <div key={row.label} className="flex justify-between font-body" style={{ padding: '4px 0', fontSize: 'var(--font-size-small)', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
-                                                <span className="text-gray-400">{row.label}</span>
-                                                <span className="text-[var(--color-text)]">{row.value}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="flex justify-between font-heading font-semibold" style={{ padding: '8px 0', fontSize: 'var(--font-size-body)', color: 'var(--color-primary)', borderTop: '2px solid var(--color-primary)', marginTop: 4 }}>
-                                        <span>Net Amount Due</span>
-                                        <span>{php(netDue)}</span>
-                                    </div>
-                                </Card>
-                            )}
-
-                            <Button
-                                type="submit"
-                                icon={Save}
-                                disabled={processing}
-                                loading={processing}
-                                style={{ width: '100%' }}
-                            >
-                                Save Changes
-                            </Button>
-                        </div>
-                    </div>
-                </form>
-            </div>
+                    <FormActions>
+                        <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('bir.show', transaction.id))}>Cancel</Button>
+                        <Button type="submit" variant="primary" icon={Save} loading={processing}>Save Changes</Button>
+                    </FormActions>
+                </FormLayout>
+            </form>
         </AppShell>
     );
 }

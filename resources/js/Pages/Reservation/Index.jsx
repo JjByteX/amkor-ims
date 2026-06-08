@@ -100,7 +100,6 @@ export default function ReservationIndex({ bookings, summary, filters, statuses,
                             <FilterField width={150}>
                                 <Input type="month" value={filters.month ?? ''} onChange={(e) => apply({ month: e.target.value })} />
                             </FilterField>
-                            <Button variant="secondary" onClick={() => apply()}>Apply</Button>
                         </FilterStrip>
                     }
                 />
