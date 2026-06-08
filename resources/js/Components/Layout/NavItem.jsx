@@ -54,6 +54,7 @@ export default function NavItem({ href, icon, label, activeOn = [], inactiveOn =
         return (
             <li>
                 <Link
+                    prefetch
                     ref={anchorRef}
                     href={href ?? '#'}
                     className="flex items-center justify-center"
@@ -78,6 +79,7 @@ export default function NavItem({ href, icon, label, activeOn = [], inactiveOn =
         return (
             <li>
                 <Link
+                    prefetch
                     href={href}
                     className="flex items-center w-full"
                     style={{

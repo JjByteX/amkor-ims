@@ -55,21 +55,19 @@ class ReservationController extends Controller
             $query->whereYear('date', $year)->whereMonth('date', $monthNumber);
         }
 
-        $summaryQuery = (clone $query)->toBase();
-
         return Inertia::render('Reservation/Index', [
             'bookings' => $query->paginate(25)->withQueryString(),
-            'summary' => [
-                'total' => (clone $summaryQuery)->count(),
-                'confirmed' => (clone $summaryQuery)->where('status', 'confirmed')->count(),
-                'gross' => (float) (clone $summaryQuery)->sum('selling_price'),
-                'income' => (float) (clone $summaryQuery)->sum('income'),
-            ],
+            'summary' => (clone $query)->toBase()->selectRaw("
+                COUNT(*) as total,
+                COUNT(CASE WHEN status = 'confirmed' THEN 1 END) as confirmed,
+                COALESCE(SUM(selling_price), 0) as gross,
+                COALESCE(SUM(income), 0) as income
+            ")->first(),
             'filters' => compact('search', 'status', 'agent', 'month'),
-            'statuses' => ReservationBooking::STATUSES,
-            'serviceTypes' => ReservationBooking::SERVICE_TYPES,
-            'paymentModes' => ReservationBooking::PAYMENT_MODES,
-            'agentCodes' => ReservationBooking::AGENT_CODES,
+            'statuses' => fn () => ReservationBooking::STATUSES,
+            'serviceTypes' => fn () => ReservationBooking::SERVICE_TYPES,
+            'paymentModes' => fn () => ReservationBooking::PAYMENT_MODES,
+            'agentCodes' => fn () => ReservationBooking::AGENT_CODES,
             'canWrite' => $this->canWrite($request),
         ]);
     }
@@ -107,17 +105,15 @@ class ReservationController extends Controller
             $query->whereYear('date', $year)->whereMonth('date', $monthNumber);
         }
 
-        $summaryQuery = (clone $query)->toBase();
-
         return Inertia::render('Reservation/SalesReport', [
             'bookings' => $query->paginate(25)->withQueryString(),
-            'summary' => [
-                'total' => (clone $summaryQuery)->count(),
-                'confirmed' => (clone $summaryQuery)->where('status', 'confirmed')->count(),
-                'gross' => (float) (clone $summaryQuery)->sum('selling_price'),
-                'income' => (float) (clone $summaryQuery)->sum('income'),
-                'pax' => (int) (clone $summaryQuery)->sum('pax_count'),
-            ],
+            'summary' => (clone $query)->toBase()->selectRaw("
+                COUNT(*) as total,
+                COUNT(CASE WHEN status = 'confirmed' THEN 1 END) as confirmed,
+                COALESCE(SUM(selling_price), 0) as gross,
+                COALESCE(SUM(income), 0) as income,
+                COALESCE(SUM(pax_count), 0) as pax
+            ")->first(),
             'filters' => compact('search', 'status', 'agent', 'serviceType', 'month'),
             'statuses' => ReservationBooking::STATUSES,
             'serviceTypes' => ReservationBooking::SERVICE_TYPES,

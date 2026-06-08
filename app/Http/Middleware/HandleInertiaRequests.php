@@ -39,12 +39,12 @@ class HandleInertiaRequests extends Middleware
                     'email' => $user->email,
                     'role' => $user->getRoleNames()->first(),
                     'branch_id' => $user->branch_id,
-                    'branch_name' => $user->branch?->name,
-                    'branch_code' => $user->branch?->code,
+                    'branch_name' => fn () => $user->branch?->name,
+                    'branch_code' => fn () => $user->branch?->code,
                     'must_change_password' => $user->must_change_password,
-                    'permissions' => $user->getAllPermissions()->pluck('name'),
+                    'permissions' => $user->getPermissionNames(),
                 ] : null,
-                'unread_notifications' => $user
+                'unread_notifications' => fn () => $user
                     ? $user->unreadNotifications()->whereNull('archived_at')->count()
                     : 0,
             ],

@@ -54,16 +54,14 @@ class EmployeeRecordsController extends Controller
             $statsQuery->forBranch($request->user()->branch_id);
         }
 
-        $stats = [
-            'total' => $statsQuery->count(),
-            'active' => $statsQuery->clone()->active()->count(),
-            'probationary' => $statsQuery->clone()->forStatus('probationary')->count(),
-            'regular' => $statsQuery->clone()->forStatus('regular')->count(),
-            'inactive' => $statsQuery->clone()->whereIn('employment_status', ['resigned', 'terminated'])->count(),
-            'sil_overdue' => $statsQuery->clone()->active()
-                ->whereColumn('sil_used', '>', 'sil_total')
-                ->count(),
-        ];
+        $stats = (clone $statsQuery)->selectRaw("
+            COUNT(*) as total,
+            COUNT(CASE WHEN employment_status IN ('probationary', 'regular') THEN 1 END) as active,
+            COUNT(CASE WHEN employment_status = 'probationary' THEN 1 END) as probationary,
+            COUNT(CASE WHEN employment_status = 'regular' THEN 1 END) as regular,
+            COUNT(CASE WHEN employment_status IN ('resigned', 'terminated') THEN 1 END) as inactive,
+            COUNT(CASE WHEN employment_status IN ('probationary', 'regular') AND sil_used > sil_total THEN 1 END) as sil_overdue
+        ")->first();
 
         // Flag probationary employees who've been > 6 months (regularization due)
         $regularizationDue = Employee::query()

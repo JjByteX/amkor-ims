@@ -72,14 +72,14 @@ class AttendanceController extends Controller
             $statsBase->forBranch((int) $branchId);
         }
 
-        $stats = [
-            'total_present' => (clone $statsBase)->where('status', 'present')->count(),
-            'total_absent' => (clone $statsBase)->where('status', 'absent')->count(),
-            'total_half_day' => (clone $statsBase)->where('status', 'half_day')->count(),
-            'total_on_leave' => (clone $statsBase)->where('status', 'on_leave')->count(),
-            'total_late' => (clone $statsBase)->where('minutes_late', '>', 0)->count(),
-            'total_undertime' => (clone $statsBase)->where('minutes_undertime', '>', 0)->count(),
-        ];
+        $stats = (clone $statsBase)->selectRaw("
+            COUNT(CASE WHEN status = 'present' THEN 1 END) as total_present,
+            COUNT(CASE WHEN status = 'absent' THEN 1 END) as total_absent,
+            COUNT(CASE WHEN status = 'half_day' THEN 1 END) as total_half_day,
+            COUNT(CASE WHEN status = 'on_leave' THEN 1 END) as total_on_leave,
+            COUNT(CASE WHEN minutes_late > 0 THEN 1 END) as total_late,
+            COUNT(CASE WHEN minutes_undertime > 0 THEN 1 END) as total_undertime
+        ")->first();
 
         // Today's clock-in status for the current user (shown in the top banner)
         $todayRecord = AttendanceRecord::forEmployee($user->id)
