@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
+import DetailPanel, { TableWithPanel, useDetailPanel } from '../../Components/Shared/DetailPanel';
+import { APContent } from './Show';
+
 import { Plus, Search, Eye, Trash2, Banknote, Receipt, WalletCards, Files } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
@@ -56,6 +59,13 @@ export default function APIndex({
     const { flash } = usePage().props;
 
     const [searchInput,  setSearchInput ] = useState(filters.search ?? '');
+
+    // ─── Detail panel ──────────────────────────────────────────────────────────
+    const panel = useDetailPanel((id) => route('ap.show', id));
+    const [showPanel, setShowPanel] = useState(false);
+    const d = panel.data;
+    function openPanel(row) { setShowPanel(true); panel.open(row); }
+
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [deleting,     setDeleting    ] = useState(false);
 
@@ -181,19 +191,15 @@ export default function APIndex({
                         variant="ghost"
                         size="sm"
                         icon={<Eye size={16} />}
-                        onClick={() => router.get(route('ap.show', row.id))}
-                    >
-                        View
-                    </Button>
+                        onClick={(e) => { e.stopPropagation(); openPanel(row); }}
+                    />
                     {canWrite && row.approval_status === 'pending' && (
                         <Button
                             variant="ghost"
                             size="sm"
                             icon={<Trash2 size={16} />}
                             onClick={() => setDeleteTarget(row)}
-                        >
-                            Delete
-                        </Button>
+                        />
                     )}
                 </div>
             ),
@@ -256,7 +262,37 @@ export default function APIndex({
                     </StatGrid>
                 )}
 
-                <DataTable
+                                <TableWithPanel
+                    panelOpen={showPanel}
+                    panel={
+                        <DetailPanel
+                open={showPanel}
+                onClose={() => { setShowPanel(false); panel.close(); }}
+                loading={panel.loading}
+                error={panel.error}
+                title={d?.payable?.supplier_name ?? ''}
+                subtitle={d?.payable ? `${d.payable.voucher_no ?? ''}${d.payable.invoice_no ? ` · Inv# ${d.payable.invoice_no}` : ''}` : ''}
+                badges={d?.payable && (
+                <>
+                    <Badge variant={STATUS_VARIANT[d.payable.status] ?? 'neutral'}>
+                        {d.statuses?.[d.payable.status] ?? d.payable.status}
+                    </Badge>
+                    <Badge variant={APPROVAL_VARIANT[d.payable.approval_status] ?? 'neutral'}>
+                        {d.approvalStatuses?.[d.payable.approval_status] ?? d.payable.approval_status}
+                    </Badge>
+                    {d.payable.days_outstanding > 0 && (
+                        <Badge variant="error">{d.payable.days_outstanding} days overdue</Badge>
+                    )}
+                </>
+            )}
+            >
+                {d?.payable && <APContent payable={d.payable} currencies={d.currencies} statuses={d.statuses} approvalStatuses={d.approvalStatuses} paymentModes={d.paymentModes} canWrite={d.canWrite} canCheck={d.canCheck} canApprove={d.canApprove} />}
+            </DetailPanel>
+                    }
+                >
+                    <DataTable
+                        panelOpen={showPanel}
+                        selectedKey={panel.id}
                     columns={columns}
                     rows={payables.data ?? []}
                     pagination={payables}
@@ -305,8 +341,10 @@ export default function APIndex({
                         </FilterStrip>
                     }
                 />
+                </TableWithPanel>
 
-            </PageStack>
+            
+        </PageStack>
 
             <ConfirmDialog
                 open={!!deleteTarget}

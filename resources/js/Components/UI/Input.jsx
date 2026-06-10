@@ -1,4 +1,7 @@
 import { isValidElement } from 'react';
+import DatePicker from './DatePicker';
+import MonthPicker from './MonthPicker';
+import TimePicker from './TimePicker';
 
 /**
  * Input — 40px height, 8px radius, exact 13px label, exact 16px input text.
@@ -7,6 +10,11 @@ import { isValidElement } from 'react';
  * rightIcon : right icon — same format; used for password toggle etc.
  *             When rightIcon is a button/interactive element, pass it as JSX
  *             (pointer-events are enabled on the right slot).
+ *
+ * Special types intercepted (no native browser picker used anywhere):
+ *   type="date"  → DatePicker  (custom calendar popup)
+ *   type="month" → MonthPicker (custom month/year popup)
+ *   type="time"  → TimePicker  (custom HH:MM scroll picker)
  */
 export default function Input({
     label       = '',
@@ -26,6 +34,57 @@ export default function Input({
     ...rest
 }) {
     const inputId = id ?? (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
+
+    // Delegate date inputs to the custom DatePicker — never use the native browser calendar
+    if (type === 'date') {
+        return (
+            <DatePicker
+                label={label}
+                value={value}
+                onChange={onChange}
+                error={error}
+                placeholder={placeholder || 'Select date'}
+                disabled={disabled}
+                required={required}
+                className={className}
+                id={inputId}
+            />
+        );
+    }
+
+    // Delegate month inputs to the custom MonthPicker
+    if (type === 'month') {
+        return (
+            <MonthPicker
+                label={label}
+                value={value}
+                onChange={onChange}
+                error={error}
+                placeholder={placeholder || 'Select month'}
+                disabled={disabled}
+                required={required}
+                className={className}
+                id={inputId}
+            />
+        );
+    }
+
+    // Delegate time inputs to the custom TimePicker
+    if (type === 'time') {
+        return (
+            <TimePicker
+                label={label}
+                value={value}
+                onChange={onChange}
+                error={error}
+                placeholder={placeholder || '--:-- --'}
+                disabled={disabled}
+                required={required}
+                className={className}
+                id={inputId}
+            />
+        );
+    }
 
     // Normalise left icon
     let iconNode = null;

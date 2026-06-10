@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Http\JsonResponse;
 use Modules\AccountsPayable\Http\Requests\StorePayableRequest;
 use Modules\AccountsPayable\Models\Payable;
 
@@ -152,7 +153,7 @@ class AccountsPayableController extends Controller
 
     // ─── Show ────────────────────────────────────────────────────────────────
 
-    public function show(Request $request, Payable $ap): Response
+    public function show(Request $request, Payable $ap): Response|JsonResponse
     {
         $role = $request->user()?->getRoleNames()->first();
 
@@ -162,6 +163,18 @@ class AccountsPayableController extends Controller
 
         $ap->load(['contact', 'branch', 'createdBy', 'updatedBy', 'checker', 'approver', 'releaser', 'voucher']);
 
+        if ($request->wantsJson() || $request->get('json')) {
+            return response()->json([
+            'payable' => $ap,
+            'currencies' => Payable::CURRENCIES,
+            'statuses' => Payable::STATUSES,
+            'approvalStatuses' => Payable::APPROVAL_STATUSES,
+            'paymentModes' => Payable::PAYMENT_MODES,
+            'canWrite' => $this->canPrepare($request),
+            'canCheck' => $this->canCheck($request),
+            'canApprove' => $this->canApprove($request),
+        ]);
+        }
         return Inertia::render('AccountsPayable/Show', [
             'payable' => $ap,
             'currencies' => Payable::CURRENCIES,

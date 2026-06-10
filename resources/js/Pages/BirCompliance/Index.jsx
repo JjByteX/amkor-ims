@@ -234,9 +234,7 @@ export default function BirIndex({
                         variant="ghost"
                         size="sm"
                         onClick={() => router.get(route('bir.show', row.id))}
-                    >
-                        View
-                    </Button>
+                    />
                 </div>
             ),
         },

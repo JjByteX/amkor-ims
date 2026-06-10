@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Http\JsonResponse;
 use Modules\CreditCardMonitoring\Models\CreditCard;
 use Modules\CreditCardMonitoring\Models\CreditCardPayment;
 
@@ -167,7 +168,7 @@ class CreditCardMonitoringController extends Controller
             ->with('flash', ['type' => 'success', 'message' => "Payment {$payment->payment_no} recorded."]);
     }
 
-    public function show(Request $request, CreditCardPayment $payment): Response
+    public function show(Request $request, CreditCardPayment $payment): Response|JsonResponse
     {
         $role = $request->user()?->getRoleNames()->first();
         if (! in_array($role, self::VIEW_ROLES, true)) {
@@ -176,6 +177,16 @@ class CreditCardMonitoringController extends Controller
 
         $payment->load(['creditCard', 'createdBy', 'checker', 'approver', 'releaser', 'voucher']);
 
+        if ($request->wantsJson() || $request->get('json')) {
+            return response()->json([
+            'payment' => $payment,
+            'statuses' => CreditCardPayment::STATUSES,
+            'approvalStatuses' => CreditCardPayment::APPROVAL_STATUSES,
+            'canWrite' => $this->canPrepare($request),
+            'canCheck' => $this->canCheck($request),
+            'canApprove' => $this->canApprove($request),
+        ]);
+        }
         return Inertia::render('CreditCardMonitoring/Show', [
             'payment' => $payment,
             'statuses' => CreditCardPayment::STATUSES,

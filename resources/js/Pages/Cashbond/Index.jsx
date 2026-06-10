@@ -1,15 +1,23 @@
 import { useState } from 'react';
-import { router, usePage, useForm } from '@inertiajs/react';
-import { Plus, RefreshCw, AlertTriangle, CheckCircle2, Pencil } from 'lucide-react';
+import { router, usePage } from '@inertiajs/react';
+import {
+    Plus, Search, Eye,
+    Wallet, AlertTriangle, Clock, CircleCheck,
+} from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
+import DataTable from '../../Components/Shared/DataTable';
+import DetailPanel, { TableWithPanel, useDetailPanel } from '../../Components/Shared/DetailPanel';
+import FilterStrip, { FilterField } from '../../Components/Shared/FilterStrip';
+import PageStack from '../../Components/Shared/PageStack';
+import StatCard from '../../Components/Shared/StatCard';
+import StatGrid from '../../Components/Shared/StatGrid';
 import Button from '../../Components/UI/Button';
-import Badge from '../../Components/UI/Badge';
-import Card from '../../Components/UI/Card';
-import Modal from '../../Components/UI/Modal';
 import Input from '../../Components/UI/Input';
-import Textarea from '../../Components/UI/Textarea';
+import Select from '../../Components/UI/Select';
+import Badge from '../../Components/UI/Badge';
 import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
+import { ReloadContent } from './ReloadShow';
 
 const APPROVAL_VARIANT = {
     pending  : 'warning',
@@ -18,45 +26,115 @@ const APPROVAL_VARIANT = {
     released : 'neutral',
 };
 
-function FlashBanner({ flash }) {
-    if (!flash?.message) return null;
-    const bg = flash.type === 'success' ? 'var(--color-success)' : flash.type === 'error' ? 'var(--color-error)' : 'var(--color-warning)';
-    return (
-        <div className="rounded font-body" style={{ padding: 'var(--space-2)', background: bg, color: '#fff', fontSize: 'var(--font-size-small)', borderRadius: 'var(--radius-md)' }}>
-            {flash.message}
-        </div>
-    );
-}
-
-export default function CashbondIndex({ portals, pendingReloads, approvalStatuses, canWrite, canCheck, canApprove }) {
+export default function CashbondIndex({
+    portals, reloads, summary, filters,
+    approvalStatuses,
+    canWrite, canCheck, canApprove,
+}) {
     const { flash } = usePage().props;
-    const [editPortal, setEditPortal] = useState(null);
 
-    const portalForm = useForm({ maintaining_balance: '', current_balance: '', notes: '' });
+    const [searchInput, setSearchInput] = useState(filters.search ?? '');
 
-    function openEditPortal(portal) {
-        setEditPortal(portal);
-        portalForm.setData({
-            maintaining_balance: portal.maintaining_balance ?? '',
-            current_balance:     portal.current_balance ?? '',
-            notes:               portal.notes ?? '',
-        });
+    // ─── Detail panel ─────────────────────────────────────────────────────────
+    const panel = useDetailPanel((id) => route('cashbond.reloads.show', id));
+    const [showPanel, setShowPanel] = useState(false);
+    const d = panel.data;
+    function openPanel(row) { setShowPanel(true); panel.open(row); }
+
+    // ─── Filters ──────────────────────────────────────────────────────────────
+    function applyFilter(overrides = {}) {
+        router.get(
+            route('cashbond.index'),
+            { ...filters, search: searchInput, ...overrides },
+            { preserveState: true, preserveScroll: true },
+        );
     }
 
-    function submitPortal(e) {
-        e.preventDefault();
-        portalForm.patch(route('cashbond.portals.update', editPortal.id), {
-            onSuccess: () => setEditPortal(null),
-        });
-    }
+    function handleSearchKey(e) { if (e.key === 'Enter') applyFilter(); }
 
-    const fmt = (d) => d ? new Date(d).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+    // ─── Table columns ────────────────────────────────────────────────────────
+    const fmt = (d) => d
+        ? new Date(d).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
+        : '—';
+
+    const columns = [
+        {
+            key: 'reload_no', label: 'Ref No.',
+            render: (row) => (
+                <span className="font-body font-semibold text-[var(--color-primary)]" style={{ fontSize: 'var(--font-size-small)' }}>
+                    {row.reload_no}
+                </span>
+            ),
+        },
+        {
+            key: 'portal', label: 'Portal',
+            render: (row) => (
+                <span className="font-body text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-small)' }}>
+                    {row.portal?.name ?? '—'}
+                </span>
+            ),
+        },
+        {
+            key: 'amount', label: 'Amount',
+            render: (row) => <CurrencyDisplay amount={row.amount} currency="PHP" />,
+        },
+        {
+            key: 'request_date', label: 'Request Date',
+            render: (row) => (
+                <span className="font-body text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-small)' }}>
+                    {fmt(row.request_date)}
+                </span>
+            ),
+        },
+        {
+            key: 'deposit_date', label: 'Deposit Date',
+            render: (row) => (
+                <span className="font-body text-gray-400" style={{ fontSize: 'var(--font-size-small)' }}>
+                    {fmt(row.deposit_date)}
+                </span>
+            ),
+        },
+        {
+            key: 'created_by', label: 'Prepared by',
+            render: (row) => (
+                <span className="font-body text-gray-400" style={{ fontSize: 'var(--font-size-small)' }}>
+                    {row.created_by?.name ?? '—'}
+                </span>
+            ),
+        },
+        {
+            key: 'approval_status', label: 'Status',
+            render: (row) => (
+                <Badge variant={APPROVAL_VARIANT[row.approval_status] ?? 'neutral'}>
+                    {approvalStatuses[row.approval_status] ?? row.approval_status}
+                </Badge>
+            ),
+        },
+        {
+            key: 'actions', label: '',
+            render: (row) => (
+                <div className="flex justify-end">
+                    <Button variant="ghost" size="sm" icon={Eye}
+                        onClick={(e) => { e.stopPropagation(); openPanel(row); }}
+                        title="View"
+                    />
+                </div>
+            ),
+        },
+    ];
+
+    const portalOptions = [
+        { value: '', label: 'All Portals' },
+        ...portals.map((p) => ({ value: p.id, label: p.name })),
+    ];
+    const approvalOptions = [
+        { value: '', label: 'All Statuses' },
+        ...Object.entries(approvalStatuses).map(([v, l]) => ({ value: v, label: l })),
+    ];
 
     return (
         <AppShell>
-            <div className="flex flex-col" style={{ gap: 'var(--space-3)' }}>
-
-                <FlashBanner flash={flash} />
+            <PageStack>
 
                 <PageHeader
                     title="Cashbond Monitoring"
@@ -68,143 +146,121 @@ export default function CashbondIndex({ portals, pendingReloads, approvalStatuse
                     )}
                 />
 
-                {/* Portal cards */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 'var(--space-2)' }}>
-                    {portals.map((portal) => {
-                        const below = portal.maintaining_balance !== null && parseFloat(portal.current_balance) < parseFloat(portal.maintaining_balance);
-                        return (
-                            <div key={portal.id} style={{
-                                background   : 'var(--color-card)',
-                                borderRadius : 'var(--radius-lg)',
-                                padding      : 'var(--space-3)',
-                                boxShadow    : 'var(--shadow-card)',
-                                borderLeft   : `4px solid ${below ? 'var(--color-error)' : 'var(--color-success)'}`,
-                            }}>
-                                <div className="flex items-start justify-between gap-2">
-                                    <div className="font-heading font-semibold text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-body)' }}>
-                                        {portal.name}
-                                    </div>
-                                    {canWrite && (
-                                        <Button variant="ghost" size="sm" icon={Pencil} onClick={() => openEditPortal(portal)} title="Update portal" />
-                                    )}
-                                </div>
-
-                                <div className="flex flex-col" style={{ gap: 6, marginTop: 'var(--space-2)' }}>
-                                    <div>
-                                        <div className="font-body text-gray-400" style={{ fontSize: 'var(--font-size-small)' }}>Current Balance</div>
-                                        <div className="font-heading font-semibold" style={{
-                                            fontSize  : 20,
-                                            color     : below ? 'var(--color-error)' : 'var(--color-success)',
-                                        }}>
-                                            <CurrencyDisplay amount={portal.current_balance ?? 0} currency="PHP" />
-                                        </div>
-                                    </div>
-                                    {portal.maintaining_balance !== null && (
-                                        <div className="flex items-center gap-1">
-                                            {below
-                                                ? <AlertTriangle size={14} color="var(--color-error)" />
-                                                : <CheckCircle2 size={14} color="var(--color-success)" />
-                                            }
-                                            <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: below ? 'var(--color-error)' : 'var(--color-text)' }}>
-                                                Maintaining: <CurrencyDisplay amount={portal.maintaining_balance} currency="PHP" />
-                                            </span>
-                                        </div>
-                                    )}
-                                    <div className="font-body text-gray-400" style={{ fontSize: 'var(--font-size-small)' }}>
-                                        {portal.reloads_count ?? 0} reload{portal.reloads_count !== 1 ? 's' : ''}
-                                    </div>
-                                </div>
-
-                                {canWrite && (
-                                    <div style={{ marginTop: 'var(--space-2)' }}>
-                                        <Button variant="secondary" size="sm" icon={RefreshCw}
-                                            onClick={() => router.visit(route('cashbond.reloads.create', { portal_id: portal.id }))}>
-                                            Request Reload
-                                        </Button>
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
-
-                {/* Pending reloads */}
-                {pendingReloads.length > 0 && (
-                    <div style={{ background: 'var(--color-card)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-3)', boxShadow: 'var(--shadow-card)' }}>
-                        <div className="font-heading font-semibold text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-small)', marginBottom: 'var(--space-2)' }}>
-                            Pending Reload Requests ({pendingReloads.length})
-                        </div>
-                        <div className="flex flex-col" style={{ gap: 'var(--space-1)' }}>
-                            {pendingReloads.map((reload) => (
-                                <div key={reload.id}
-                                    className="flex items-center justify-between flex-wrap cursor-pointer"
-                                    style={{ padding: 'var(--space-1) var(--space-2)', background: 'var(--color-bg)', borderRadius: 'var(--radius-md)', gap: 8 }}
-                                    onClick={() => router.visit(route('cashbond.reloads.show', reload.id))}
-                                >
-                                    <div className="flex flex-col">
-                                        <span className="font-body font-semibold text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-small)' }}>
-                                            {reload.reload_no}
-                                        </span>
-                                        <span className="font-body text-gray-400" style={{ fontSize: 'var(--font-size-small)' }}>
-                                            {reload.portal?.name} · {fmt(reload.request_date)} · by {reload.created_by?.name ?? '—'}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center" style={{ gap: 8 }}>
-                                        <span className="font-heading font-semibold text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-small)' }}>
-                                            <CurrencyDisplay amount={reload.amount} currency="PHP" />
-                                        </span>
-                                        <Badge variant={APPROVAL_VARIANT[reload.approval_status] ?? 'neutral'}>
-                                            {approvalStatuses[reload.approval_status] ?? reload.approval_status}
-                                        </Badge>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                        <div style={{ marginTop: 'var(--space-2)' }}>
-                            <Button variant="ghost" size="sm" onClick={() => router.visit(route('cashbond.reloads.index'))}>
-                                View all reloads →
-                            </Button>
-                        </div>
+                {flash?.message && (
+                    <div style={{
+                        padding     : 'var(--space-2)',
+                        borderRadius: 'var(--radius-md)',
+                        background  : flash.type === 'success' ? 'var(--color-success)' : flash.type === 'error' ? 'var(--color-error)' : 'var(--color-warning)',
+                        color       : '#fff',
+                        fontSize    : 'var(--font-size-small)',
+                        fontFamily  : 'var(--font-body)',
+                    }}>
+                        {flash.message}
                     </div>
                 )}
 
-                {pendingReloads.length === 0 && (
-                    <div style={{ textAlign: 'center', padding: 'var(--space-4)', color: 'var(--color-text)', opacity: 0.5 }}>
-                        <CheckCircle2 size={32} style={{ margin: '0 auto var(--space-1)' }} />
-                        <p className="font-body" style={{ fontSize: 'var(--font-size-small)' }}>No pending reload requests.</p>
-                    </div>
-                )}
-            </div>
+                <StatGrid>
+                    <StatCard
+                        icon={Wallet}
+                        label="Total Portal Balance"
+                        value={<CurrencyDisplay amount={summary.total_balance ?? 0} currency="PHP" />}
+                        tone="primary"
+                    />
+                    <StatCard
+                        icon={AlertTriangle}
+                        label="Below Threshold"
+                        value={summary.below_threshold ?? 0}
+                        tone={summary.below_threshold > 0 ? 'error' : 'success'}
+                        sub={summary.below_threshold > 0 ? 'portal(s) need reloading' : 'All portals healthy'}
+                    />
+                    <StatCard
+                        icon={Clock}
+                        label="Pending Reloads"
+                        value={summary.pending_count ?? 0}
+                        tone={summary.pending_count > 0 ? 'warning' : 'default'}
+                    />
+                    <StatCard
+                        icon={CircleCheck}
+                        label="Released This Month"
+                        value={summary.released_month ?? 0}
+                        tone="success"
+                    />
+                </StatGrid>
 
-            {/* Edit portal modal */}
-            <Modal open={!!editPortal} onClose={() => setEditPortal(null)} title={`Update Portal — ${editPortal?.name}`}>
-                <form onSubmit={submitPortal} className="flex flex-col" style={{ gap: 'var(--space-2)' }}>
-                    <Input
-                        label="Current Balance (PHP)"
-                        type="number" step="0.01"
-                        value={portalForm.data.current_balance}
-                        onChange={(e) => portalForm.setData('current_balance', e.target.value)}
-                        error={portalForm.errors.current_balance}
+                <TableWithPanel
+                    panelOpen={showPanel}
+                    panel={
+                        <DetailPanel
+                            open={showPanel}
+                            onClose={() => { setShowPanel(false); panel.close(); }}
+                            loading={panel.loading}
+                            error={panel.error}
+                            title={d?.reload?.reload_no ?? ''}
+                            subtitle={d?.reload ? `${d.reload.portal?.name ?? ''} · ${fmt(d.reload.request_date)}` : ''}
+                            badges={d?.reload && (
+                                <Badge variant={APPROVAL_VARIANT[d.reload.approval_status] ?? 'neutral'}>
+                                    {d.approvalStatuses?.[d.reload.approval_status] ?? d.reload.approval_status}
+                                </Badge>
+                            )}
+                        >
+                            {d?.reload && (
+                                <ReloadContent
+                                    reload={d.reload}
+                                    approvalStatuses={d.approvalStatuses}
+                                    canWrite={d.canWrite}
+                                    canCheck={d.canCheck}
+                                    canApprove={d.canApprove}
+                                />
+                            )}
+                        </DetailPanel>
+                    }
+                >
+                    <DataTable
+                        panelOpen={showPanel}
+                        selectedKey={panel.id}
+                        columns={columns}
+                        rows={reloads.data ?? []}
+                        pagination={reloads}
+                        onPageChange={(page) => applyFilter({ page })}
+
+                        toolbar={
+                            <FilterStrip>
+                                <FilterField grow>
+                                    <Input
+                                        value={searchInput}
+                                        onChange={(e) => setSearchInput(e.target.value)}
+                                        onKeyDown={handleSearchKey}
+                                        icon={Search}
+                                        placeholder="Ref no., portal..."
+                                    />
+                                </FilterField>
+                                <FilterField width={190}>
+                                    <Select
+                                        options={portalOptions}
+                                        value={filters.portal_id ?? ''}
+                                        onChange={(e) => applyFilter({ portal_id: e.target.value || undefined, page: 1 })}
+                                    />
+                                </FilterField>
+                                <FilterField width={175}>
+                                    <Select
+                                        options={approvalOptions}
+                                        value={filters.approval_status ?? ''}
+                                        onChange={(e) => applyFilter({ approval_status: e.target.value || undefined, page: 1 })}
+                                    />
+                                </FilterField>
+                                <FilterField width={160}>
+                                    <Input
+                                        type="month"
+                                        value={filters.month ?? ''}
+                                        onChange={(e) => applyFilter({ month: e.target.value || undefined, page: 1 })}
+                                    />
+                                </FilterField>
+                            </FilterStrip>
+                        }
                     />
-                    <Input
-                        label="Maintaining Balance (PHP)"
-                        type="number" step="0.01"
-                        value={portalForm.data.maintaining_balance}
-                        onChange={(e) => portalForm.setData('maintaining_balance', e.target.value)}
-                        error={portalForm.errors.maintaining_balance}
-                    />
-                    <Textarea
-                        label="Notes"
-                        rows={2}
-                        value={portalForm.data.notes}
-                        onChange={(e) => portalForm.setData('notes', e.target.value)}
-                    />
-                    <div className="flex justify-end" style={{ gap: 'var(--space-1)', marginTop: 'var(--space-1)' }}>
-                        <Button variant="ghost" type="button" onClick={() => setEditPortal(null)}>Cancel</Button>
-                        <Button variant="primary" type="submit" loading={portalForm.processing}>Save</Button>
-                    </div>
-                </form>
-            </Modal>
+                </TableWithPanel>
+
+            </PageStack>
         </AppShell>
     );
 }

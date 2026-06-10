@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
+import DetailPanel, { TableWithPanel, useDetailPanel } from '../../Components/Shared/DetailPanel';
+import { IataContent } from './Show';
+
 import { Plus, Search, Eye, Trash2, BanknoteArrowUp, ClipboardList, FileClock, FileWarning, CircleCheckBig } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
@@ -31,6 +34,13 @@ const APPROVAL_VARIANT = {
 export default function IataPaymentsIndex({ payments, summary, filters, statuses, approvalStatuses, canWrite }) {
     const { flash } = usePage().props;
     const [searchInput,  setSearchInput ] = useState(filters.search ?? '');
+
+    // ─── Detail panel ──────────────────────────────────────────────────────────
+    const panel = useDetailPanel((id) => route('iata.show', id));
+    const [showPanel, setShowPanel] = useState(false);
+    const d = panel.data;
+    function openPanel(row) { setShowPanel(true); panel.open(row); }
+
     const [deleteTarget, setDeleteTarget] = useState(null);
 
     function applyFilter(overrides = {}) {
@@ -130,7 +140,7 @@ export default function IataPaymentsIndex({ payments, summary, filters, statuses
                         variant="ghost"
                         size="sm"
                         icon={Eye}
-                        onClick={() => router.visit(route('iata.show', row.id))}
+                        onClick={(e) => { e.stopPropagation(); openPanel(row); }}
                         title="View"
                     />
                     {canWrite && row.approval_status === 'pending' && (
@@ -183,7 +193,36 @@ export default function IataPaymentsIndex({ payments, summary, filters, statuses
                     </StatGrid>
                 )}
 
-                <DataTable
+                                <TableWithPanel
+                    panelOpen={showPanel}
+                    panel={
+                        <DetailPanel
+                open={showPanel}
+                onClose={() => { setShowPanel(false); panel.close(); }}
+                loading={panel.loading}
+                error={panel.error}
+                title={d?.payment?.payment_no ?? ''}
+                subtitle={d?.payment?.operator_name ?? ''}
+                badges={d?.payment && (
+                <>
+                    <Badge variant={STATUS_VARIANT[d.payment.status] ?? 'neutral'}>
+                        {d.statuses?.[d.payment.status] ?? d.payment.status}
+                    </Badge>
+                    <Badge variant={APPROVAL_VARIANT[d.payment.approval_status] ?? 'neutral'}>
+                        {d.approvalStatuses?.[d.payment.approval_status] ?? d.payment.approval_status}
+                    </Badge>
+                    {d.payment.deposit_slip_attached && <Badge variant="success">Deposit Slip Attached</Badge>}
+                    {d.payment.operator_notified && <Badge variant="info">Operator Notified</Badge>}
+                </>
+            )}
+            >
+                {d?.payment && <IataContent payment={d.payment} statuses={d.statuses} approvalStatuses={d.approvalStatuses} canWrite={d.canWrite} canCheck={d.canCheck} canApprove={d.canApprove} />}
+            </DetailPanel>
+                    }
+                >
+                    <DataTable
+                        panelOpen={showPanel}
+                        selectedKey={panel.id}
                     columns={columns}
                     rows={payments.data ?? []}
                     pagination={payments}
@@ -219,7 +258,9 @@ export default function IataPaymentsIndex({ payments, summary, filters, statuses
                         </FilterStrip>
                     }
                 />
-            </PageStack>
+                </TableWithPanel>
+            
+        </PageStack>
 
             <ConfirmDialog
                 open={!!deleteTarget}

@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
+import DetailPanel, { TableWithPanel, useDetailPanel } from '../../Components/Shared/DetailPanel';
+import { EmployeeContent } from './Show';
+
 import {
     Plus, Search, Users, UserCheck, Clock, UserX,
     AlertTriangle, Download, Eye,
@@ -41,6 +44,13 @@ export default function EmployeeIndex({
 }) {
     const { flash } = usePage().props;
     const [searchInput, setSearchInput] = useState(filters.search ?? '');
+
+    // ─── Detail panel ──────────────────────────────────────────────────────────
+    const panel = useDetailPanel((id) => route('employees.show', id));
+    const [showPanel, setShowPanel] = useState(false);
+    const d = panel.data;
+    function openPanel(row) { setShowPanel(true); panel.open(row); }
+
 
     function applyFilter(overrides = {}) {
         router.get(
@@ -149,10 +159,8 @@ export default function EmployeeIndex({
                         variant="ghost"
                         size="sm"
                         icon={Eye}
-                        onClick={() => router.get(route('employees.show', row.id))}
-                    >
-                        View
-                    </Button>
+                        onClick={(e) => { e.stopPropagation(); openPanel(row); }}
+                    />
                 </div>
             ),
         },
@@ -218,7 +226,32 @@ export default function EmployeeIndex({
                     <StatCard icon={UserX} label="Inactive" value={stats.inactive} tone="error" />
                 </StatGrid>
 
-                <DataTable
+                                <TableWithPanel
+                    panelOpen={showPanel}
+                    panel={
+                        <DetailPanel
+                open={showPanel}
+                onClose={() => { setShowPanel(false); panel.close(); }}
+                loading={panel.loading}
+                error={panel.error}
+                title={d?.employee?.display_name ?? ''}
+                subtitle={d?.employee ? `${d.employee.employee_code ?? 'No code'} · ${d.employee.position} · ${d.employee.tenure}` : ''}
+                badges={d?.employee && (
+                <>
+                    <Badge variant={STATUS_VARIANT[d.employee.employment_status] ?? 'neutral'}>
+                        {d.statuses?.[d.employee.employment_status] ?? d.employee.employment_status}
+                    </Badge>
+                    {d.employee.regularization_due && <Badge variant="warning">Reg. Due</Badge>}
+                </>
+            )}
+            >
+                {d?.employee && <EmployeeContent employee={d.employee} statuses={d.statuses} departments={d.departments} canManage={d.canManage} />}
+            </DetailPanel>
+                    }
+                >
+                    <DataTable
+                        panelOpen={showPanel}
+                        selectedKey={panel.id}
                     columns={columns}
                     rows={employees.data ?? []}
                     pagination={employees}
@@ -262,7 +295,9 @@ export default function EmployeeIndex({
                         </FilterStrip>
                     }
                 />
-            </PageStack>
+                </TableWithPanel>
+            
+        </PageStack>
         </AppShell>
     );
 }

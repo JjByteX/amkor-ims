@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
+import DetailPanel, { TableWithPanel, useDetailPanel } from '../../Components/Shared/DetailPanel';
+import { VisaContent } from './Show';
+
 import { Plus, Search, Eye, Pencil, Trash2 } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
@@ -27,6 +30,13 @@ export default function VisaIndex({ applications, filters, statuses, agentCodes,
     const { flash } = usePage().props;
 
     const [searchInput,  setSearchInput ] = useState(filters.search ?? '');
+
+    // ─── Detail panel ──────────────────────────────────────────────────────────
+    const panel = useDetailPanel((id) => route('visa.show', id));
+    const [showPanel, setShowPanel] = useState(false);
+    const d = panel.data;
+    function openPanel(row) { setShowPanel(true); panel.open(row); }
+
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [deleting,     setDeleting    ] = useState(false);
 
@@ -150,7 +160,7 @@ export default function VisaIndex({ applications, filters, statuses, agentCodes,
             render: (row) => (
                 <div className="flex justify-end" style={{ gap: 'var(--space-1)' }}>
                     <Button variant="ghost" size="sm" icon={Eye}
-                        onClick={() => router.visit(route('visa.show', row.id))} title="View" />
+                        onClick={(e) => { e.stopPropagation(); openPanel(row); }} title="View" />
                     {canWrite && (
                         <>
                             <Button variant="ghost" size="sm" icon={Pencil}
@@ -205,7 +215,29 @@ export default function VisaIndex({ applications, filters, statuses, agentCodes,
                     )}
                 />
 
-                <DataTable
+                                <TableWithPanel
+                    panelOpen={showPanel}
+                    panel={
+                        <DetailPanel
+                open={showPanel}
+                onClose={() => { setShowPanel(false); panel.close(); }}
+                loading={panel.loading}
+                error={panel.error}
+                title={d?.application?.customer_name ?? ''}
+                subtitle={d?.application?.visa_type ?? ''}
+                badges={d?.application && (
+                <Badge variant={STATUS_VARIANT[d.application.status] ?? 'neutral'}>
+                    {d.statuses?.[d.application.status] ?? d.application.status}
+                </Badge>
+            )}
+            >
+                {d?.application && <VisaContent application={d.application} statuses={d.statuses} paymentModes={d.paymentModes} canWrite={d.canWrite} canEndorse={d.canEndorse} />}
+            </DetailPanel>
+                    }
+                >
+                    <DataTable
+                        panelOpen={showPanel}
+                        selectedKey={panel.id}
                     columns={columns}
                     rows={applications.data}
                     pagination={applications}
@@ -241,8 +273,10 @@ export default function VisaIndex({ applications, filters, statuses, agentCodes,
                         </FilterStrip>
                     }
                 />
+                </TableWithPanel>
 
-            </PageStack>
+            
+        </PageStack>
 
             <ConfirmDialog
                 open={!!deleteTarget}

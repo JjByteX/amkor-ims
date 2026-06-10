@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { usePage, Link, router } from '@inertiajs/react';
 import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     PanelLeftOpen,
     Gauge,
@@ -198,6 +199,18 @@ const ROLE_LABELS = {
 };
 
 /* ─────────────────────────────────────────────────────────────────────────────
+   Animation constants — single place to tune timing for the whole sidebar.
+   ───────────────────────────────────────────────────────────────────────────── */
+const SIDEBAR_DURATION = 0.22;          // width transition duration (seconds)
+const SIDEBAR_EASE     = [0.4, 0, 0.2, 1]; // standard ease-in-out
+
+// Text/label fade — slightly shorter than the width so labels vanish before
+// the sidebar fully closes (avoids text wrapping during collapse).
+const LABEL_EXIT_DURATION  = 0.10;
+const LABEL_ENTER_DURATION = 0.16;
+const LABEL_ENTER_DELAY    = 0.12;     // wait for sidebar to mostly open
+
+/* ─────────────────────────────────────────────────────────────────────────────
    ProfileMenu — portal-rendered popup that escapes the sidebar clip context.
    ───────────────────────────────────────────────────────────────────────────── */
 function ProfileMenu({ triggerRef, onClose, dark, onToggleDark, onLogout, borderColor }) {
@@ -207,10 +220,7 @@ function ProfileMenu({ triggerRef, onClose, dark, onToggleDark, onLogout, border
     useEffect(() => {
         if (!triggerRef.current) return;
         const rect = triggerRef.current.getBoundingClientRect();
-        // Fixed width so the popup doesn't resize when the sidebar is collapsed.
-        // Anchor from rect.left so the menu always opens rightward — using
-        // rect.right - MENU_WIDTH would go off-screen when collapsed (rect.right ≈ 64px).
-        const MENU_WIDTH = 216; // --width-sidebar (240) minus 2 × --space-2 (16px each side)
+        const MENU_WIDTH = 216;
         setStyle({
             position    : 'fixed',
             left        : rect.left,
@@ -288,10 +298,28 @@ function ProfileMenu({ triggerRef, onClose, dark, onToggleDark, onLogout, border
     );
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   SidebarLabel — animated text wrapper used for section headers and the
+   expanded account row. Fades + clips horizontally; never moves the icon.
+   ───────────────────────────────────────────────────────────────────────────── */
+function SidebarLabel({ children, className, style: extraStyle }) {
+    return (
+        <motion.span
+            className={className}
+            style={{ overflow: 'hidden', whiteSpace: 'nowrap', display: 'block', ...extraStyle }}
+            initial={false}
+            animate={{ opacity: 1, width: 'auto', transition: { duration: LABEL_ENTER_DURATION, delay: LABEL_ENTER_DELAY, ease: SIDEBAR_EASE } }}
+            exit={{ opacity: 0, width: 0, transition: { duration: LABEL_EXIT_DURATION, ease: 'easeIn' } }}
+        >
+            {children}
+        </motion.span>
+    );
+}
+
 /* AmkorLogo is imported from Components/UI/AmkorLogo.jsx */
 
 
-export default function Sidebar() {
+export default function Sidebar({ dark = false, onToggleDark }) {
     const { auth } = usePage().props;
     const user      = auth?.user;
     const role      = user?.role ?? '';
@@ -313,21 +341,6 @@ export default function Sidebar() {
         } catch { /* ignore */ }
     }, [collapsed]);
 
-    /* ── Dark mode ───────────────────────────────────────────────────────────── */
-    const [dark, setDark] = useState(() => {
-        try {
-            const stored = localStorage.getItem('amkor_dark_mode');
-            if (stored !== null) return stored === 'true';
-            return window.matchMedia('(prefers-color-scheme: dark)').matches;
-        } catch {
-            return false;
-        }
-    });
-
-    useEffect(() => {
-        document.documentElement.classList.toggle('dark', dark);
-        try { localStorage.setItem('amkor_dark_mode', String(dark)); } catch { /* ignore */ }
-    }, [dark]);
 
     /* ── Profile menu ────────────────────────────────────────────────────────── */
     const [menuOpen, setMenuOpen] = useState(false);
@@ -353,17 +366,18 @@ export default function Sidebar() {
     const borderColor = 'var(--color-border)';
 
     return (
-        <aside
+        <motion.aside
             className={[
                 'flex flex-col',
                 'h-screen sticky top-0',
                 'bg-[var(--color-card)]',
-                'transition-[width] duration-200 ease-in-out',
                 'shrink-0 overflow-visible',
                 'relative',
             ].join(' ')}
+            initial={false}
+            animate={{ width: collapsed ? 'var(--width-sidebar-collapsed)' : 'var(--width-sidebar)' }}
+            transition={{ duration: SIDEBAR_DURATION, ease: SIDEBAR_EASE }}
             style={{
-                width       : collapsed ? 'var(--width-sidebar-collapsed)' : 'var(--width-sidebar)',
                 borderRight : 'var(--border-container)',
                 boxShadow   : 'var(--shadow-card)',
             }}
@@ -378,8 +392,7 @@ export default function Sidebar() {
             >
                 {collapsed ? (
                     /* ── COLLAPSED HEADER ──────────────────────────────────────────
-                       Full-width centering, no padding so the logo never gets
-                       clipped. On hover: logo hides, expand icon appears (CSS).     */
+                       Full-width centering. On hover: logo hides, expand icon appears. */
                     <div className="flex items-center justify-center w-full h-full">
                         <button
                             onClick={() => setCollapsed(false)}
@@ -399,20 +412,27 @@ export default function Sidebar() {
                     </div>
                 ) : (
                     /* ── EXPANDED HEADER ───────────────────────────────────────────
-                       Brand left, collapse button right.                             */
+                       Brand left, collapse button right. Icon is locked; only the
+                       text block next to it is animated.                             */
                     <div className="flex items-center w-full" style={{ paddingLeft: 'var(--sidebar-logo-pl)', paddingRight: 'var(--space-1)' }}>
                         <div className="flex items-center gap-3 flex-1 min-w-0">
+                            {/* Logo icon — never animated, never moves */}
                             <div className="flex items-center justify-center shrink-0" style={{ width: 40, height: 40, color: 'var(--color-primary)' }}>
                                 <AmkorLogo size={40} />
                             </div>
-                            <div className="min-w-0">
-                                <p className="text-sm font-heading font-semibold text-[var(--color-text)] truncate leading-tight">
-                                    Amkor Travel
-                                </p>
-                                <p style={{ fontSize: '11px', color: '#9CA3AF', lineHeight: '1.2' }}>
-                                    & Tours Inc.
-                                </p>
-                            </div>
+                            {/* Text block — fades in after sidebar opens */}
+                            <AnimatePresence>
+                                {!collapsed && (
+                                    <SidebarLabel style={{ minWidth: 0 }}>
+                                        <p className="text-sm font-heading font-semibold text-[var(--color-text)] truncate leading-tight">
+                                            Amkor Travel
+                                        </p>
+                                        <p style={{ fontSize: '11px', color: '#9CA3AF', lineHeight: '1.2' }}>
+                                            & Tours Inc.
+                                        </p>
+                                    </SidebarLabel>
+                                )}
+                            </AnimatePresence>
                         </div>
                         <button
                             onClick={() => setCollapsed(true)}
@@ -434,27 +454,31 @@ export default function Sidebar() {
                 <ul className={`flex flex-col ${collapsed ? 'items-center' : ''}`} style={{ gap: 'var(--nav-item-gap)' }}>
                     {navSections.map((section) => (
                         <li key={section.key} className="w-full">
-                            {!collapsed && (
-                                <p
-                                    className="pt-3 font-body font-semibold uppercase"
-                                    style={{
-                                        paddingLeft  : '10px',
-                                        color        : 'var(--color-text-muted)',
-                                        fontSize     : '11px',
-                                        lineHeight   : 1.2,
-                                        letterSpacing: 0,
-                                    }}
-                                >
-                                    {section.label}
-                                </p>
-                            )}
-                            <ul
+                            <AnimatePresence>
+                                {!collapsed && (
+                                    <SidebarLabel
+                                        className="pt-3 font-body font-semibold uppercase"
+                                        style={{
+                                            paddingLeft  : '10px',
+                                            color        : 'var(--color-text-muted)',
+                                            fontSize     : '11px',
+                                            lineHeight   : 1.2,
+                                            letterSpacing: 0,
+                                        }}
+                                    >
+                                        {section.label}
+                                    </SidebarLabel>
+                                )}
+                            </AnimatePresence>
+                            <motion.ul
                                 className={`flex flex-col ${collapsed ? 'items-center' : ''}`}
-                                style={{
-                                    gap         : 'var(--nav-item-gap)',
-                                    marginTop   : collapsed ? 0 : 'var(--nav-label-gap)',
-                                    marginBottom: collapsed ? 0 : 'var(--nav-section-gap)',
+                                initial={false}
+                                animate={{
+                                    marginTop   : collapsed ? 0 : 6,
+                                    marginBottom: collapsed ? 0 : 10,
                                 }}
+                                transition={{ duration: SIDEBAR_DURATION, ease: SIDEBAR_EASE }}
+                                style={{ gap: 'var(--nav-item-gap)' }}
                             >
                                 {section.items.map((item) => (
                                     <NavItem
@@ -467,7 +491,8 @@ export default function Sidebar() {
                                         collapsed={collapsed}
                                     />
                                 ))}
-                            </ul>
+                            </motion.ul>
+
                         </li>
                     ))}
                 </ul>
@@ -482,9 +507,7 @@ export default function Sidebar() {
                 }}
             >
                 {collapsed ? (
-                    /* ── COLLAPSED ACCOUNT ROW ─────────────────────────────────────
-                       CHANGE 2: Bell removed. Notifications is already in the Main
-                       nav section. Only the avatar button remains.                   */
+                    /* ── COLLAPSED ACCOUNT ROW ───────────────────────────────────── */
                     <div className="flex flex-col items-center gap-1">
                         <button
                             ref={triggerRef}
@@ -502,9 +525,7 @@ export default function Sidebar() {
                         )}
                     </div>
                 ) : (
-                    /* ── EXPANDED ACCOUNT ROW ──────────────────────────────────────
-                       CHANGE 2: Bell removed from the account row entirely.
-                       Notifications lives in the Main nav section already.           */
+                    /* ── EXPANDED ACCOUNT ROW ────────────────────────────────────── */
                     <button
                         ref={triggerRef}
                         onClick={() => setMenuOpen((v) => !v)}
@@ -522,28 +543,32 @@ export default function Sidebar() {
                             border       : '1px solid transparent',
                         }}
                     >
-                        {/* Avatar */}
+                        {/* Avatar — locked, never animated */}
                         <div className="w-8 h-8 rounded-full bg-[var(--color-primary)] flex items-center justify-center shrink-0">
                             <span className="text-white text-xs font-bold font-heading">
                                 {user?.name?.charAt(0)?.toUpperCase() ?? '?'}
                             </span>
                         </div>
 
-                        {/* Name + role */}
-                        <div className="flex-1 min-w-0">
-                            <p
-                                className="font-semibold font-body text-[var(--color-text)] truncate leading-tight"
-                                style={{ fontSize: '13px' }}
-                            >
-                                {user?.name ?? '—'}
-                            </p>
-                            <p
-                                className="truncate leading-tight"
-                                style={{ fontSize: '11px', color: '#9CA3AF' }}
-                            >
-                                {roleLabel}
-                            </p>
-                        </div>
+                        {/* Name + role — fades in after sidebar opens */}
+                        <AnimatePresence>
+                            {!collapsed && (
+                                <SidebarLabel style={{ flex: 1, minWidth: 0 }}>
+                                    <p
+                                        className="font-semibold font-body text-[var(--color-text)] truncate leading-tight"
+                                        style={{ fontSize: '13px' }}
+                                    >
+                                        {user?.name ?? '—'}
+                                    </p>
+                                    <p
+                                        className="truncate leading-tight"
+                                        style={{ fontSize: '11px', color: '#9CA3AF' }}
+                                    >
+                                        {roleLabel}
+                                    </p>
+                                </SidebarLabel>
+                            )}
+                        </AnimatePresence>
                     </button>
                 )}
             </div>
@@ -554,11 +579,11 @@ export default function Sidebar() {
                     triggerRef={triggerRef}
                     onClose={() => setMenuOpen(false)}
                     dark={dark}
-                    onToggleDark={() => setDark((d) => !d)}
+                    onToggleDark={onToggleDark}
                     onLogout={handleLogout}
                     borderColor={borderColor}
                 />
             )}
-        </aside>
+        </motion.aside>
     );
 }

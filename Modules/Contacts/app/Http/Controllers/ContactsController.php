@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Http\JsonResponse;
 use Modules\Contacts\Http\Requests\StoreContactRequest;
 use Modules\Contacts\Models\Contact;
 
@@ -92,8 +93,14 @@ class ContactsController extends Controller
 
     // ─── Show ─────────────────────────────────────────────────────────────────
 
-    public function show(Request $request, Contact $contact): Response
+    public function show(Request $request, Contact $contact): Response|JsonResponse
     {
+        if ($request->wantsJson() || $request->get('json')) {
+            return response()->json([
+            'contact' => $contact->load(['branch', 'createdBy', 'updatedBy']),
+            'canWrite' => $this->canWrite($request),
+        ]);
+        }
         return Inertia::render('Contacts/Show', [
             'contact' => $contact->load(['branch', 'createdBy', 'updatedBy']),
             'canWrite' => $this->canWrite($request),

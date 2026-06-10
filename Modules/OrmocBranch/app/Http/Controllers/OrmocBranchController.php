@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Http\JsonResponse;
 use Modules\OrmocBranch\Http\Requests\StoreOrmocBookingRequest;
 use Modules\OrmocBranch\Mail\OrmocEscalationMail;
 use Modules\OrmocBranch\Models\OrmocBooking;
@@ -132,7 +133,7 @@ class OrmocBranchController extends Controller
 
     // ─── Show ─────────────────────────────────────────────────────────────────
 
-    public function show(Request $request, OrmocBooking $ormoc): Response
+    public function show(Request $request, OrmocBooking $ormoc): Response|JsonResponse
     {
         $role = $request->user()?->getRoleNames()->first();
 
@@ -147,6 +148,15 @@ class OrmocBranchController extends Controller
 
         $ormoc->load(['branch', 'createdBy', 'updatedBy', 'escalatedBy']);
 
+        if ($request->wantsJson() || $request->get('json')) {
+            return response()->json([
+            'booking' => $ormoc,
+            'statuses' => OrmocBooking::STATUSES,
+            'bookingTypes' => OrmocBooking::BOOKING_TYPES,
+            'paymentModes' => OrmocBooking::PAYMENT_MODES,
+            'canWrite' => $this->canWrite($request),
+        ]);
+        }
         return Inertia::render('OrmocBranch/Show', [
             'booking' => $ormoc,
             'statuses' => OrmocBooking::STATUSES,

@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Http\JsonResponse;
 use Modules\Contacts\Models\Contact;
 use Modules\IataPayments\Models\IataPayment;
 use Modules\Notifications\Services\NotificationDispatcher;
@@ -118,7 +119,7 @@ class IataPaymentsController extends Controller
 
     // ─── Show ────────────────────────────────────────────────────────────────
 
-    public function show(Request $request, IataPayment $payment): Response
+    public function show(Request $request, IataPayment $payment): Response|JsonResponse
     {
         $role = $request->user()?->getRoleNames()->first();
         if (! in_array($role, self::VIEW_ROLES, true)) {
@@ -127,6 +128,16 @@ class IataPaymentsController extends Controller
 
         $payment->load(['contact', 'branch', 'createdBy', 'updatedBy', 'checker', 'approver', 'releaser', 'voucher']);
 
+        if ($request->wantsJson() || $request->get('json')) {
+            return response()->json([
+            'payment' => $payment,
+            'statuses' => IataPayment::STATUSES,
+            'approvalStatuses' => IataPayment::APPROVAL_STATUSES,
+            'canWrite' => $this->canPrepare($request),
+            'canCheck' => $this->canCheck($request),
+            'canApprove' => $this->canApprove($request),
+        ]);
+        }
         return Inertia::render('IataPayments/Show', [
             'payment' => $payment,
             'statuses' => IataPayment::STATUSES,

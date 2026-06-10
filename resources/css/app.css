@@ -74,6 +74,12 @@
         0 8px  18px -18px rgba(15, 23, 42, 0.16),
         0 1px  2px  rgba(15, 23, 42, 0.04);
 
+    /* --- Detail Panel slide-in shadow (leftward, for right-anchored overlay) --- */
+    --shadow-panel:
+        -6px  0 18px -10px rgba(15, 23, 42, 0.18),
+        -2px  0  6px  -4px rgba(15, 23, 42, 0.08),
+        -1px  0  2px   0px rgba(15, 23, 42, 0.04);
+
     /* --- Container Border ---
        Single token used by Card, DataTable, Input, Select, Sidebar border-right,
        and the account-row border-top. Change once → all containers update.
@@ -87,13 +93,16 @@
     --border-table-header:       1px solid var(--color-border);
     --ring-focus:           none;    /* focus uses 2px solid border, not a shadow ring */
     --border-focus-width:   2px;     /* focused input/select/button border width */
+    --table-pagination-gap: var(--space-1);  /* gap between table card and pagination row */
 
     /* --- Hover surface tint --- */
-    --color-hover: rgba(0, 0, 0, 0.04);
+    --color-hover:        rgba(0, 0, 0, 0.04);
+    --color-row-selected: color-mix(in srgb, var(--color-primary) 9%, var(--color-card)); /* matches StatCard icon bg */
+    --color-overlay: rgba(0, 0, 0, 0.06); /* dim backdrop behind panels/modals */
 
     /* --- Component Dimensions --- */
-    --height-btn:              40px;
-    --height-btn-sm:           34px;
+    --height-btn:              36px;
+    --height-btn-sm:           32px;
     --height-input:            40px;
     --height-table-row:        52px;
     --height-table-header:     44px;
@@ -102,6 +111,32 @@
     --height-header:           60px;
     --width-modal:             480px;
     --width-modal-wide:        720px;
+
+    /* --- Badge / Status pill ---
+       Font is intentionally smaller than row secondary text (--font-size-small: 13px)
+       so the pill reads as a label, not body copy.
+       Adjust these tokens → all status pills update everywhere.
+    */
+    --badge-font-size:  11px;  /* 2px below --font-size-small so it sits clearly smaller */
+    --badge-px:          8px;  /* horizontal padding */
+    --badge-py:          4px;  /* vertical padding   */
+
+    /* --- Textarea ---
+       Single source of truth for every <Textarea> across all pages.
+       Change here → all textareas update automatically.
+    */
+    --textarea-min-height   : 96px;
+    --textarea-px           : var(--space-2);          /* 16px — matches Input */
+    --textarea-py           : var(--space-1);          /*  8px */
+    --textarea-font-size    : var(--font-size-body);   /* 14px */
+    --textarea-line-height  : var(--line-height-body); /* 1.45 */
+    --textarea-radius       : var(--radius-md);        /*  8px */
+    --textarea-border       : var(--border-container); /* 1px solid #DDE3EA */
+    --textarea-border-focus : 2px solid var(--color-primary);
+    --textarea-border-error : 1.5px solid var(--color-error);
+    --textarea-bg           : var(--color-card);
+    --textarea-color        : var(--color-text);
+    --textarea-resize       : vertical;
 }
 
 /* ── Dark mode — Excel "Black" theme inspiration ────────────────────────────
@@ -132,8 +167,13 @@
     /* --- Table header --- */
     --color-table-header-bg:     #1a1a1a;
     --border-table-header:       1px solid var(--color-border);
-    --color-hover:      rgba(255, 255, 255, 0.05);
+    --color-hover:        rgba(255, 255, 255, 0.05);
+    --color-row-selected: color-mix(in srgb, var(--color-primary) 11%, var(--color-card)); /* slightly stronger in dark mode */
     --ring-focus:       none;
+
+    /* Textarea dark overrides — border inherits --border-container automatically */
+    --textarea-border-focus : 2px solid var(--color-primary);
+    --textarea-border-error : 1.5px solid var(--color-error);
 }
 
 /* ============================================================
@@ -255,4 +295,24 @@ button, input, select, textarea {
 
 .sidebar-logo-toggle:hover .sidebar-logo-expand {
     display: flex;
+}
+
+/* ============================================================
+   DATA TABLE — COLUMN RESTORE ANIMATION
+   Applied to <table> by DataTable.jsx during the panel-close
+   phase2 window (hidden cols going display:none → display:block).
+   Gives visible columns a width transition so they animate
+   leftward instead of snapping when the restored columns
+   reclaim their share of the table width.
+   Duration matches DataTable's FADE_IN_DURATION (0.22 s) so
+   the width reflow and the opacity fade-in finish together.
+   Easing mirrors FADE_IN_EASE: decelerate-in, smooth arrival.
+   ============================================================ */
+.dt-col-restoring th,
+.dt-col-restoring td {
+    transition:
+        width       0.22s cubic-bezier(0.0, 0.0, 0.2, 1),
+        max-width   0.22s cubic-bezier(0.0, 0.0, 0.2, 1),
+        padding-left  0.22s cubic-bezier(0.0, 0.0, 0.2, 1),
+        padding-right 0.22s cubic-bezier(0.0, 0.0, 0.2, 1);
 }

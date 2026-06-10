@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
+import DetailPanel, { TableWithPanel, useDetailPanel } from '../../Components/Shared/DetailPanel';
+import { OrmocContent } from './Show';
+
 import { Plus, Search, Eye, Pencil, Trash2, ArrowUpRight, Package, AlertTriangle } from 'lucide-react';
 import AppShell        from '../../Components/Layout/AppShell';
 import PageHeader      from '../../Components/Shared/PageHeader';
@@ -31,6 +34,13 @@ export default function OrmocBranchIndex({
     const { flash } = usePage().props;
 
     const [searchInput,  setSearchInput ] = useState(filters.search ?? '');
+
+    // ─── Detail panel ──────────────────────────────────────────────────────────
+    const panel = useDetailPanel((id) => route('ormoc.show', id));
+    const [showPanel, setShowPanel] = useState(false);
+    const d = panel.data;
+    function openPanel(row) { setShowPanel(true); panel.open(row); }
+
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [deleting,     setDeleting    ] = useState(false);
 
@@ -166,7 +176,7 @@ export default function OrmocBranchIndex({
             render: (row) => (
                 <div className="flex items-center" style={{ gap: 'var(--space-1)' }}>
                     <Button variant="ghost" size="sm" icon={Eye}
-                        onClick={() => router.get(route('ormoc.show', row.id))} />
+                        onClick={(e) => { e.stopPropagation(); openPanel(row); }} />
                     {canWrite && (
                         <>
                             <Button variant="ghost" size="sm" icon={Pencil}
@@ -223,7 +233,30 @@ export default function OrmocBranchIndex({
                     }
                 />
 
-                <DataTable
+                                <TableWithPanel
+                    panelOpen={showPanel}
+                    panel={
+                        <DetailPanel
+                open={showPanel}
+                onClose={() => { setShowPanel(false); panel.close(); }}
+                loading={panel.loading}
+                error={panel.error}
+                title={d?.booking?.client_name ?? ''}
+                subtitle={''}
+                badges={d?.booking && (
+                <>
+                    <Badge variant={STATUS_VARIANT[d.booking.status] ?? 'neutral'}>{d.statuses?.[d.booking.status] ?? d.booking.status}</Badge>
+                    <Badge variant="neutral">{d.bookingTypes?.[d.booking.booking_type] ?? d.booking.booking_type}</Badge>
+                </>
+            )}
+            >
+                {d?.booking && <OrmocContent booking={d.booking} statuses={d.statuses} bookingTypes={d.bookingTypes} paymentModes={d.paymentModes} canWrite={d.canWrite} />}
+            </DetailPanel>
+                    }
+                >
+                    <DataTable
+                        panelOpen={showPanel}
+                        selectedKey={panel.id}
                     columns={columns}
                     rows={bookings.data}
                     pagination={bookings}
@@ -269,8 +302,10 @@ export default function OrmocBranchIndex({
                         </FilterStrip>
                     }
                 />
+                </TableWithPanel>
 
-            </PageStack>
+            
+        </PageStack>
 
             <ConfirmDialog
                 open={!!deleteTarget}

@@ -24,7 +24,7 @@ class CashbondController extends Controller
     private const VIEW_ROLES = ['disbursement_officer', 'admin_auditor', 'general_manager'];
 
     // ════════════════════════════════════════════════════════════════════════
-    // PORTALS DASHBOARD
+    // MAIN INDEX — stat cards + reload requests table
     // ════════════════════════════════════════════════════════════════════════
 
     public function index(Request $request): Response
@@ -34,84 +34,60 @@ class CashbondController extends Controller
             abort(403);
         }
 
-        $portals = CashbondPortal::active()
-            ->withCount('reloads')
-            ->with(['reloads' => fn ($q) => $q->latest()->limit(1)])
-            ->get();
+        // Portals — lightweight list for the filter dropdown only
+        $portals = CashbondPortal::active()->get(['id', 'name', 'current_balance', 'maintaining_balance']);
 
-        $pendingReloads = CashbondReload::with(['portal', 'createdBy'])
-            ->where('approval_status', '!=', 'released')
-            ->latest()
-            ->get();
+        // ── Summary stat cards ─────────────────────────────────────────────
+        $summary = [
+            'total_balance'   => (float) $portals->sum('current_balance'),
+            'below_threshold' => $portals->filter(fn ($p) => $p->isBelowThreshold())->count(),
+            'pending_count'   => CashbondReload::whereNotIn('approval_status', ['released'])->count(),
+            'released_month'  => CashbondReload::where('approval_status', 'released')
+                ->whereMonth('released_at', now()->month)
+                ->whereYear('released_at',  now()->year)
+                ->count(),
+        ];
 
-        return Inertia::render('Cashbond/Index', [
-            'portals' => $portals,
-            'pendingReloads' => $pendingReloads,
-            'approvalStatuses' => CashbondReload::APPROVAL_STATUSES,
-            'canWrite' => $this->canPrepare($request),
-            'canCheck' => $this->canCheck($request),
-            'canApprove' => $this->canApprove($request),
-        ]);
-    }
-
-    // ════════════════════════════════════════════════════════════════════════
-    // PORTAL SETTINGS (maintaining balance threshold)
-    // ════════════════════════════════════════════════════════════════════════
-
-    public function updatePortal(Request $request, CashbondPortal $portal): RedirectResponse
-    {
-        $this->requirePreparer($request);
-
-        $data = $request->validate([
-            'maintaining_balance' => ['nullable', 'numeric', 'min:0'],
-            'current_balance' => ['nullable', 'numeric', 'min:0'],
-            'notes' => ['nullable', 'string'],
-        ]);
-
-        $data['updated_by'] = $request->user()->id;
-        $portal->update($data);
-
-        return back()->with('flash', ['type' => 'success', 'message' => "Portal \"{$portal->name}\" updated."]);
-    }
-
-    // ════════════════════════════════════════════════════════════════════════
-    // RELOAD REQUESTS
-    // ════════════════════════════════════════════════════════════════════════
-
-    public function reloadsIndex(Request $request): Response
-    {
-        $role = $request->user()?->getRoleNames()->first();
-        if (! in_array($role, self::VIEW_ROLES, true)) {
-            abort(403);
-        }
-
+        // ── Reload requests table ──────────────────────────────────────────
         $portalId = $request->get('portal_id');
         $approval = $request->get('approval_status');
-        $month = $request->get('month');
+        $month    = $request->get('month');
+        $search   = $request->get('search');
 
-        $query = CashbondReload::with(['portal', 'createdBy', 'checker', 'approver'])
+        $query = CashbondReload::with(['portal', 'createdBy', 'checker', 'approver', 'releaser'])
             ->latest('request_date');
 
         $query->forPortal($portalId)->forApprovalStatus($approval);
 
         if ($month) {
-            [$y, $m] = explode('-', $month.'-01');
+            [$y, $m] = explode('-', $month . '-01');
             $query->whereYear('request_date', (int) $y)->whereMonth('request_date', (int) $m);
         }
 
-        $reloads = $query->paginate(25)->withQueryString();
-        $portals = CashbondPortal::active()->get(['id', 'name']);
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('reload_no', 'like', "%{$search}%")
+                  ->orWhereHas('portal', fn ($pq) => $pq->where('name', 'like', "%{$search}%"));
+            });
+        }
 
-        return Inertia::render('Cashbond/Reloads', [
-            'reloads' => $reloads,
-            'portals' => $portals,
-            'filters' => compact('portalId', 'approval', 'month'),
+        $reloads = $query->paginate(25)->withQueryString();
+
+        return Inertia::render('Cashbond/Index', [
+            'portals'          => $portals,
+            'reloads'          => $reloads,
+            'summary'          => $summary,
+            'filters'          => compact('portalId', 'approval', 'month', 'search'),
             'approvalStatuses' => CashbondReload::APPROVAL_STATUSES,
-            'canWrite' => $this->canPrepare($request),
-            'canCheck' => $this->canCheck($request),
-            'canApprove' => $this->canApprove($request),
+            'canWrite'         => $this->canPrepare($request),
+            'canCheck'         => $this->canCheck($request),
+            'canApprove'       => $this->canApprove($request),
         ]);
     }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // RELOAD REQUESTS — create / show / approval chain
+    // ════════════════════════════════════════════════════════════════════════
 
     public function reloadCreate(Request $request): Response
     {
@@ -127,13 +103,13 @@ class CashbondController extends Controller
         $this->requirePreparer($request);
 
         $data = $request->validate([
-            'portal_id' => ['required', 'exists:cashbond_portals,id'],
-            'amount' => ['required', 'numeric', 'min:0.01'],
+            'portal_id'    => ['required', 'exists:cashbond_portals,id'],
+            'amount'       => ['required', 'numeric', 'min:0.01'],
             'request_date' => ['required', 'date'],
-            'remarks' => ['nullable', 'string'],
+            'remarks'      => ['nullable', 'string'],
         ]);
 
-        $data['reload_no'] = CashbondReload::nextNumber();
+        $data['reload_no']  = CashbondReload::nextNumber();
         $data['created_by'] = $request->user()->id;
         $data['updated_by'] = $request->user()->id;
 
@@ -144,7 +120,7 @@ class CashbondController extends Controller
             ->with('flash', ['type' => 'success', 'message' => "Reload request {$reload->reload_no} created."]);
     }
 
-    public function reloadShow(Request $request, CashbondReload $reload): Response
+    public function reloadShow(Request $request, CashbondReload $reload): Response|array
     {
         $role = $request->user()?->getRoleNames()->first();
         if (! in_array($role, self::VIEW_ROLES, true)) {
@@ -153,13 +129,20 @@ class CashbondController extends Controller
 
         $reload->load(['portal', 'createdBy', 'checker', 'approver', 'releaser', 'voucher']);
 
-        return Inertia::render('Cashbond/ReloadShow', [
-            'reload' => $reload,
+        $payload = [
+            'reload'           => $reload,
             'approvalStatuses' => CashbondReload::APPROVAL_STATUSES,
-            'canWrite' => $this->canPrepare($request),
-            'canCheck' => $this->canCheck($request),
-            'canApprove' => $this->canApprove($request),
-        ]);
+            'canWrite'         => $this->canPrepare($request),
+            'canCheck'         => $this->canCheck($request),
+            'canApprove'       => $this->canApprove($request),
+        ];
+
+        // JSON mode for DetailPanel fetch
+        if ($request->boolean('json')) {
+            return $payload;
+        }
+
+        return Inertia::render('Cashbond/ReloadShow', $payload);
     }
 
     // ─── Approval chain ──────────────────────────────────────────────────────
@@ -176,11 +159,11 @@ class CashbondController extends Controller
         $request->validate(['audit_remarks' => ['nullable', 'string']]);
 
         $reload->update([
-            'checked_by' => $request->user()->id,
-            'checked_at' => now(),
+            'checked_by'      => $request->user()->id,
+            'checked_at'      => now(),
             'approval_status' => 'checked',
-            'audit_remarks' => $request->audit_remarks ?? $reload->audit_remarks,
-            'updated_by' => $request->user()->id,
+            'audit_remarks'   => $request->audit_remarks ?? $reload->audit_remarks,
+            'updated_by'      => $request->user()->id,
         ]);
 
         return back()->with('flash', ['type' => 'success', 'message' => 'Reload request checked.']);
@@ -199,10 +182,10 @@ class CashbondController extends Controller
         }
 
         $reload->update([
-            'approved_by' => $request->user()->id,
-            'approved_at' => now(),
+            'approved_by'     => $request->user()->id,
+            'approved_at'     => now(),
             'approval_status' => 'approved',
-            'updated_by' => $request->user()->id,
+            'updated_by'      => $request->user()->id,
         ]);
 
         return back()->with('flash', ['type' => 'success', 'message' => 'Reload request approved. Ready for deposit.']);
@@ -218,14 +201,13 @@ class CashbondController extends Controller
         $request->validate(['deposit_date' => ['nullable', 'date']]);
 
         $reload->update([
-            'released_by' => $request->user()->id,
-            'released_at' => now(),
+            'released_by'     => $request->user()->id,
+            'released_at'     => now(),
             'approval_status' => 'released',
-            'deposit_date' => $request->deposit_date ?? now()->toDateString(),
-            'updated_by' => $request->user()->id,
+            'deposit_date'    => $request->deposit_date ?? now()->toDateString(),
+            'updated_by'      => $request->user()->id,
         ]);
 
-        // Update portal balance
         $reload->portal->increment('current_balance', $reload->amount);
         $reload->portal->update(['updated_by' => $request->user()->id]);
         $reload->update(['balance_updated' => true]);
@@ -252,9 +234,9 @@ class CashbondController extends Controller
         );
 
         $reload->update([
-            'supplier_notified' => true,
+            'supplier_notified'    => true,
             'supplier_notified_at' => now(),
-            'updated_by' => $request->user()->id,
+            'updated_by'           => $request->user()->id,
         ]);
 
         return back()->with('flash', ['type' => 'success', 'message' => 'Supplier notification sent and recorded.']);

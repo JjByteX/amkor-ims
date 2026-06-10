@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
+import DetailPanel, { TableWithPanel, useDetailPanel } from '../../Components/Shared/DetailPanel';
+import { VoucherContent } from './VoucherShow';
+
 import { Plus, Search, Eye, Trash2, BanknoteArrowUp, ClipboardList, FileClock, CircleCheckBig } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
@@ -35,6 +38,13 @@ export default function VouchersIndex({
     const { flash } = usePage().props;
 
     const [searchInput,  setSearchInput ] = useState(filters.search ?? '');
+
+    // ─── Detail panel ──────────────────────────────────────────────────────────
+    const panel = useDetailPanel((id) => route('disbursement.vouchers.show', id));
+    const [showPanel, setShowPanel] = useState(false);
+    const d = panel.data;
+    function openPanel(row) { setShowPanel(true); panel.open(row); }
+
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [deleting,     setDeleting    ] = useState(false);
 
@@ -126,19 +136,15 @@ export default function VouchersIndex({
                         variant="ghost"
                         size="sm"
                         icon={<Eye size={16} />}
-                        onClick={() => router.get(route('disbursement.vouchers.show', row.id))}
-                    >
-                        View
-                    </Button>
+                        onClick={(e) => { e.stopPropagation(); openPanel(row); }}
+                    />
                     {canWrite && row.approval_status === 'pending' && (
                         <Button
                             variant="ghost"
                             size="sm"
                             icon={<Trash2 size={16} />}
                             onClick={() => setDeleteTarget(row)}
-                        >
-                            Delete
-                        </Button>
+                        />
                     )}
                 </div>
             ),
@@ -187,7 +193,33 @@ export default function VouchersIndex({
                     </StatGrid>
                 )}
 
-                <DataTable
+                                <TableWithPanel
+                    panelOpen={showPanel}
+                    panel={
+                        <DetailPanel
+                open={showPanel}
+                onClose={() => { setShowPanel(false); panel.close(); }}
+                loading={panel.loading}
+                error={panel.error}
+                title={d?.voucher ? `${d.types?.[d.voucher.type] ?? d.voucher.type} — ${d.voucher.voucher_no}` : ''}
+                subtitle={d?.voucher ? `Payee: ${d.voucher.payee}` : ''}
+                badges={d?.voucher && (
+                <>
+                    <Badge variant={TYPE_VARIANT[d.voucher.type] ?? 'neutral'}>
+                        {d.types?.[d.voucher.type] ?? d.voucher.type}
+                    </Badge>
+                    <Badge variant={APPROVAL_VARIANT[d.voucher.approval_status] ?? 'neutral'}>
+                        {d.approvalStatuses?.[d.voucher.approval_status] ?? d.voucher.approval_status}
+                    </Badge>
+                </>
+            )}
+            >
+                {d?.voucher && <VoucherContent voucher={d.voucher} types={d.types} approvalStatuses={d.approvalStatuses} currencies={d.currencies} canWrite={d.canWrite} canCheck={d.canCheck} canApprove={d.canApprove} />}
+            </DetailPanel>
+                    }
+                >
+                    <DataTable
+                        panelOpen={showPanel}
                     columns={columns}
                     rows={vouchers.data ?? []}
                     pagination={vouchers}
@@ -234,8 +266,10 @@ export default function VouchersIndex({
                         </FilterStrip>
                     }
                 />
+                </TableWithPanel>
 
-            </PageStack>
+            
+        </PageStack>
 
             <ConfirmDialog
                 open={!!deleteTarget}

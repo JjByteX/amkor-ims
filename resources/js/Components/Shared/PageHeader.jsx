@@ -6,7 +6,6 @@ import { ChevronRight } from 'lucide-react';
  *
  * Props:
  *   title       : string                 — current page name
- *   subtitle    : string                 — optional secondary line below title
  *   actions     : ReactNode              — rendered on the right (Buttons etc.)
  *   breadcrumb  : Array<{ label, href }> — optional ancestors, left-to-right
  *   inlineTitle : bool                   — injected by FormLayout; renders the
@@ -24,7 +23,6 @@ import { ChevronRight } from 'lucide-react';
  */
 export default function PageHeader({
     title,
-    subtitle,
     actions,
     breadcrumb = [],
     inlineTitle = false,
@@ -87,15 +85,7 @@ export default function PageHeader({
                         </span>
                     </div>
 
-                    {/* Subtitle just below, if provided */}
-                    {subtitle && (
-                        <p
-                            className="font-body text-[var(--color-text-muted)]"
-                            style={{ fontSize: 'var(--font-size-small)', marginTop: 2 }}
-                        >
-                            {subtitle}
-                        </p>
-                    )}
+
                 </div>
 
                 {/* Actions suppressed by FormLayout — rendered here only if somehow passed */}
@@ -155,14 +145,7 @@ export default function PageHeader({
                     {title}
                 </h1>
 
-                {subtitle && (
-                    <p
-                        className="font-body text-[var(--color-text-muted)]"
-                        style={{ fontSize: 'var(--font-size-small)', marginTop: 2 }}
-                    >
-                        {subtitle}
-                    </p>
-                )}
+
             </div>
 
             {actions && (

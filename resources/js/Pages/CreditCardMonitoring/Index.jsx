@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
+import DetailPanel, { TableWithPanel, useDetailPanel } from '../../Components/Shared/DetailPanel';
+import { CreditCardContent } from './Show';
+
 import { Plus, Search, Eye, CreditCard as CardIcon, BanknoteArrowUp, ClipboardList, FileClock, FileWarning } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
@@ -30,6 +33,13 @@ const APPROVAL_VARIANT = {
 export default function CreditCardIndex({ payments, cards, summary, filters, statuses, approvalStatuses, canWrite }) {
     const { flash } = usePage().props;
     const [searchInput, setSearchInput] = useState(filters.search ?? '');
+
+    // ─── Detail panel ──────────────────────────────────────────────────────────
+    const panel = useDetailPanel((id) => route('credit-cards.show', id));
+    const [showPanel, setShowPanel] = useState(false);
+    const d = panel.data;
+    function openPanel(row) { setShowPanel(true); panel.open(row); }
+
 
     function applyFilter(overrides = {}) {
         router.get(route('credit-cards.index'), { ...filters, search: searchInput, ...overrides }, { preserveState: true, preserveScroll: true });
@@ -120,7 +130,7 @@ export default function CreditCardIndex({ payments, cards, summary, filters, sta
                         variant="ghost"
                         size="sm"
                         icon={Eye}
-                        onClick={() => router.visit(route('credit-cards.show', row.id))}
+                        onClick={(e) => { e.stopPropagation(); openPanel(row); }}
                         title="View"
                     />
                 </div>
@@ -178,7 +188,34 @@ export default function CreditCardIndex({ payments, cards, summary, filters, sta
                     </StatGrid>
                 )}
 
-                <DataTable
+                                <TableWithPanel
+                    panelOpen={showPanel}
+                    panel={
+                        <DetailPanel
+                open={showPanel}
+                onClose={() => { setShowPanel(false); panel.close(); }}
+                loading={panel.loading}
+                error={panel.error}
+                title={d?.payment?.payment_no ?? ''}
+                subtitle={d?.payment?.credit_card?.card_name ?? 'Credit Card Payment'}
+                badges={d?.payment && (
+                <>
+                    <Badge variant={STATUS_VARIANT[d.payment.status] ?? 'neutral'}>
+                        {d.statuses?.[d.payment.status] ?? d.payment.status}
+                    </Badge>
+                    <Badge variant={APPROVAL_VARIANT[d.payment.approval_status] ?? 'neutral'}>
+                        {d.approvalStatuses?.[d.payment.approval_status] ?? d.payment.approval_status}
+                    </Badge>
+                </>
+            )}
+            >
+                {d?.payment && <CreditCardContent payment={d.payment} statuses={d.statuses} approvalStatuses={d.approvalStatuses} canWrite={d.canWrite} canCheck={d.canCheck} canApprove={d.canApprove} />}
+            </DetailPanel>
+                    }
+                >
+                    <DataTable
+                        panelOpen={showPanel}
+                        selectedKey={panel.id}
                     columns={columns}
                     rows={payments.data ?? []}
                     pagination={payments}
@@ -221,7 +258,9 @@ export default function CreditCardIndex({ payments, cards, summary, filters, sta
                         </FilterStrip>
                     }
                 />
-            </PageStack>
+                </TableWithPanel>
+            
+        </PageStack>
         </AppShell>
     );
 }

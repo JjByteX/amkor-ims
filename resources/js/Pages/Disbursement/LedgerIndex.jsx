@@ -127,9 +127,7 @@ export default function LedgerIndex({
                         size="sm"
                         icon={<Edit2 size={16} />}
                         onClick={() => router.get(route('disbursement.ledger.edit', row.id))}
-                    >
-                        Edit
-                    </Button>
+                    />
                 )
             ),
         },

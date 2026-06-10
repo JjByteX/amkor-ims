@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Http\JsonResponse;
 use Modules\Reservation\Events\ReservationBookingConfirmed;
 use Modules\Reservation\Events\ReservationForwardedToAccounting;
 use Modules\Reservation\Http\Requests\StoreReservationBookingRequest;
@@ -162,13 +163,22 @@ class ReservationController extends Controller
             ->with('flash', ['type' => 'success', 'message' => "Reservation {$booking->booking_no} created."]);
     }
 
-    public function show(Request $request, ReservationBooking $booking): Response
+    public function show(Request $request, ReservationBooking $booking): Response|JsonResponse
     {
         $this->requireViewer($request);
         $this->authorizeBranch($request, $booking);
 
         $booking->load(['branch', 'createdBy', 'updatedBy', 'confirmedBy', 'accountingForwarder']);
 
+        if ($request->wantsJson() || $request->get('json')) {
+            return response()->json([
+            'booking' => $booking,
+            'statuses' => ReservationBooking::STATUSES,
+            'serviceTypes' => ReservationBooking::SERVICE_TYPES,
+            'paymentModes' => ReservationBooking::PAYMENT_MODES,
+            'canWrite' => $this->canWrite($request),
+        ]);
+        }
         return Inertia::render('Reservation/Show', [
             'booking' => $booking,
             'statuses' => ReservationBooking::STATUSES,

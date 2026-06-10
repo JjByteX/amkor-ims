@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
+import DetailPanel, { TableWithPanel, useDetailPanel } from '../../Components/Shared/DetailPanel';
+import { BookingContent } from './Show';
+
 import { BanknoteArrowUp, ChartSpline, CircleCheckBig, ClipboardList, Eye, Plus, Search } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
@@ -16,9 +19,16 @@ import Select from '../../Components/UI/Select';
 const money = (v) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(Number(v ?? 0));
 const date = (v) => v ? new Date(v).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '-';
 const badge = { inquiry: 'neutral', quoted: 'info', confirmed: 'success', cancelled: 'error' };
+const STATUS_VARIANT = { inquiry: 'neutral', quoted: 'info', confirmed: 'success', cancelled: 'error' };
 
 export default function ReservationIndex({ bookings, summary, filters, statuses, agentCodes, canWrite }) {
     const [search, setSearch] = useState(filters.search ?? '');
+
+    // ─── Detail panel ──────────────────────────────────────────────────────────
+    const panel = useDetailPanel((id) => route('reservation.show', id));
+    const [showPanel, setShowPanel] = useState(false);
+    const d = panel.data;
+    function openPanel(row) { setShowPanel(true); panel.open(row); }
 
     function apply(overrides = {}) {
         router.get(route('reservation.index'), { ...filters, search, ...overrides }, { preserveState: true, preserveScroll: true });
@@ -58,9 +68,7 @@ export default function ReservationIndex({ bookings, summary, filters, statuses,
             key: 'actions',
             label: '',
             render: (row) => (
-                <Button size="sm" variant="ghost" icon={Eye} onClick={() => router.get(route('reservation.show', row.id))}>
-                    View
-                </Button>
+                <Button size="sm" variant="ghost" icon={Eye} onClick={(e) => { e.stopPropagation(); openPanel(row); }} />
             ),
         },
     ];
@@ -81,28 +89,52 @@ export default function ReservationIndex({ bookings, summary, filters, statuses,
                     <StatCard icon={ChartSpline} label="Income" value={money(summary.income)} tone="primary" />
                 </StatGrid>
 
-                <DataTable
-                    rows={bookings.data ?? []}
-                    columns={columns}
-                    pagination={bookings}
-                    onPageChange={(page) => apply({ page })}
-                    toolbar={
-                        <FilterStrip>
-                            <FilterField grow>
-                                <Input icon={Search} value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && apply()} placeholder="Booking, client, destination..." />
-                            </FilterField>
-                            <FilterField>
-                                <Select value={filters.status ?? ''} onChange={(e) => apply({ status: e.target.value })} placeholder="All statuses" options={[{ value: '', label: 'All statuses' }, ...Object.entries(statuses).map(([value, label]) => ({ value, label }))]} />
-                            </FilterField>
-                            <FilterField>
-                                <Select value={filters.agent ?? ''} onChange={(e) => apply({ agent: e.target.value })} placeholder="All agents" options={[{ value: '', label: 'All agents' }, ...agentCodes.map((code) => ({ value: code, label: code }))]} />
-                            </FilterField>
-                            <FilterField width={150}>
-                                <Input type="month" value={filters.month ?? ''} onChange={(e) => apply({ month: e.target.value })} />
-                            </FilterField>
-                        </FilterStrip>
+                <TableWithPanel
+                    panelOpen={showPanel}
+                    panel={
+                        <DetailPanel
+                            open={showPanel}
+                            onClose={() => { setShowPanel(false); panel.close(); }}
+                            loading={panel.loading}
+                            error={panel.error}
+                            title={d?.booking?.booking_no ?? ''}
+                            subtitle={d?.booking?.client_name ?? ''}
+                            badges={d?.booking && (
+                                <>
+                                    <Badge variant={STATUS_VARIANT[d.booking.status] ?? 'neutral'}>{d.statuses?.[d.booking.status] ?? d.booking.status}</Badge>
+                                    {d.booking.forwarded_to_accounting && <Badge variant="success">Forwarded to Accounting</Badge>}
+                                </>
+                            )}
+                        >
+                            {d?.booking && <BookingContent booking={d.booking} statuses={d.statuses} serviceTypes={d.serviceTypes} paymentModes={d.paymentModes} canWrite={d.canWrite} />}
+                        </DetailPanel>
                     }
-                />
+                >
+                    <DataTable
+                        rows={bookings.data ?? []}
+                        columns={columns}
+                        pagination={bookings}
+                        onPageChange={(page) => apply({ page })}
+                        panelOpen={showPanel}
+                        selectedKey={panel.id}
+                        toolbar={
+                            <FilterStrip>
+                                <FilterField grow>
+                                    <Input icon={Search} value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && apply()} placeholder="Booking, client, destination..." />
+                                </FilterField>
+                                <FilterField>
+                                    <Select value={filters.status ?? ''} onChange={(e) => apply({ status: e.target.value })} placeholder="All statuses" options={[{ value: '', label: 'All statuses' }, ...Object.entries(statuses).map(([value, label]) => ({ value, label }))]} />
+                                </FilterField>
+                                <FilterField>
+                                    <Select value={filters.agent ?? ''} onChange={(e) => apply({ agent: e.target.value })} placeholder="All agents" options={[{ value: '', label: 'All agents' }, ...agentCodes.map((code) => ({ value: code, label: code }))]} />
+                                </FilterField>
+                                <FilterField width={150}>
+                                    <Input type="month" value={filters.month ?? ''} onChange={(e) => apply({ month: e.target.value })} />
+                                </FilterField>
+                            </FilterStrip>
+                        }
+                    />
+                </TableWithPanel>
             </PageStack>
         </AppShell>
     );

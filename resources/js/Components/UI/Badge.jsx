@@ -22,14 +22,21 @@ export default function Badge({ variant = 'neutral', children, className = '' })
         <span
             className={[
                 'inline-flex items-center',
-                'px-2.5 py-1',
-                'text-[13px] font-semibold',
+                'font-semibold',
                 'font-body',
                 'whitespace-nowrap',
                 variants[variant] ?? variants.neutral,
                 className,
             ].join(' ')}
-            style={{ borderRadius: 'var(--radius-md)', lineHeight: 1 }}
+            style={{
+                fontSize      : 'var(--badge-font-size)',
+                borderRadius  : 'var(--radius-md)',
+                lineHeight    : 1,
+                paddingLeft   : 'var(--badge-px)',
+                paddingRight  : 'var(--badge-px)',
+                paddingTop    : 'var(--badge-py)',
+                paddingBottom : 'var(--badge-py)',
+            }}
         >
             {children}
         </span>

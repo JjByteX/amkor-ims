@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Http\JsonResponse;
 use Modules\EmployeeRecords\Http\Requests\StoreEmployeeRequest;
 use Modules\EmployeeRecords\Models\Employee;
 
@@ -86,11 +87,25 @@ class EmployeeRecordsController extends Controller
     // SHOW
     // ════════════════════════════════════════════════════════════════════════
 
-    public function show(Request $request, Employee $employee): Response
+    public function show(Request $request, Employee $employee): Response|JsonResponse
     {
         $this->requireViewAccess($request);
         $employee->load(['branch', 'createdBy', 'updatedBy', 'user']);
 
+        if ($request->wantsJson() || $request->get('json')) {
+            return response()->json([
+            'employee' => array_merge($employee->toArray(), [
+                'full_name' => $employee->full_name,
+                'display_name' => $employee->display_name,
+                'tenure' => $employee->tenure,
+                'sil_remaining' => $employee->sil_remaining,
+                'regularization_due' => $employee->regularization_due,
+            ]),
+            'statuses' => Employee::EMPLOYMENT_STATUSES,
+            'departments' => Employee::DEPARTMENTS,
+            'canManage' => $this->canManage($request),
+        ]);
+        }
         return Inertia::render('EmployeeRecords/Show', [
             'employee' => array_merge($employee->toArray(), [
                 'full_name' => $employee->full_name,

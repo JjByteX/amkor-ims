@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
+import DetailPanel, { TableWithPanel, useDetailPanel } from '../../Components/Shared/DetailPanel';
+import { ARContent } from './Show';
+
 import { Plus, Search, Eye, Trash2, Banknote, Receipt, WalletCards } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
@@ -37,6 +40,13 @@ export default function ARIndex({
     const { flash } = usePage().props;
 
     const [searchInput,  setSearchInput ] = useState(filters.search ?? '');
+
+    // ─── Detail panel ──────────────────────────────────────────────────────────
+    const panel = useDetailPanel((id) => route('ar.show', id));
+    const [showPanel, setShowPanel] = useState(false);
+    const d = panel.data;
+    function openPanel(row) { setShowPanel(true); panel.open(row); }
+
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [deleting,     setDeleting    ] = useState(false);
 
@@ -157,7 +167,7 @@ export default function ARIndex({
             render: (row) => (
                 <div className="flex justify-end" style={{ gap: 'var(--space-1)' }}>
                     <Button variant="ghost" size="sm" icon={Eye}
-                        onClick={() => router.visit(route('ar.show', row.id))} title="View" />
+                        onClick={(e) => { e.stopPropagation(); openPanel(row); }} title="View" />
                     {canWrite && (
                         <Button variant="ghost" size="sm" icon={Trash2}
                             onClick={() => setDeleteTarget(row)} title="Remove" />
@@ -217,7 +227,37 @@ export default function ARIndex({
                     </StatGrid>
                 )}
 
-                <DataTable
+                                <TableWithPanel
+                    panelOpen={showPanel}
+                    panel={
+                        <DetailPanel
+                open={showPanel}
+                onClose={() => { setShowPanel(false); panel.close(); }}
+                loading={panel.loading}
+                error={panel.error}
+                title={d?.collectible?.customer_name ?? ''}
+                subtitle={d?.collectible ? `${d.departments?.[d.collectible.department] ?? d.collectible.department} · ${new Date(d.collectible.date).toLocaleDateString('en-PH', {month:'short',day:'numeric',year:'numeric'})}` : ''}
+                badges={d?.collectible && (
+                <>
+                    <Badge variant={STATUS_VARIANT[d.collectible.status] ?? 'neutral'}>
+                        {d.statuses?.[d.collectible.status] ?? d.collectible.status}
+                    </Badge>
+                    <Badge variant={APPROVAL_VARIANT[d.collectible.approval_status] ?? 'neutral'}>
+                        {d.approvalStatuses?.[d.collectible.approval_status] ?? d.collectible.approval_status}
+                    </Badge>
+                    {d.collectible.days_outstanding > 0 && (
+                        <Badge variant="error">{d.collectible.days_outstanding} days overdue</Badge>
+                    )}
+                </>
+            )}
+            >
+                {d?.collectible && <ARContent collectible={d.collectible} departments={d.departments} statuses={d.statuses} approvalStatuses={d.approvalStatuses} canWrite={d.canWrite} canApprove={d.canApprove} canAudit={d.canAudit} />}
+            </DetailPanel>
+                    }
+                >
+                    <DataTable
+                        panelOpen={showPanel}
+                        selectedKey={panel.id}
                     columns={columns}
                     rows={collectibles.data}
                     pagination={collectibles}
@@ -253,8 +293,10 @@ export default function ARIndex({
                         </FilterStrip>
                     }
                 />
+                </TableWithPanel>
 
-            </PageStack>
+            
+        </PageStack>
 
             <ConfirmDialog
                 open={!!deleteTarget}

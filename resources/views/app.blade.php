@@ -7,6 +7,9 @@
 
         <title inertia>{{ config('app.name', 'Amkor Travel & Tours Inc.') }}</title>
 
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+        <link rel="alternate icon" type="image/x-icon" href="/favicon.ico">
+
         <!-- Fonts are loaded via app.css Google Fonts import -->
 
         @routes

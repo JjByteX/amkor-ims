@@ -3,7 +3,7 @@ import { router, usePage, useForm } from '@inertiajs/react';
 import {
     Clock, Users, UserCheck, AlertTriangle, Calendar,
     Search, Download, Plus, Eye, Edit2, ChevronLeft, ChevronRight,
-    LogIn, LogOut, CheckCircle, XCircle, MinusCircle,
+    LogIn, LogOut, CheckCircle, XCircle, MinusCircle, Shield,
 } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
@@ -18,6 +18,7 @@ import DataTable from '../../Components/Shared/DataTable';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
 import Modal from '../../Components/UI/Modal';
+import DetailPanel, { TableWithPanel, useDetailPanel, PanelSection, PanelField, PanelFieldRow, PanelDivider, PanelColumns, PanelCol, PanelColRight } from '../../Components/Shared/DetailPanel';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -28,6 +29,9 @@ const MONTHS = [
 
 const fmt = (d) =>
     d ? new Date(d).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+
+const fmtLong = (d) =>
+    d ? new Date(d).toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : '—';
 
 const fmtTime = (t) => {
     if (!t) return '—';
@@ -45,6 +49,9 @@ const fmtMinutes = (min) => {
     return h > 0 ? (m > 0 ? `${h}h ${m}m` : `${h}h`) : `${m}m`;
 };
 
+const fmtDateTime = (dt) =>
+    dt ? new Date(dt).toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+
 const STATUS_VARIANT = {
     present:   'success',
     absent:    'error',
@@ -53,6 +60,108 @@ const STATUS_VARIANT = {
     holiday:   'neutral',
     rest_day:  'neutral',
 };
+
+// ── Attendance panel content ──────────────────────────────────────────────────
+
+function AttendancePanelContent({ data }) {
+    const { record, statuses, leaveTypes } = data;
+
+    const workedPct = record.minutes_worked
+        ? Math.min(100, Math.round((record.minutes_worked / (8 * 60)) * 100))
+        : 0;
+
+    return (
+        <PanelColumns>
+            <PanelCol>
+                <PanelSection title="Time Summary">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <Badge variant={STATUS_VARIANT[record.status] ?? 'neutral'}>
+                            {statuses?.[record.status] ?? record.status}
+                        </Badge>
+                        {record.leave_type && (
+                            <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-info)' }}>
+                                {leaveTypes?.[record.leave_type] ?? record.leave_type}
+                            </span>
+                        )}
+                    </div>
+
+                    <PanelFieldRow>
+                        <PanelField label="Time In"  value={fmtTime(record.time_in)} />
+                        <PanelField label="Time Out" value={fmtTime(record.time_out)} />
+                    </PanelFieldRow>
+
+                    {(record.minutes_late > 0 || record.minutes_undertime > 0) && (
+                        <PanelFieldRow>
+                            {record.minutes_late > 0 && (
+                                <PanelField label="Late" value={`${record.minutes_late}m`} />
+                            )}
+                            {record.minutes_undertime > 0 && (
+                                <PanelField label="Undertime" value={`${record.minutes_undertime}m`} />
+                            )}
+                        </PanelFieldRow>
+                    )}
+
+                    <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                            <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>
+                                Hours Worked
+                            </span>
+                            <span className="font-body font-semibold" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)' }}>
+                                {fmtMinutes(record.minutes_worked)} / 8h
+                            </span>
+                        </div>
+                        <div style={{ height: 6, borderRadius: 3, background: 'var(--color-bg)', overflow: 'hidden' }}>
+                            <div style={{
+                                height: '100%',
+                                width: `${workedPct}%`,
+                                borderRadius: 3,
+                                background: workedPct >= 100 ? 'var(--color-success)' : workedPct >= 75 ? 'var(--color-primary)' : 'var(--color-warning)',
+                            }} />
+                        </div>
+                    </div>
+                </PanelSection>
+
+                <PanelDivider />
+
+                <PanelSection title="Details">
+                    <PanelField label="Employee"  value={record.user?.name ?? `#${record.employee_id}`} />
+                    <PanelField label="Branch"    value={record.branch?.name} />
+                    <PanelField label="Work Date" value={fmtLong(record.work_date)} />
+                    <PanelField label="IP Address" value={record.ip_address} mono />
+                    {record.remarks && <PanelField label="Remarks" value={record.remarks} />}
+                </PanelSection>
+            </PanelCol>
+
+            <PanelColRight>
+                {record.hr_override && (
+                    <div style={{
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        padding: '8px 10px',
+                        background: 'rgba(59,130,246,0.08)',
+                        border: '1px solid var(--color-info)',
+                        borderRadius: 'var(--radius-md)',
+                        color: 'var(--color-info)',
+                        fontSize: 'var(--font-size-small)',
+                    }}>
+                        <Shield size={14} />
+                        <span className="font-body" style={{ fontSize: 'var(--font-size-small)' }}>
+                            <strong>HR Override</strong>
+                            {record.override_reason ? ` — ${record.override_reason}` : ''}
+                        </span>
+                    </div>
+                )}
+
+                <PanelSection title="Audit Trail">
+                    <PanelField label="Clocked In At"  value={fmtDateTime(record.time_in_at)} />
+                    <PanelField label="Clocked Out At" value={fmtDateTime(record.time_out_at)} />
+                    <PanelField label="Recorded By"    value={record.recorded_by_user?.name} />
+                    <PanelField label="Created"        value={fmtDateTime(record.created_at)} />
+                    <PanelField label="Last Updated"   value={fmtDateTime(record.updated_at)} />
+                </PanelSection>
+            </PanelColRight>
+        </PanelColumns>
+    );
+}
 
 // ── Clock widget (today's card) ───────────────────────────────────────────────
 
@@ -189,6 +298,13 @@ export default function AttendanceIndex({
     const { flash } = usePage().props;
     const [searchInput, setSearchInput] = useState(filters.search ?? '');
 
+    // ─── Detail panel ──────────────────────────────────────────────────────────
+    const panel = useDetailPanel((id) => route('attendance.show', id));
+    const [showPanel, setShowPanel] = useState(false);
+    const d = panel.data;
+
+    function openPanel(row) { setShowPanel(true); panel.open(row); }
+
     // Month navigation
     const month = filters.month;
     const year  = filters.year;
@@ -311,13 +427,9 @@ export default function AttendanceIndex({
             label: '',
             render: (row) => (
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-1)' }}>
-                    <Button variant="ghost" size="sm" icon={Eye} onClick={() => router.get(route('attendance.show', row.id))}>
-                        View
-                    </Button>
+                    <Button variant="ghost" size="sm" icon={Eye} onClick={(e) => { e.stopPropagation(); openPanel(row); }} />
                     {canManage && (
-                        <Button variant="ghost" size="sm" icon={Edit2} onClick={() => router.get(route('attendance.edit', row.id))}>
-                            Edit
-                        </Button>
+                        <Button variant="ghost" size="sm" icon={Edit2} onClick={() => router.get(route('attendance.edit', row.id))} />
                     )}
                 </div>
             ),
@@ -370,15 +482,37 @@ export default function AttendanceIndex({
                 />
 
                 <StatGrid min="150px">
-                    <SharedStatCard icon={CheckCircle} label="Present" value={stats.total_present} tone="success" />
-                    <SharedStatCard icon={XCircle} label="Absent" value={stats.total_absent} tone="error" />
-                    <SharedStatCard icon={MinusCircle} label="Half Day" value={stats.total_half_day} tone="warning" />
-                    <SharedStatCard icon={Users} label="On Leave" value={stats.total_on_leave} tone="info" />
-                    <SharedStatCard icon={Clock} label="Late" value={stats.total_late} tone="warning" />
+                    <SharedStatCard icon={CheckCircle} label="Present"   value={stats.total_present}   tone="success" />
+                    <SharedStatCard icon={XCircle}     label="Absent"    value={stats.total_absent}    tone="error" />
+                    <SharedStatCard icon={MinusCircle} label="Half Day"  value={stats.total_half_day}  tone="warning" />
+                    <SharedStatCard icon={Users}       label="On Leave"  value={stats.total_on_leave}  tone="info" />
+                    <SharedStatCard icon={Clock}       label="Late"      value={stats.total_late}      tone="warning" />
                     <SharedStatCard icon={AlertTriangle} label="Undertime" value={stats.total_undertime} tone="warning" />
                 </StatGrid>
 
-                <DataTable
+                                <TableWithPanel
+                    panelOpen={showPanel}
+                    panel={
+                        <DetailPanel
+                open={showPanel}
+                onClose={() => { setShowPanel(false); panel.close(); }}
+                loading={panel.loading}
+                error={panel.error}
+                title={d?.record ? (d.record.user?.name ?? `Employee #${d.record.employee_id}`) : ''}
+                subtitle={d?.record ? fmtLong(d.record.work_date) : ''}
+                badges={d?.record && (
+                    <Badge variant={STATUS_VARIANT[d.record.status] ?? 'neutral'}>
+                        {d.statuses?.[d.record.status] ?? d.record.status}
+                    </Badge>
+                )}
+            >
+                {d?.record && <AttendancePanelContent data={d} />}
+            </DetailPanel>
+                    }
+                >
+                    <DataTable
+                        panelOpen={showPanel}
+                        selectedKey={panel.id}
                     columns={columns}
                     rows={records.data ?? []}
                     pagination={records}
@@ -431,6 +565,7 @@ export default function AttendanceIndex({
                         </FilterStrip>
                     }
                 />
+                </TableWithPanel>
             </PageStack>
         </AppShell>
     );

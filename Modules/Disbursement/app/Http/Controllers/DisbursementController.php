@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Http\JsonResponse;
 use Modules\Disbursement\Http\Requests\StoreDisbursementEntryRequest;
 use Modules\Disbursement\Http\Requests\StoreVoucherRequest;
 use Modules\Disbursement\Models\DisbursementEntry;
@@ -123,7 +124,7 @@ class DisbursementController extends Controller
             ->with('flash', ['type' => 'success', 'message' => "Voucher {$voucher->voucher_no} created."]);
     }
 
-    public function voucherShow(Request $request, Voucher $voucher): Response
+    public function voucherShow(Request $request, Voucher $voucher): Response|JsonResponse
     {
         $role = $request->user()?->getRoleNames()->first();
 
@@ -133,6 +134,17 @@ class DisbursementController extends Controller
 
         $voucher->load(['branch', 'createdBy', 'updatedBy', 'checker', 'approver', 'releaser', 'disbursementEntries']);
 
+        if ($request->wantsJson() || $request->get('json')) {
+            return response()->json([
+            'voucher' => $voucher,
+            'types' => Voucher::TYPES,
+            'approvalStatuses' => Voucher::APPROVAL_STATUSES,
+            'currencies' => Voucher::CURRENCIES,
+            'canWrite' => $this->canPrepare($request),
+            'canCheck' => $this->canCheck($request),
+            'canApprove' => $this->canApprove($request),
+        ]);
+        }
         return Inertia::render('Disbursement/VoucherShow', [
             'voucher' => $voucher,
             'types' => Voucher::TYPES,

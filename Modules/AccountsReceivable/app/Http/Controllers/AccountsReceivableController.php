@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Http\JsonResponse;
 use Modules\AccountsReceivable\Http\Requests\StoreCollectibleRequest;
 use Modules\AccountsReceivable\Models\Collectible;
 
@@ -155,7 +156,7 @@ class AccountsReceivableController extends Controller
 
     // ─── Show ─────────────────────────────────────────────────────────────────
 
-    public function show(Request $request, Collectible $ar): Response
+    public function show(Request $request, Collectible $ar): Response|JsonResponse
     {
         $role = $request->user()?->getRoleNames()->first();
 
@@ -165,6 +166,17 @@ class AccountsReceivableController extends Controller
 
         $ar->load(['branch', 'createdBy', 'updatedBy', 'cooApprover', 'gsmApprover']);
 
+        if ($request->wantsJson() || $request->get('json')) {
+            return response()->json([
+            'collectible' => $ar,
+            'departments' => Collectible::DEPARTMENTS,
+            'statuses' => Collectible::STATUSES,
+            'approvalStatuses' => Collectible::APPROVAL_STATUSES,
+            'canWrite' => $this->canOriginate($request),
+            'canApprove' => $this->canApprove($request),
+            'canAudit' => $role === 'admin_auditor' || $role === 'general_manager',
+        ]);
+        }
         return Inertia::render('AccountsReceivable/Show', [
             'collectible' => $ar,
             'departments' => Collectible::DEPARTMENTS,

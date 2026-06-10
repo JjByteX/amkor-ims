@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import { ChevronDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Tooltip from './Tooltip';
 
 /**
@@ -10,6 +11,13 @@ import Tooltip from './Tooltip';
  * Text colors use --color-text and --color-text-muted tokens (never
  * hardcoded Tailwind gray classes) so dark mode is always correct.
  *
+ * Animation strategy
+ * ──────────────────
+ * Icons live in a fixed-width (40px) slot that never moves. Only the
+ * label text is wrapped in AnimatePresence + motion.span so it fades
+ * and clips horizontally. This prevents any jitter or shake on the
+ * icon during expand/collapse.
+ *
  * Props:
  *   href     : string             (route URL)
  *   icon     : ReactNode          (Lucide icon, 20px)
@@ -18,10 +26,19 @@ import Tooltip from './Tooltip';
  *   children : NavItem[]          (nested sub-items)
  *   collapsed: bool               (sidebar collapsed state)
  */
+
+/* ── Label animation constants (mirror Sidebar.jsx) ─────────────────────── */
+const LABEL_EXIT_DURATION  = 0.10;
+const LABEL_ENTER_DURATION = 0.16;
+const LABEL_ENTER_DELAY    = 0.12;
+const SIDEBAR_EASE         = [0.4, 0, 0.2, 1];
+
 export default function NavItem({ href, icon, label, activeOn = [], inactiveOn = [], children, collapsed = false }) {
     const { url } = usePage();
+    // Strip query string so /payables?tab=pending still matches /payables
+    const pathname = url.split('?')[0];
     const hasChildren = !!children;
-    const matches = (path) => path && (url === path || url.startsWith(path + '/'));
+    const matches = (path) => path && (pathname === path || pathname.startsWith(path + '/'));
     const isSuppressed = inactiveOn.some(matches);
 
     const isActive = !isSuppressed && (
@@ -101,13 +118,25 @@ export default function NavItem({ href, icon, label, activeOn = [], inactiveOn =
                         if (!isActive) e.currentTarget.style.background = 'transparent';
                     }}
                 >
+                    {/* Icon — fixed slot, never moves */}
                     <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center',
                                    color: isActive ? '#ffffff' : 'var(--color-text-muted)' }}>
                         {icon}
                     </span>
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {label}
-                    </span>
+
+                    {/* Label — animated, never affects the icon position */}
+                    <AnimatePresence>
+                        {!collapsed && (
+                            <motion.span
+                                style={{ overflow: 'hidden', whiteSpace: 'nowrap', display: 'block', minWidth: 0 }}
+                                initial={false}
+                                animate={{ opacity: 1, width: 'auto', transition: { duration: LABEL_ENTER_DURATION, delay: LABEL_ENTER_DELAY, ease: SIDEBAR_EASE } }}
+                                exit={{ opacity: 0, width: 0, transition: { duration: LABEL_EXIT_DURATION, ease: 'easeIn' } }}
+                            >
+                                {label}
+                            </motion.span>
+                        )}
+                    </AnimatePresence>
                 </Link>
             </li>
         );
@@ -121,9 +150,9 @@ export default function NavItem({ href, icon, label, activeOn = [], inactiveOn =
                 className="w-full flex items-center"
                 style={{
                     ...itemStyle,
-                        gap        : '10px',
-                        paddingLeft: '10px',
-                        paddingRight: '10px',
+                    gap        : '10px',
+                    paddingLeft: '10px',
+                    paddingRight: '10px',
                     fontSize   : 'var(--font-size-small)',
                     fontFamily : 'var(--font-body)',
                     fontWeight : childActive ? 'var(--font-weight-semibold)' : 'var(--font-weight-normal)',
@@ -141,22 +170,46 @@ export default function NavItem({ href, icon, label, activeOn = [], inactiveOn =
                         childActive ? 'color-mix(in srgb, var(--color-primary) 12%, transparent)' : 'transparent';
                 }}
             >
+                {/* Icon — fixed slot, never moves */}
                 <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center',
                                color: childActive ? 'var(--color-primary)' : 'var(--color-text-muted)' }}>
                     {icon}
                 </span>
-                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'left' }}>
-                    {label}
-                </span>
-                <ChevronDown
-                    size={15}
-                    style={{
-                        flexShrink: 0,
-                        transform : open ? 'rotate(180deg)' : 'rotate(0deg)',
-                        transition: 'transform 200ms ease',
-                        color     : 'var(--color-text-muted)',
-                    }}
-                />
+
+                {/* Label — animated, never affects the icon position */}
+                <AnimatePresence>
+                    {!collapsed && (
+                        <motion.span
+                            style={{ overflow: 'hidden', whiteSpace: 'nowrap', flex: 1, display: 'block', minWidth: 0, textAlign: 'left' }}
+                            initial={false}
+                            animate={{ opacity: 1, width: 'auto', transition: { duration: LABEL_ENTER_DURATION, delay: LABEL_ENTER_DELAY, ease: SIDEBAR_EASE } }}
+                            exit={{ opacity: 0, width: 0, transition: { duration: LABEL_EXIT_DURATION, ease: 'easeIn' } }}
+                        >
+                            {label}
+                        </motion.span>
+                    )}
+                </AnimatePresence>
+
+                {/* Chevron — only shown when expanded */}
+                <AnimatePresence>
+                    {!collapsed && (
+                        <motion.span
+                            style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}
+                            initial={false}
+                            animate={{ opacity: 1, transition: { duration: LABEL_ENTER_DURATION, delay: LABEL_ENTER_DELAY } }}
+                            exit={{ opacity: 0, transition: { duration: LABEL_EXIT_DURATION } }}
+                        >
+                            <ChevronDown
+                                size={15}
+                                style={{
+                                    transform : open ? 'rotate(180deg)' : 'rotate(0deg)',
+                                    transition: 'transform 200ms ease',
+                                    color     : 'var(--color-text-muted)',
+                                }}
+                            />
+                        </motion.span>
+                    )}
+                </AnimatePresence>
             </button>
 
             {open && (

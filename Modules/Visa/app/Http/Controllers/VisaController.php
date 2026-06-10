@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Http\JsonResponse;
 use Modules\Visa\Http\Requests\StoreVisaApplicationRequest;
 use Modules\Visa\Mail\VisaPaymentRequestMail;
 use Modules\Visa\Models\VisaApplication;
@@ -116,7 +117,7 @@ class VisaController extends Controller
 
     // ─── Show ─────────────────────────────────────────────────────────────────
 
-    public function show(Request $request, VisaApplication $visa): Response
+    public function show(Request $request, VisaApplication $visa): Response|JsonResponse
     {
         $role = $request->user()?->getRoleNames()->first();
 
@@ -126,6 +127,15 @@ class VisaController extends Controller
 
         $visa->load(['branch', 'createdBy', 'updatedBy', 'orEndorsedBy']);
 
+        if ($request->wantsJson() || $request->get('json')) {
+            return response()->json([
+            'application' => $visa,
+            'statuses' => VisaApplication::STATUSES,
+            'paymentModes' => VisaApplication::PAYMENT_MODES,
+            'canWrite' => $this->canWrite($request),
+            'canEndorse' => $role === 'visa_documentation_officer' && $visa->or_number && ! $visa->isEndorsed(),
+        ]);
+        }
         return Inertia::render('Visa/Show', [
             'application' => $visa,
             'statuses' => VisaApplication::STATUSES,
