@@ -8,266 +8,231 @@
   body {
     font-family: 'DejaVu Sans', Arial, sans-serif;
     font-size: 9pt;
-    color: #0F172A;
-    padding: 28px 36px;
+    color: #000;
+    padding: 16px 20px;
     line-height: 1.4;
   }
 
-  .header { border-bottom: 2px solid #1D4ED8; padding-bottom: 12px; margin-bottom: 14px; }
-  .header-top { display: flex; justify-content: space-between; align-items: flex-start; }
-  .company-name { font-size: 14pt; font-weight: bold; color: #1D4ED8; }
-  .company-sub { font-size: 8pt; color: #475569; margin-top: 2px; }
-  .doc-title { font-size: 13pt; font-weight: bold; color: #0F172A; text-transform: uppercase; letter-spacing: 1px; }
-  .doc-number { font-size: 10pt; color: #1D4ED8; font-weight: bold; margin-top: 3px; }
-  .atp-badge {
-    background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 4px;
-    padding: 3px 8px; font-size: 7.5pt; font-weight: bold; color: #92400E;
-    margin-top: 4px; display: inline-block;
+  /* ── Outer layout ────────────────────────────────────────────────── */
+  .outer-table { width: 100%; border-collapse: collapse; }
+  .left-col  { width: 42%; border: 1px solid #000; vertical-align: top; padding: 0; }
+  .right-col { width: 58%; vertical-align: top; padding-left: 18px; }
+
+  /* ── Left: particulars table ─────────────────────────────────────── */
+  .settlement-header {
+    background: #000; color: #fff;
+    text-align: center; font-weight: bold; font-size: 9pt; padding: 5px;
+  }
+  .settlement-table { width: 100%; border-collapse: collapse; }
+  .settlement-table th {
+    background: #000; color: #fff;
+    padding: 3px 6px; font-size: 8.5pt; font-weight: bold; text-align: left;
+  }
+  .settlement-table th.right { text-align: right; }
+  .settlement-table td {
+    border-bottom: 1px solid #ccc; padding: 3px 6px; font-size: 8.5pt; height: 18px;
+  }
+  .settlement-table td.amount { text-align: right; border-left: 1px solid #ccc; }
+  .calc-table { width: 100%; border-collapse: collapse; }
+  .calc-table td {
+    border-bottom: 1px solid #ccc; padding: 2px 6px; font-size: 8pt; height: 16px;
+  }
+  .calc-table td.value { text-align: right; border-left: 1px solid #ccc; font-weight: normal; }
+  .calc-table .bold td { font-weight: bold; }
+
+  /* ── Left: form of payment section ──────────────────────────────── */
+  .payment-header {
+    background: #000; color: #fff;
+    text-align: center; font-weight: bold; font-size: 9pt; padding: 4px 6px;
+  }
+  .payment-table { width: 100%; border-collapse: collapse; }
+  .payment-table td {
+    border-bottom: 1px solid #ccc; padding: 3px 6px; font-size: 8.5pt; height: 20px;
+  }
+  .payment-table td.value { border-left: 1px solid #ccc; text-align: right; }
+
+  /* ── Right: company header ───────────────────────────────────────── */
+  .company-name {
+    font-size: 22pt; font-weight: bold; color: #2D6A00;
+    letter-spacing: 0.3px; line-height: 1; margin-bottom: 3px;
+  }
+  .company-address { font-size: 8.5pt; margin-bottom: 1px; }
+  .company-tin     { font-size: 8.5pt; margin-bottom: 10px; }
+
+  /* ── Right: doc title ────────────────────────────────────────────── */
+  .doc-title  { font-size: 14pt; font-weight: bold; color: #000; margin-bottom: 6px; }
+  .doc-number { font-size: 14pt; font-weight: bold; color: #CC0000; float: right; margin-top: -22px; }
+
+  /* ── Right: fields ───────────────────────────────────────────────── */
+  .field-row { margin-bottom: 7px; }
+  .field-label { font-size: 9pt; }
+  .field-line    { border-bottom: 1px solid #000; display: inline-block; min-width: 280px; vertical-align: bottom; margin-left: 4px; }
+  .field-line-sm { border-bottom: 1px solid #000; display: inline-block; min-width: 160px; vertical-align: bottom; margin-left: 4px; }
+  .pesos-line {
+    border-bottom: 1px solid #000; display: block; width: 100%;
+    margin-top: 6px; margin-bottom: 8px; min-height: 20px;
+    padding-bottom: 2px; font-weight: bold;
+  }
+  .amount-paren { text-align: right; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 10px; }
+  .partial-line { border-bottom: 1px solid #000; display: inline-block; min-width: 220px; vertical-align: bottom; margin-left: 4px; }
+
+  /* ── BIR footer text ──────────────────────────────────────────────── */
+  .bir-footer {
+    font-size: 7pt; color: #000; margin-top: 8px; line-height: 1.5;
   }
 
-  .section-label {
-    font-size: 7.5pt; font-weight: bold; color: #64748B;
-    text-transform: uppercase; letter-spacing: 0.8px;
-    margin-bottom: 3px; margin-top: 12px;
-  }
-
-  .info-grid { width: 100%; border-collapse: collapse; margin-top: 10px; }
-  .info-grid td { padding: 4px 6px; vertical-align: top; }
-  .info-label { font-size: 8pt; color: #64748B; width: 110px; white-space: nowrap; }
-  .info-value { font-size: 9pt; font-weight: bold; border-bottom: 1px solid #CBD5E1; min-width: 200px; }
-
-  /* Particulars table */
-  .details-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-  .details-table th {
-    background: #1D4ED8; color: white;
-    border: 1px solid #1D4ED8; padding: 5px 8px;
-    font-size: 8.5pt; font-weight: bold; text-align: left;
-  }
-  .details-table td { border: 1px solid #E2E8F0; padding: 5px 8px; font-size: 8.5pt; }
-  .text-right { text-align: right; }
-  .text-center { text-align: center; }
-
-  /* VAT breakdown box — THE KEY BIR-CRITICAL SECTION */
-  .vat-box {
-    border: 2px solid #1D4ED8; border-radius: 6px;
-    padding: 10px 14px; margin-top: 14px;
-  }
-  .vat-title {
-    font-size: 9pt; font-weight: bold; color: #1D4ED8;
-    text-transform: uppercase; letter-spacing: 0.5px;
-    border-bottom: 1px solid #BFDBFE; padding-bottom: 6px; margin-bottom: 8px;
-  }
-  .vat-grid { width: 100%; border-collapse: collapse; }
-  .vat-grid td { padding: 4px 8px; font-size: 8.5pt; border-bottom: 1px solid #F1F5F9; }
-  .vat-label { color: #475569; width: 200px; }
-  .vat-value { font-weight: bold; text-align: right; width: 120px; }
-  .vat-total { font-size: 9.5pt; font-weight: bold; color: #1D4ED8; }
-
-  /* Summary totals */
-  .totals-block { margin-top: 10px; width: 280px; margin-left: auto; }
-  .total-row {
-    display: flex; justify-content: space-between;
-    padding: 3px 0; font-size: 8.5pt;
-    border-bottom: 1px solid #F1F5F9;
-  }
-  .total-final {
-    font-weight: bold; font-size: 10pt; color: #1D4ED8;
-    border-top: 2px solid #1D4ED8; padding-top: 5px; margin-top: 3px;
-  }
-
-  .sig-block { margin-top: 36px; display: flex; justify-content: space-between; }
-  .sig-item { text-align: center; width: 180px; }
-  .sig-line { border-top: 1px solid #0F172A; margin-bottom: 4px; margin-top: 32px; }
-  .sig-label { font-size: 8pt; color: #475569; }
-
-  .footer {
-    margin-top: 24px; border-top: 1px solid #E2E8F0;
-    padding-top: 8px; font-size: 7.5pt; color: #94A3B8; text-align: center;
-  }
-  .badge-bir {
-    display: inline-block; background: #EF4444; color: white;
-    font-size: 7pt; font-weight: bold; padding: 2px 6px;
-    border-radius: 3px; margin-left: 6px;
-  }
+  /* ── Signature ───────────────────────────────────────────────────── */
+  .sig-block { margin-top: 20px; text-align: right; }
+  .sig-line-right { border-bottom: 1px solid #000; display: inline-block; min-width: 180px; min-height: 24px; vertical-align: bottom; }
+  .sig-label { font-size: 8.5pt; font-weight: bold; font-style: italic; }
 </style>
 </head>
 <body>
 
-{{-- ── HEADER ──────────────────────────────────────────────────────────── --}}
-<div class="header">
-  <div class="header-top">
+<table class="outer-table">
+<tr>
+  {{-- ── LEFT COLUMN ─────────────────────────────────────────────────── --}}
+  <td class="left-col">
+    <div class="settlement-header">In Settlement of the following</div>
+    <table class="settlement-table">
+      <thead>
+        <tr>
+          <th>PARTICULARS</th>
+          <th class="right">AMOUNT</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>QUANTITY</td><td class="amount">1</td></tr>
+        <tr><td>UNIT COST</td><td class="amount">&#8369; {{ number_format($transaction->total_sales_vat_inclusive, 2) }}</td></tr>
+        <tr><td>DESCRIPTION</td><td class="amount"></td></tr>
+        <tr><td>{{ $transaction->particulars ?? 'Travel Services' }}</td><td class="amount"></td></tr>
+      </tbody>
+    </table>
+
+    {{-- VAT Calculation block --}}
+    <table class="calc-table">
+      <tr><td>Total Sales (Vat Inclusive)</td><td class="value">&#8369; {{ number_format($transaction->total_sales_vat_inclusive, 2) }}</td></tr>
+      <tr><td>Less: VAT</td><td class="value">&#8369; {{ number_format($transaction->vat_amount, 2) }}</td></tr>
+      <tr><td>Total</td><td class="value">&#8369; {{ number_format($transaction->vatable_sales, 2) }}</td></tr>
+      <tr><td>Less: SC/PWD Discount</td><td class="value">&#8369; {{ number_format($transaction->sc_pwd_discount, 2) }}</td></tr>
+      <tr><td>Total Due</td><td class="value">&#8369; {{ number_format($transaction->total_sales_vat_inclusive - $transaction->sc_pwd_discount, 2) }}</td></tr>
+      <tr><td>Less: Withholding Tax</td><td class="value">&#8369; {{ number_format($transaction->withholding_tax, 2) }}</td></tr>
+      <tr><td>Amount Date</td><td class="value"></td></tr>
+      <tr><td>Add: VAT</td><td class="value">&#8369; {{ number_format($transaction->vat_amount, 2) }}</td></tr>
+      <tr class="bold"><td>Total Amount Due</td><td class="value">&#8369; {{ number_format($transaction->net_amount_due, 2) }}</td></tr>
+      <tr><td>&nbsp;</td><td class="value"></td></tr>
+      <tr><td>VATable Sales</td><td class="value">&#8369; {{ number_format($transaction->vatable_sales, 2) }}</td></tr>
+      <tr><td>VAT - Exempt Sales</td><td class="value">&#8369; {{ number_format($transaction->vat_exempt_sales, 2) }}</td></tr>
+      <tr><td>VAT Zero Rated Sales</td><td class="value">&#8369; {{ number_format($transaction->vat_zero_rated_sales, 2) }}</td></tr>
+      <tr><td>VAT amount</td><td class="value">&#8369; {{ number_format($transaction->vat_amount, 2) }}</td></tr>
+      <tr><td>Total Sales</td><td class="value">&#8369; {{ number_format($transaction->total_sales_vat_inclusive, 2) }}</td></tr>
+    </table>
+
+    {{-- Form of Payment --}}
+    <div class="payment-header">Form of Payment</div>
+    <table class="payment-table">
+      <tr>
+        <td>Cash</td>
+        <td class="value">{{ $transaction->mode_of_payment === 'cash' ? '&#10003;' : '' }}</td>
+      </tr>
+      <tr>
+        <td>Check</td>
+        <td class="value">{{ $transaction->mode_of_payment === 'check' ? '&#10003;' : '' }}</td>
+      </tr>
+      <tr>
+        <td>Bank</td>
+        <td class="value">{{ $transaction->mode_of_payment === 'bank' ? '&#10003;' : '' }}</td>
+      </tr>
+      <tr>
+        <td>Check #</td>
+        <td class="value">{{ $transaction->check_number ?? '' }}</td>
+      </tr>
+      <tr>
+        <td>Date</td>
+        <td class="value">{{ $transaction->transaction_date->format('m/d/Y') }}</td>
+      </tr>
+      <tr>
+        <td style="font-weight:bold;">TOTAL &#8369;</td>
+        <td class="value" style="font-weight:bold;">{{ number_format($transaction->gross_amount, 2) }}</td>
+      </tr>
+    </table>
+  </td>
+
+  {{-- ── RIGHT COLUMN ────────────────────────────────────────────────── --}}
+  <td class="right-col">
+
+    {{-- Company header --}}
+    <div class="company-name">&#9992; AMKOR TRAVEL &amp; TOURS INC.</div>
+    <div class="company-address">Rm 108 West City Plaza Bldg., 66 West Ave., Quezon City</div>
+    <div class="company-tin">VAT Reg. TIN. {{ $transaction->branch?->code === 'ORMOC' ? $company['tin_ormoc'] : $company['tin_main'] }}</div>
+
+    {{-- Doc title + number --}}
     <div>
-      <div class="company-name">{{ $company['name'] }}</div>
-      <div class="company-sub">IATA Accredited · PTAA Member</div>
-      <div class="company-sub">TIN: {{ $transaction->branch?->code === 'ORMOC' ? $company['tin_ormoc'] : $company['tin_main'] }}</div>
-      <div class="company-sub">
-        {{ $transaction->branch?->code === 'ORMOC' ? $company['address_ormoc'] : $company['address_main'] }}
-      </div>
+      <span class="doc-title">SERVICE INVOICE</span>
+      <span class="doc-number">No. {{ $transaction->document_number }}</span>
     </div>
-    <div style="text-align:right;">
-      <div class="doc-title">Service Invoice <span class="badge-bir">BIR</span></div>
-      <div class="doc-number">{{ $transaction->document_number }}</div>
-      <div class="atp-badge">BIR Authority to Print No.: {{ $atpNumber }}</div>
-      <div style="font-size:8pt; color:#64748B; margin-top:6px;">
-        Date: <strong>{{ $transaction->transaction_date->format('F d, Y') }}</strong>
-      </div>
+
+    {{-- Date --}}
+    <div class="field-row" style="margin-top:16px;">
+      <span class="field-label">Date:</span>
+      <span class="field-line-sm">{{ $transaction->transaction_date->format('F d, Y') }}</span>
     </div>
-  </div>
-</div>
 
-{{-- ── CLIENT INFO ─────────────────────────────────────────────────────── --}}
-<div class="section-label">Billed To</div>
-<table class="info-grid">
-  <tr>
-    <td class="info-label">Name:</td>
-    <td class="info-value">{{ $transaction->client_name }}</td>
-    <td width="20"></td>
-    <td class="info-label">TIN:</td>
-    <td class="info-value" style="color:{{ $transaction->tin ? '#0F172A' : '#EF4444' }}">
-      {{ $transaction->tin ?? '— Required for BIR —' }}
-    </td>
-  </tr>
-  <tr>
-    <td class="info-label">Address:</td>
-    <td class="info-value" colspan="4">{{ $transaction->address ?? '' }}</td>
-  </tr>
-  <tr>
-    <td class="info-label">Business Style:</td>
-    <td class="info-value">{{ $transaction->business_style ?? '' }}</td>
-    <td width="20"></td>
-    <td class="info-label">Mode of Payment:</td>
-    <td class="info-value">{{ strtoupper($transaction->mode_of_payment ?? '') }}</td>
-  </tr>
+    {{-- Received from --}}
+    <div class="field-row">
+      <span class="field-label">Received from</span>
+      <span class="field-line">{{ $transaction->client_name }}</span>
+    </div>
+
+    {{-- TIN + address --}}
+    <div class="field-row">
+      <span class="field-label">with TIN</span>
+      <span class="field-line-sm">{{ $transaction->tin ?? '' }}</span>
+      <span style="margin-left:8px;">and address at</span>
+    </div>
+    <div style="border-bottom:1px solid #000; margin-bottom:8px; min-height:18px;">{{ $transaction->address ?? '' }}</div>
+
+    {{-- Business style --}}
+    <div class="field-row">
+      <span class="field-label">enganged in a business style of</span>
+      <span class="field-line">{{ $transaction->business_style ?? '' }}</span>
+    </div>
+
+    {{-- Sum of pesos --}}
+    <div class="field-row">
+      <span class="field-label">the sum of pesos</span>
+      <span class="pesos-line">{{ $amountInWords }}</span>
+    </div>
+
+    {{-- Amount in parentheses --}}
+    <div class="amount-paren">
+      (&#8369; {{ number_format($transaction->gross_amount, 2) }})
+    </div>
+
+    {{-- Partial/full payment --}}
+    <div class="field-row">
+      <span class="field-label">in Partial/Full payment of</span>
+      <span class="partial-line">{{ $transaction->particulars ?? '' }}</span>
+    </div>
+
+    {{-- BIR ATP footer --}}
+    <div class="bir-footer">
+      30 Bklts. (50x3) 2501-4,000 &nbsp; Date Issued:{{ now()->format('m/d/y') }}<br>
+      BIR Authority to Print No.: {{ $atpNumber }}<br>
+      BM PRINTING &amp; BOOKBIDING &nbsp;&nbsp; TIN: 920-848-016-00000 VAT<br>
+      Lopez Jaena St., Brgy. South 6541 Ormoc City Leyte Philippines<br>
+      Printer's Accredation No.089MP20240000000003 Date Issued: March 21, 2024
+    </div>
+
+    {{-- Cashier signature --}}
+    <div class="sig-block">
+      <div>By: <span class="sig-line-right"></span></div>
+      <div class="sig-label">Cashier / Authorized Signature</div>
+    </div>
+
+  </td>
+</tr>
 </table>
-
-{{-- ── AMOUNT IN WORDS ──────────────────────────────────────────────────── --}}
-<div style="margin-top:12px; font-size:8pt; color:#64748B;">Sum of pesos:</div>
-<div style="font-size:9pt; font-weight:bold; font-style:italic; border-bottom:1px solid #CBD5E1; padding-bottom:4px; margin-bottom:10px;">
-  {{ $amountInWords }}
-</div>
-
-{{-- ── PARTICULARS ──────────────────────────────────────────────────────── --}}
-<div class="section-label">Particulars</div>
-<table class="details-table">
-  <thead>
-    <tr>
-      <th>Qty</th>
-      <th>Description</th>
-      <th class="text-right" width="110">Unit Cost</th>
-      <th class="text-right" width="110">Amount</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td class="text-center">1</td>
-      <td>{{ $transaction->particulars ?? 'Professional Travel Services' }}</td>
-      <td class="text-right">₱ {{ number_format($transaction->total_sales_vat_inclusive, 2) }}</td>
-      <td class="text-right">₱ {{ number_format($transaction->total_sales_vat_inclusive, 2) }}</td>
-    </tr>
-    <tr>
-      <td colspan="2"></td>
-      <td class="text-right" style="font-size:8pt; color:#64748B;">Total Sales (VAT Inclusive)</td>
-      <td class="text-right" style="font-weight:bold;">₱ {{ number_format($transaction->total_sales_vat_inclusive, 2) }}</td>
-    </tr>
-    <tr>
-      <td colspan="2"></td>
-      <td class="text-right" style="font-size:8pt; color:#64748B;">Less: VAT ({{ $vatRate }}%)</td>
-      <td class="text-right" style="color:#EF4444;">- ₱ {{ number_format($transaction->vat_amount, 2) }}</td>
-    </tr>
-    <tr>
-      <td colspan="2"></td>
-      <td class="text-right" style="font-size:8pt; color:#64748B;">Total (VAT Exclusive)</td>
-      <td class="text-right" style="font-weight:bold;">₱ {{ number_format($transaction->vatable_sales, 2) }}</td>
-    </tr>
-    @if($transaction->sc_pwd_discount > 0)
-    <tr>
-      <td colspan="2"></td>
-      <td class="text-right" style="font-size:8pt; color:#64748B;">Less SC/PWD Discount</td>
-      <td class="text-right" style="color:#EF4444;">- ₱ {{ number_format($transaction->sc_pwd_discount, 2) }}</td>
-    </tr>
-    @endif
-    <tr>
-      <td colspan="2"></td>
-      <td class="text-right" style="font-size:8pt; color:#64748B;">Total Due</td>
-      <td class="text-right">₱ {{ number_format($transaction->total_sales_vat_inclusive - $transaction->sc_pwd_discount, 2) }}</td>
-    </tr>
-    @if($transaction->withholding_tax > 0)
-    <tr>
-      <td colspan="2"></td>
-      <td class="text-right" style="font-size:8pt; color:#64748B;">Less Withholding Tax (2%)</td>
-      <td class="text-right" style="color:#EF4444;">- ₱ {{ number_format($transaction->withholding_tax, 2) }}</td>
-    </tr>
-    @endif
-    <tr>
-      <td colspan="2"></td>
-      <td class="text-right" style="font-size:8pt; color:#64748B;">Amount Due</td>
-      <td class="text-right">₱ {{ number_format($transaction->net_amount_due + $transaction->vat_amount, 2) }}</td>
-    </tr>
-    <tr>
-      <td colspan="2"></td>
-      <td class="text-right" style="font-size:8pt; color:#64748B;">Add VAT</td>
-      <td class="text-right">₱ {{ number_format($transaction->vat_amount, 2) }}</td>
-    </tr>
-    <tr style="background:#EFF6FF;">
-      <td colspan="2"></td>
-      <td class="text-right" style="font-weight:bold; font-size:9pt; color:#1D4ED8;">TOTAL AMOUNT DUE</td>
-      <td class="text-right" style="font-weight:bold; font-size:10pt; color:#1D4ED8;">
-        ₱ {{ number_format($transaction->net_amount_due, 2) }}
-      </td>
-    </tr>
-  </tbody>
-</table>
-
-{{-- ── VAT BREAKDOWN (BIR-REQUIRED) ────────────────────────────────────── --}}
-<div class="vat-box">
-  <div class="vat-title">BIR VAT Summary — ATP No. {{ $atpNumber }}</div>
-  <table class="vat-grid">
-    <tr>
-      <td class="vat-label">VATAble Sales</td>
-      <td class="vat-value">₱ {{ number_format($transaction->vatable_sales, 2) }}</td>
-      <td width="30"></td>
-      <td class="vat-label">VAT-Exempt Sales</td>
-      <td class="vat-value">₱ {{ number_format($transaction->vat_exempt_sales, 2) }}</td>
-    </tr>
-    <tr>
-      <td class="vat-label">VAT Zero-Rated Sales</td>
-      <td class="vat-value">₱ {{ number_format($transaction->vat_zero_rated_sales, 2) }}</td>
-      <td width="30"></td>
-      <td class="vat-label">VAT Amount (12%)</td>
-      <td class="vat-value">₱ {{ number_format($transaction->vat_amount, 2) }}</td>
-    </tr>
-    <tr>
-      <td class="vat-label vat-total" colspan="4" style="border-top:2px solid #BFDBFE; padding-top:6px;">
-        Total Sales (VAT Inclusive)
-      </td>
-      <td class="vat-value vat-total" style="border-top:2px solid #BFDBFE; padding-top:6px;">
-        ₱ {{ number_format($transaction->total_sales_vat_inclusive, 2) }}
-      </td>
-    </tr>
-  </table>
-</div>
-
-{{-- ── SIGNATURES ───────────────────────────────────────────────────────── --}}
-<div class="sig-block">
-  <div class="sig-item">
-    <div class="sig-line"></div>
-    <div class="sig-label">Prepared by</div>
-  </div>
-  <div class="sig-item">
-    <div class="sig-line"></div>
-    <div class="sig-label">Cashier / Authorized Signature</div>
-  </div>
-  <div class="sig-item">
-    <div class="sig-line"></div>
-    <div class="sig-label">Client Signature / Received by</div>
-  </div>
-</div>
-
-{{-- ── FOOTER ───────────────────────────────────────────────────────────── --}}
-<div class="footer">
-  This is a computer-generated Service Invoice. · Generated: {{ $generatedAt }}
-  <br>{{ $company['name'] }} · BIR Authority to Print No.: {{ $atpNumber }} · IATA Accredited · PTAA Member
-</div>
 
 </body>
 </html>

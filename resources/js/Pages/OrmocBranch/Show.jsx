@@ -14,12 +14,14 @@ import Textarea from '../../Components/UI/Textarea';
 import Select from '../../Components/UI/Select';
 import ConfirmDialog from '../../Components/Shared/ConfirmDialog';
 import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
+import ContactLinkPanel from '../../Components/Shared/ContactLinkPanel';
+import RelatedTransactionsPanel from '../../Components/Shared/RelatedTransactionsPanel';
 
 const STATUS_VARIANT = { inquiry: 'info', quoted: 'warning', confirmed: 'success', cancelled: 'error' };
 const fmt   = (d) => d ? new Date(d).toLocaleDateString('en-PH', { month: 'long', day: 'numeric', year: 'numeric' }) : null;
 const fmtDt = (d) => d ? new Date(d).toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : null;
 
-export function OrmocContent({ booking, statuses, bookingTypes, paymentModes, canWrite }) {
+export function OrmocContent({ booking, statuses, bookingTypes, paymentModes, canWrite, contactsSearchUrl, relatedTransactions }) {
     const [notesModal,   setNotesModal  ] = useState(false);
     const [statusModal,  setStatusModal ] = useState(false);
     const [deleteDialog, setDeleteDialog] = useState(false);
@@ -88,6 +90,17 @@ export function OrmocContent({ booking, statuses, bookingTypes, paymentModes, ca
                     <PanelField label="Payment Mode"    value={paymentModes[booking.mode_of_payment] ?? booking.mode_of_payment} />
                     <PanelField label="Date of Payment" value={fmt(booking.date_of_payment)} />
                 </PanelSection>
+                <PanelDivider />
+                <PanelSection title="Contact Link">
+                    <ContactLinkPanel
+                        contact={booking.contact}
+                        contactsSearchUrl={contactsSearchUrl}
+                        linkUrl={route('ormoc.link-contact', booking.id)}
+                        unlinkUrl={route('ormoc.unlink-contact', booking.id)}
+                        canLink={canWrite}
+                    />
+                </PanelSection>
+                <RelatedTransactionsPanel transactions={relatedTransactions} />
                 {booking.notes && (<>
                     <PanelDivider />
                     <PanelSection title="Notes">
@@ -126,7 +139,7 @@ export function OrmocContent({ booking, statuses, bookingTypes, paymentModes, ca
     </>);
 }
 
-export default function OrmocBranchShow({ booking, statuses, bookingTypes, paymentModes, canWrite }) {
+export default function OrmocBranchShow({ booking, statuses, bookingTypes, paymentModes, canWrite, contactsSearchUrl, relatedTransactions }) {
     const { url } = usePage();
     const isPanel = url?.includes('panel=1');
     if (isPanel) {
@@ -138,9 +151,9 @@ export default function OrmocBranchShow({ booking, statuses, bookingTypes, payme
                     <Badge variant="neutral">{bookingTypes[booking.booking_type] ?? booking.booking_type}</Badge>
                 </>}
             >
-                <OrmocContent booking={booking} statuses={statuses} bookingTypes={bookingTypes} paymentModes={paymentModes} canWrite={canWrite} />
+                <OrmocContent booking={booking} statuses={statuses} bookingTypes={bookingTypes} paymentModes={paymentModes} canWrite={canWrite} contactsSearchUrl={contactsSearchUrl} relatedTransactions={relatedTransactions} />
             </DetailPanel>
         );
     }
-    return <AppShell><OrmocContent booking={booking} statuses={statuses} bookingTypes={bookingTypes} paymentModes={paymentModes} canWrite={canWrite} /></AppShell>;
+    return <AppShell><OrmocContent booking={booking} statuses={statuses} bookingTypes={bookingTypes} paymentModes={paymentModes} canWrite={canWrite} contactsSearchUrl={contactsSearchUrl} relatedTransactions={relatedTransactions} /></AppShell>;
 }

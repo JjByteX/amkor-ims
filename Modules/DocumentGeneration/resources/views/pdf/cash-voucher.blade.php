@@ -7,223 +7,174 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: 'DejaVu Sans', Arial, sans-serif;
-    font-size: 9pt; color: #0F172A;
-    padding: 28px 36px; line-height: 1.4;
+    font-size: 9pt;
+    color: #000;
+    padding: 20px 28px;
+    line-height: 1.4;
   }
 
-  .header { border-bottom: 2px solid #3F9800; padding-bottom: 12px; margin-bottom: 14px; }
-  .header-top { display: flex; justify-content: space-between; }
-  .company-name { font-size: 14pt; font-weight: bold; color: #3F9800; }
-  .company-sub { font-size: 8pt; color: #475569; margin-top: 2px; }
-  .doc-title { font-size: 13pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
-  .doc-number { font-size: 10pt; font-weight: bold; color: #3F9800; margin-top: 3px; }
-
-  .section-label {
-    font-size: 7.5pt; font-weight: bold; color: #64748B;
-    text-transform: uppercase; letter-spacing: 0.8px;
-    margin-bottom: 4px; margin-top: 14px;
+  /* ── Company header ──────────────────────────────────────────────── */
+  .company-name {
+    font-size: 26pt;
+    font-weight: bold;
+    color: #2D6A00;
+    letter-spacing: 0.3px;
+    line-height: 1;
+    margin-bottom: 6px;
   }
+  .branch-row { font-size: 7.5pt; margin-bottom: 12px; }
+  .branch-col { display: inline-block; width: 32%; vertical-align: top; padding-right: 8px; }
 
-  .info-grid { width: 100%; border-collapse: collapse; margin-top: 10px; }
-  .info-grid td { padding: 5px 6px; vertical-align: top; }
-  .info-label { font-size: 8pt; color: #64748B; width: 100px; white-space: nowrap; }
-  .info-value { font-size: 9pt; font-weight: bold; border-bottom: 1px solid #CBD5E1; min-width: 200px; }
+  /* ── CV title row ────────────────────────────────────────────────── */
+  .cv-title { font-size: 22pt; font-weight: bold; display: inline; }
+  .cv-date  { font-size: 11pt; display: inline; margin-left: 20px; }
+  .cv-no    { font-size: 14pt; font-weight: bold; float: right; margin-top: 2px; }
 
-  /* Payment details table */
-  .details-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-  .details-table th {
-    background: #F1F5F9; border: 1px solid #CBD5E1;
-    padding: 6px 8px; font-size: 8.5pt; font-weight: bold; text-align: left;
+  /* ── Main table ──────────────────────────────────────────────────── */
+  .main-table { width: 100%; border-collapse: collapse; margin-top: 12px; border: 2px solid #000; }
+  .main-table td, .main-table th {
+    border: 1px solid #000; padding: 6px 8px; font-size: 9pt;
   }
-  .details-table td { border: 1px solid #E2E8F0; padding: 6px 8px; font-size: 8.5pt; }
-  .text-right { text-align: right; }
-  .text-center { text-align: center; }
-
-  /* Approval chain */
-  .approval-table { width: 100%; border-collapse: collapse; margin-top: 14px; }
-  .approval-table th {
-    background: #3F9800; color: white;
-    padding: 5px 8px; font-size: 8pt; font-weight: bold;
+  .main-table .header-row th {
+    font-weight: bold; text-align: center; font-size: 10pt; background: #fff;
   }
-  .approval-table td { border: 1px solid #E2E8F0; padding: 10px 8px; font-size: 8pt; }
-  .approval-role { color: #64748B; font-size: 7.5pt; }
-  .approval-name { font-weight: bold; margin-top: 2px; }
-  .approval-date { color: #3F9800; font-size: 7.5pt; margin-top: 2px; }
-  .sig-space { height: 30px; border-bottom: 1px solid #CBD5E1; margin-bottom: 4px; }
-
-  /* Total */
-  .total-row {
-    background: #F0FDF4; border: 1.5px solid #3F9800;
-    border-radius: 4px; padding: 8px 12px;
-    display: flex; justify-content: space-between;
-    align-items: center; margin-top: 10px;
+  .main-table .payee-cell { font-weight: bold; font-size: 9pt; }
+  .main-table .label-cell { font-weight: bold; width: 80px; }
+  .main-table .empty-row td { height: 22px; }
+  .main-table .account-header th {
+    font-weight: bold; text-align: center; background: #fff;
   }
-  .total-label { font-size: 9pt; font-weight: bold; }
-  .total-amount { font-size: 13pt; font-weight: bold; color: #3F9800; }
+  .main-table .sig-row td { height: 28px; padding: 4px 8px; font-size: 8.5pt; }
+  .amount-col { width: 120px; text-align: right; }
 
-  /* Received by section */
-  .received-block {
-    margin-top: 20px; border: 1px solid #E2E8F0;
-    border-radius: 4px; padding: 10px 14px;
-  }
-  .received-grid { display: flex; gap: 24px; margin-top: 6px; }
-  .received-item { flex: 1; }
-  .received-label { font-size: 7.5pt; color: #64748B; margin-bottom: 2px; }
-  .received-line { border-bottom: 1px solid #CBD5E1; height: 28px; }
-
-  .status-badge {
-    display: inline-block; padding: 2px 8px;
-    border-radius: 4px; font-size: 7.5pt; font-weight: bold;
-  }
-  .status-pending  { background: #FEF3C7; color: #92400E; }
-  .status-checked  { background: #DBEAFE; color: #1D4ED8; }
-  .status-approved { background: #F0FDF4; color: #15803D; }
-  .status-released { background: #F0FDF4; color: #166534; border: 1px solid #86EFAC; }
-
-  .footer {
-    margin-top: 20px; border-top: 1px solid #E2E8F0;
-    padding-top: 8px; font-size: 7.5pt; color: #94A3B8; text-align: center;
-  }
+  /* ── Received from / signature ───────────────────────────────────── */
+  .received-table { width: 100%; border-collapse: collapse; margin-top: 8px; border: 2px solid #000; }
+  .received-table td { padding: 8px 12px; font-size: 9pt; }
+  .underline-field { border-bottom: 1px solid #000; display: inline-block; min-width: 200px; vertical-align: bottom; }
+  .sig-line { border-bottom: 1px solid #000; display: block; min-height: 28px; width: 160px; }
 </style>
 </head>
 <body>
 
-{{-- ── HEADER ──────────────────────────────────────────────────────────── --}}
-<div class="header">
-  <div class="header-top">
-    <div>
-      <div class="company-name">{{ $company['name'] }}</div>
-      <div class="company-sub">IATA Accredited · PTAA Member</div>
-      <div class="company-sub">{{ $company['address_main'] }}</div>
-    </div>
-    <div style="text-align:right;">
-      <div class="doc-title">Cash Voucher</div>
-      <div class="doc-number">{{ $voucher->voucher_no }}</div>
-      <div style="font-size:8pt; color:#64748B; margin-top:4px;">
-        Date: <strong>{{ \Carbon\Carbon::parse($voucher->date)->format('F d, Y') }}</strong>
-      </div>
-      <div style="margin-top:4px;">
-        <span class="status-badge status-{{ $voucher->approval_status }}">
-          {{ strtoupper($voucher->approval_status) }}
-        </span>
-      </div>
-    </div>
+{{-- ── COMPANY HEADER ─────────────────────────────────────────────────── --}}
+<div class="company-name">&#9992; AMKOR TRAVEL &amp; TOURS INC.</div>
+
+{{-- ── BRANCH ADDRESSES ────────────────────────────────────────────────── --}}
+<div class="branch-row">
+  <div class="branch-col">
+    Suite 108 West City Plaza Bldg. #66<br>
+    West Avenue, Quezon City, Philippines<br>
+    Tel. No: (632) 8252 6291 Mobile: 0917-8172003 /<br>
+    0917-1260207 / 0917-8472006 / 0917-1255280
+  </div>
+  <div class="branch-col">
+    Suite 107 West City Plaza Bldg. #66<br>
+    West Avenue, Quezon City, Philippines<br>
+    Tel. No: (632) 7002-9441<br>
+    Mobile: 0917-3178472 / 0956-45788902
+  </div>
+  <div class="branch-col">
+    Unit 315 Robinsons Place Ormoc<br>
+    Cogon, Ormoc City Leyte, Philippines<br>
+    Tel. No: (053) 839-9304<br>
+    Mobile: 0917-8172003 / 0977-2364498
   </div>
 </div>
 
-{{-- ── PAYEE INFORMATION ────────────────────────────────────────────────── --}}
-<div class="section-label">Payee Information</div>
-<table class="info-grid">
+{{-- ── CV TITLE + DATE + NUMBER ─────────────────────────────────────────── --}}
+<div style="clear:both; margin-bottom:4px;">
+  <span class="cv-no">CV No.: {{ $voucher->voucher_no }}</span>
+  <span class="cv-title">CASH VOUCHER</span>
+  <span class="cv-date">
+    {{ \Carbon\Carbon::parse($voucher->date)->format('F') }}, 20{{ \Carbon\Carbon::parse($voucher->date)->format('y') }}
+  </span>
+</div>
+
+{{-- ── MAIN TABLE ──────────────────────────────────────────────────────── --}}
+<table class="main-table">
+  {{-- Payee + Address --}}
   <tr>
-    <td class="info-label">Payee:</td>
-    <td class="info-value" colspan="3">{{ $voucher->payee }}</td>
+    <td class="label-cell" style="width:60px;">PAYEE:</td>
+    <td style="border-right: 2px solid #000;">{{ $voucher->payee }}</td>
+    <td class="label-cell" style="width:80px;">ADDRESS:</td>
+    <td>{{ $voucher->payee_address ?? '' }}</td>
   </tr>
-  <tr>
-    <td class="info-label">Address:</td>
-    <td class="info-value" colspan="3">{{ $voucher->payee_address ?? '' }}</td>
+
+  {{-- Details of Payment / Amount header --}}
+  <tr class="header-row">
+    <th colspan="3" style="text-align:center; border-right: 2px solid #000;">DETAILS OF PAYMENT</th>
+    <th class="amount-col">AMOUNT</th>
   </tr>
+
+  {{-- Payment detail rows --}}
   <tr>
-    <td class="info-label">Branch:</td>
-    <td class="info-value">{{ $voucher->branch?->name ?? '' }}</td>
-    <td class="info-label" style="padding-left:16px;">Currency:</td>
-    <td class="info-value">{{ $voucher->currency }}</td>
+    <td colspan="3" style="border-right: 2px solid #000;">{{ $voucher->details }}</td>
+    <td class="amount-col">
+      @if($voucher->currency === 'PHP')
+        &#8369; {{ number_format($voucher->amount, 2) }}
+      @else
+        {{ $voucher->currency }} {{ number_format($voucher->amount, 2) }}
+      @endif
+    </td>
+  </tr>
+  @for ($i = 0; $i < 4; $i++)
+  <tr class="empty-row">
+    <td colspan="3" style="border-right: 2px solid #000;"></td>
+    <td class="amount-col"></td>
+  </tr>
+  @endfor
+
+  {{-- Account Description / Account Number header --}}
+  <tr class="account-header">
+    <th colspan="3" style="text-align:center; border-right: 2px solid #000;">ACCOUNT DESCRIPTION</th>
+    <th class="amount-col">ACCOUNT NUMBER</th>
+  </tr>
+  <tr class="empty-row">
+    <td colspan="3" style="border-right: 2px solid #000;">{{ $voucher->account_description ?? '' }}</td>
+    <td class="amount-col">{{ $voucher->account_code ?? '' }}</td>
+  </tr>
+  @for ($i = 0; $i < 2; $i++)
+  <tr class="empty-row">
+    <td colspan="3" style="border-right: 2px solid #000;"></td>
+    <td class="amount-col"></td>
+  </tr>
+  @endfor
+
+  {{-- Prepared / Checked / Approved --}}
+  <tr class="sig-row">
+    <td style="border-right: 1px solid #000; font-weight:bold; font-size:7.5pt; width:33%;">
+      PREPARED BY: {{ $voucher->createdBy?->name ?? '' }}
+    </td>
+    <td style="border-right: 2px solid #000; font-weight:bold; font-size:7.5pt; width:33%;">
+      CHECKED BY: {{ $voucher->checker?->name ?? '' }}
+    </td>
+    <td colspan="2" style="font-weight:bold; font-size:7.5pt;">
+      APPROVED BY: {{ $voucher->approver?->name ?? '' }}
+    </td>
   </tr>
 </table>
 
-{{-- ── PAYMENT DETAILS ──────────────────────────────────────────────────── --}}
-<div class="section-label">Details of Payment</div>
-<table class="details-table">
-  <thead>
-    <tr>
-      <th>Description / Details</th>
-      <th width="150">Account Code</th>
-      <th width="110">Account Description</th>
-      <th class="text-right" width="120">Amount</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>{{ $voucher->details }}</td>
-      <td>{{ $voucher->account_code ?? '' }}</td>
-      <td>{{ $voucher->account_description ?? '' }}</td>
-      <td class="text-right">{{ $voucher->currency }} {{ number_format($voucher->amount, 2) }}</td>
-    </tr>
-    <tr><td colspan="4" style="height:18px;"></td></tr>
-    <tr><td colspan="4" style="height:18px;"></td></tr>
-  </tbody>
+{{-- ── RECEIVED FROM SECTION ───────────────────────────────────────────── --}}
+<table class="received-table">
+  <tr>
+    <td style="width:55%;">
+      Received from:
+      <span class="underline-field" style="min-width:160px; font-weight:bold;">
+        AMKOR TRAVEL &amp; TOURS INC.
+      </span>
+      &nbsp; The amount of (Pesos):
+      <span class="underline-field">{{ $amountInWords ?? '' }}</span>
+    </td>
+    <td style="width:22%; text-align:center; border-left:1px solid #000;">
+      <div class="sig-line"></div>
+      <div style="font-size:8pt;">Date Received</div>
+    </td>
+    <td style="width:23%; text-align:center; border-left:1px solid #000;">
+      <div class="sig-line"></div>
+      <div style="font-size:8pt;">Received by</div>
+    </td>
+  </tr>
 </table>
-
-{{-- ── TOTAL ─────────────────────────────────────────────────────────────── --}}
-@php
-  $amountDisplay = $voucher->currency . ' ' . number_format($voucher->amount, 2);
-  if ($voucher->amount_usd > 0) $amountDisplay .= ' (USD ' . number_format($voucher->amount_usd, 2) . ')';
-  if ($voucher->amount_jpy > 0) $amountDisplay .= ' (JPY ' . number_format($voucher->amount_jpy, 0) . ')';
-@endphp
-<div class="total-row">
-  <div class="total-label">TOTAL AMOUNT</div>
-  <div class="total-amount">{{ $amountDisplay }}</div>
-</div>
-
-@if($voucher->remarks)
-<div style="margin-top:8px; font-size:8pt; color:#475569;">
-  <strong>Remarks:</strong> {{ $voucher->remarks }}
-</div>
-@endif
-
-{{-- ── APPROVAL CHAIN ───────────────────────────────────────────────────── --}}
-<div class="section-label">Approval Chain</div>
-<table class="approval-table">
-  <thead>
-    <tr>
-      <th>Prepared by</th>
-      <th>Checked by (Admin Auditor)</th>
-      <th>Approved by (General Manager)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>
-        <div class="sig-space"></div>
-        <div class="approval-role">Prepared by</div>
-        <div class="approval-name">{{ $voucher->createdBy?->name ?? '' }}</div>
-        <div class="approval-date">{{ $voucher->created_at?->format('m/d/Y') }}</div>
-      </td>
-      <td>
-        <div class="sig-space"></div>
-        <div class="approval-role">Checked by</div>
-        <div class="approval-name">{{ $voucher->checker?->name ?? '' }}</div>
-        <div class="approval-date">{{ $voucher->checked_at?->format('m/d/Y') ?? '___________' }}</div>
-      </td>
-      <td>
-        <div class="sig-space"></div>
-        <div class="approval-role">Approved by</div>
-        <div class="approval-name">{{ $voucher->approver?->name ?? '' }}</div>
-        <div class="approval-date">{{ $voucher->approved_at?->format('m/d/Y') ?? '___________' }}</div>
-      </td>
-    </tr>
-  </tbody>
-</table>
-
-{{-- ── RECEIVED BY ──────────────────────────────────────────────────────── --}}
-<div class="received-block">
-  <div style="font-size:8pt; font-weight:bold; color:#334155;">Received by (Payee)</div>
-  <div class="received-grid">
-    <div class="received-item">
-      <div class="received-label">Signature over Printed Name</div>
-      <div class="received-line"></div>
-    </div>
-    <div class="received-item" style="max-width:150px;">
-      <div class="received-label">Date Received</div>
-      <div class="received-line"></div>
-    </div>
-  </div>
-</div>
-
-{{-- ── FOOTER ───────────────────────────────────────────────────────────── --}}
-<div class="footer">
-  This is a computer-generated Cash Voucher. · Generated: {{ $generatedAt }}
-  <br>{{ $company['name'] }} · IATA Accredited · PTAA Member
-</div>
 
 </body>
 </html>

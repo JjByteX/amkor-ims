@@ -18,7 +18,25 @@ class ContributeDashboardSummary
         $query = Bill::query();
 
         $collector->addCard('finance', 'Finance', 'Bills', $query->count(), 'Files', 'default', href: '/bills');
-        $collector->addAttention('finance', 'Finance', 'Bills pending', (clone $query)->where('status', 'pending')->count(), 'warning', '/bills');
-        $collector->addAttention('finance', 'Finance', 'Bills overdue', (clone $query)->where('status', 'overdue')->count(), 'error', '/bills');
+
+        // "Pending" count: not yet due and not paid.
+        // Uses the actual due_date so it never reads from a potentially stale
+        // stored status column.
+        $collector->addAttention(
+            'finance', 'Finance', 'Bills pending',
+            (clone $query)->where('status', '!=', 'paid')
+                ->where(function ($q) {
+                    $q->whereNull('due_date')
+                        ->orWhere('due_date', '>=', now()->toDateString());
+                })->count(),
+            'warning', '/bills'
+        );
+
+        // "Overdue" count: past due_date and not paid — always accurate.
+        $collector->addAttention(
+            'finance', 'Finance', 'Bills overdue',
+            (clone $query)->effectivelyOverdue()->count(),
+            'error', '/bills'
+        );
     }
 }

@@ -2,7 +2,6 @@
 
 namespace Modules\Auth\Database\Seeders;
 
-use App\Models\Branch;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -13,523 +12,393 @@ use Spatie\Permission\PermissionRegistrar;
 
 class AuthDatabaseSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     *
-     * Seeds in order:
-     *  1. Branches         (3 branches — QC Main, Visa Centre, Ormoc)
-     *  2. Roles            (12 system roles)
-     *  3. Permissions      (all module.action permissions from Roles.md)
-     *  4. Role → Permission assignments
-     *  5. Placeholder users (12 — one per role, force-change on first login)
-     *  6. Agent codes      (RESA, Visa, Ormoc groups)
-     */
     public function run(): void
     {
-        // Spatie caches permissions — clear before seeding so nothing is stale
+        // Required by Spatie — clears cached roles/permissions before seeding
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // ── 1. BRANCHES ────────────────────────────────────────────────────────
-        $qcMain = Branch::create([
-            'name' => 'QC Main Branch',
-            'code' => 'QC_MAIN',
-            'address' => 'Suite 108 West City Plaza Bldg. #66, West Avenue, Quezon City',
-        ]);
-
-        $visCentre = Branch::create([
-            'name' => 'Visa Centre',
-            'code' => 'VISA_CENTRE',
-            'address' => 'Suite 107 West City Plaza Bldg. #66, West Avenue, Quezon City',
-        ]);
-
-        $ormoc = Branch::create([
-            'name' => 'Ormoc Branch',
-            'code' => 'ORMOC',
-            'address' => 'Unit 315 Robinsons Place Ormoc, Cogon, Ormoc City, Leyte',
-        ]);
-
-        // ── 2. ROLES ───────────────────────────────────────────────────────────
-        $roles = [
-            'general_manager',
-            'chief_operations_officer',
-            'general_sales_manager',
-            'accounting_officer',
-            'disbursement_officer',
-            'admin_auditor',
-            'hr_admin_officer',
-            'liaison_officer',
-            'resa_officer',
-            'ormoc_branch_officer',
-            'visa_documentation_officer',
-            'marketing_officer',
+        // ── 1. Branches ───────────────────────────────────────────────────────
+        $branches = [
+            ['name' => 'QC Main',      'code' => 'QC_MAIN',      'address' => 'Suite 108 West City Plaza Bldg. #66, West Avenue, Quezon City'],
+            ['name' => 'Visa Centre',  'code' => 'VISA_CENTRE',  'address' => 'Suite 107 West City Plaza Bldg. #66, West Avenue, Quezon City'],
+            ['name' => 'Ormoc Branch', 'code' => 'ORMOC',        'address' => 'Unit 315 Robinsons Place Ormoc, Cogon, Ormoc City, Leyte'],
         ];
 
-        $createdRoles = [];
-        foreach ($roles as $roleName) {
-            $createdRoles[$roleName] = Role::create(['name' => $roleName]);
+        foreach ($branches as $branch) {
+            DB::table('branches')->updateOrInsert(
+                ['code' => $branch['code']],
+                array_merge($branch, ['is_active' => true, 'created_at' => now(), 'updated_at' => now()])
+            );
         }
 
-        // ── 3. PERMISSIONS ─────────────────────────────────────────────────────
-        // Pattern: module.action
-        // Derived from every permission table in Roles.md.
-        $permissions = [
+        $qcMain = DB::table('branches')->where('code', 'QC_MAIN')->value('id');
+        $visaCentre = DB::table('branches')->where('code', 'VISA_CENTRE')->value('id');
+        $ormoc = DB::table('branches')->where('code', 'ORMOC')->value('id');
 
-            // ── Reservation / Booking ──────────────────────────────────────────
+        // ── 2. Permissions ────────────────────────────────────────────────────
+        // Pattern: module.action
+        $permissions = [
+            // Reservation & Booking
+            'reservation.view',
             'reservation.create_inquiry',
-            'reservation.view_quotations',
             'reservation.confirm_booking',
-            'reservation.issue_soa_po',
+            'reservation.issue_soa',
+            'reservation.issue_po',
             'reservation.escalate_international',
-            'reservation.input_monthly_sales',
+            'reservation.input_sales',
+            'reservation.issue_ar',
+            'reservation.forward_documents',
             'reservation.view_sales_report',
             'reservation.view_sales_report_own',
-            'reservation.issue_acknowledgement_receipt',
-            'reservation.forward_to_accounting',
 
-            // ── Sales Summary & Progress Report ───────────────────────────────
-            'sales.view_own_department',
-            'sales.view_consolidated',
-            'sales.view_progress_report',
-            'sales.set_monthly_target',
-            'sales.export',
-
-            // ── Visa & Documentation ──────────────────────────────────────────
+            // Visa & Documentation
+            'visa.view',
             'visa.create_application',
             'visa.update_status',
             'visa.record_transaction',
             'visa.request_payment',
-            'visa.prepare_cash_voucher',
+            'visa.prepare_voucher',
             'visa.audit_voucher',
-            'visa.final_approval',
+            'visa.approve',
             'visa.release_cash',
-            'visa.physical_payment',
+            'visa.pay_embassy',
             'visa.return_or',
-            'visa.collect_and_endorse_or',
+            'visa.collect_or',
 
-            // ── Finance – Disbursement / Payables ─────────────────────────────
+            // Accounts Receivable
+            'ar.view',
+            'ar.originate',
+            'ar.issue_receipt',
+            'ar.submit_documents',
+            'ar.check_documents',
+            'ar.approve',
+            'ar.endorse_disbursement',
+            'ar.process_refund',
+            'ar.report_audit',
+
+            // Accounts Payable / Disbursement
+            'payables.view',
             'payables.request_payment',
             'payables.prepare_voucher',
             'payables.prepare_deposit_slip',
             'payables.record_access_files',
             'payables.send_access_files',
             'payables.audit_voucher',
-            'payables.final_approval',
-            'payables.email_proof_of_payment',
+            'payables.approve',
+            'payables.email_proof',
             'payables.generate_report',
-            'payables.segregate_by_branch',
 
-            // ── Accounts Receivable / Collectibles ────────────────────────────
-            'ar.originate_transaction',
-            'ar.issue_receipt',
-            'ar.submit_documents',
-            'ar.check_documents',
-            'ar.approve',
-            'ar.endorse_to_disbursement',
-            'ar.process_refund',
-            'ar.report_to_audit',
-            'ar.view_own',
-            'ar.view_all',
+            // Disbursement Ledger
+            'disbursement.view',
+            'disbursement.record',
+            'disbursement.audit',
+            'disbursement.approve',
 
-            // ── Cashbond Monitoring ────────────────────────────────────────────
+            // Cashbond Monitoring
+            'cashbond.view',
             'cashbond.check_balances',
-            'cashbond.prepare_reload_request',
-            'cashbond.audit_request',
-            'cashbond.final_approval',
-            'cashbond.deposit_and_notify',
+            'cashbond.prepare_requisition',
+            'cashbond.audit',
+            'cashbond.approve',
+            'cashbond.deposit',
             'cashbond.update_monitoring',
 
-            // ── Bills & Credit Card Monitoring ────────────────────────────────
-            'bills.monitor_due_dates',
+            // Bills & On-Ques Monitoring
+            'bills.view',
+            'bills.monitor',
             'bills.prepare_voucher',
             'bills.audit',
-            'bills.final_approval',
+            'bills.approve',
             'bills.process_payment',
             'bills.update_monitoring',
 
-            // ── HR & Attendance ───────────────────────────────────────────────
-            'hr.manage_employee',
-            'hr.view_all_attendance',
-            'hr.generate_attendance_report',
-            'hr.manage_leave',
-            'hr.track_regularization',
-            'attendance.record_own',
-            'attendance.view_own',
+            // Credit Card Monitoring
+            'creditcard.view',
+            'creditcard.monitor',
+            'creditcard.prepare_voucher',
+            'creditcard.audit',
+            'creditcard.approve',
+            'creditcard.process_payment',
+            'creditcard.update_monitoring',
 
-            // ── Marketing ─────────────────────────────────────────────────────
-            'marketing.create_material',
-            'marketing.submit_for_review',
-            'marketing.review_and_approve',
-            'marketing.publish',
-            'marketing.create_itinerary',
-            'marketing.run_campaigns',
-            'marketing.monitor_analytics',
-            'marketing.send_email_blasts',
-            'marketing.view_expense_report',
+            // IATA Payments
+            'iata.view',
+            'iata.prepare_payment',
+            'iata.audit',
+            'iata.approve',
+            'iata.process_payment',
 
-            // ── BIR / Compliance ──────────────────────────────────────────────
-            'bir.view_transactions',
+            // BIR / Compliance
+            'bir.view',
             'bir.generate_forms',
             'bir.receive_reminders',
-            'bir.send_to_external_accounting',
+            'bir.send_reports',
+
+            // HR & Employee Records
+            'hr.view',
+            'hr.manage_employees',
+            'hr.manage_leave',
+            'hr.track_regularization',
+            'hr.generate_report',
+
+            // Attendance
+            'attendance.view_own',
+            'attendance.view_all',
+            'attendance.record_own',
+            'attendance.edit_all',
+            'attendance.generate_report',
+
+            // Marketing
+            'marketing.view',
+            'marketing.create_material',
+            'marketing.submit_material',
+            'marketing.approve_material',
+            'marketing.publish',
+            'marketing.run_campaigns',
+            'marketing.monitor_analytics',
+            'marketing.send_blasts',
+            'marketing.view_expense_report',
+
+            // Sales Summary
+            'sales.view_own',
+            'sales.view_consolidated',
+            'sales.view_progress',
+            'sales.set_targets',
+            'sales.export',
+
+            // Contacts / Directory
+            'contacts.view',
+            'contacts.create',
+            'contacts.edit',
+            'contacts.delete',
+
+            // Documents
+            'documents.view',
+            'documents.generate_ar',
+            'documents.generate_si',
+            'documents.generate_soa',
+            'documents.generate_cv',
+            'documents.generate_check_voucher',
+
+            // Notifications
+            'notifications.view',
+            'notifications.receive',
         ];
 
         foreach ($permissions as $perm) {
-            Permission::create(['name' => $perm]);
+            Permission::firstOrCreate(['name' => $perm, 'guard_name' => 'web']);
         }
 
-        // ── 4. ROLE → PERMISSION ASSIGNMENTS ──────────────────────────────────
+        // ── 3. Roles + Permission assignments ─────────────────────────────────
+        $rolePermissions = [
 
-        // General Manager (JRT) — all permissions
-        $createdRoles['general_manager']->givePermissionTo(Permission::all());
+            'general_manager' => $permissions, // all permissions
 
-        // Chief Operations Officer — AR + marketing
-        $createdRoles['chief_operations_officer']->givePermissionTo([
-            'reservation.view_quotations',
-            'reservation.view_sales_report',
-            'ar.approve',
-            'ar.view_all',
-            'ar.process_refund',
-            'sales.view_own_department',
-            'sales.view_consolidated',
-            'sales.view_progress_report',
-            'sales.export',
-            'marketing.review_and_approve',
-            'marketing.monitor_analytics',
-            'marketing.view_expense_report',
-        ]);
+            'chief_operations_officer' => [
+                'ar.view', 'ar.approve',
+                'marketing.view', 'marketing.approve_material', 'marketing.monitor_analytics', 'marketing.view_expense_report',
+                'sales.view_own', 'sales.view_consolidated', 'sales.view_progress', 'sales.export',
+                'reservation.view_sales_report',
+                'contacts.view',
+                'documents.view',
+                'notifications.view', 'notifications.receive',
+            ],
 
-        // General Sales Manager — AR only
-        $createdRoles['general_sales_manager']->givePermissionTo([
-            'reservation.view_quotations',
-            'reservation.view_sales_report',
-            'ar.approve',
-            'ar.view_all',
-            'sales.view_own_department',
-            'sales.view_consolidated',
-            'sales.view_progress_report',
-            'sales.export',
-        ]);
+            'general_sales_manager' => [
+                'ar.view', 'ar.approve',
+                'sales.view_own', 'sales.view_consolidated', 'sales.view_progress', 'sales.export',
+                'reservation.view_sales_report',
+                'contacts.view',
+                'documents.view',
+                'notifications.view', 'notifications.receive',
+            ],
 
-        // Accounting Officer — finance and AR
-        $createdRoles['accounting_officer']->givePermissionTo([
-            'reservation.view_quotations',
-            'reservation.issue_soa_po',
-            'reservation.view_sales_report',
-            'reservation.issue_acknowledgement_receipt',
-            'reservation.forward_to_accounting',
-            'ar.issue_receipt',
-            'ar.submit_documents',
-            'ar.check_documents',
-            'ar.endorse_to_disbursement',
-            'ar.process_refund',
-            'ar.report_to_audit',
-            'ar.view_all',
-            'payables.request_payment',
-            'payables.prepare_voucher',
-            'payables.prepare_deposit_slip',
-            'sales.view_own_department',
-            'sales.view_consolidated',
-            'sales.view_progress_report',
-            'sales.export',
-            'bir.view_transactions',
-            'bir.generate_forms',
-            'bir.receive_reminders',
-        ]);
+            'accounting_officer' => [
+                'reservation.view', 'reservation.issue_soa', 'reservation.issue_ar', 'reservation.forward_documents',
+                'reservation.view_sales_report',
+                'ar.view', 'ar.issue_receipt', 'ar.check_documents', 'ar.endorse_disbursement', 'ar.process_refund', 'ar.report_audit',
+                'payables.view', 'payables.request_payment', 'payables.prepare_voucher', 'payables.prepare_deposit_slip',
+                'disbursement.view', 'disbursement.record',
+                'bir.view', 'bir.generate_forms', 'bir.receive_reminders',
+                'sales.view_own', 'sales.view_consolidated', 'sales.view_progress', 'sales.export',
+                'contacts.view', 'contacts.create', 'contacts.edit',
+                'documents.view', 'documents.generate_ar', 'documents.generate_si', 'documents.generate_soa', 'documents.generate_cv', 'documents.generate_check_voucher',
+                'notifications.view', 'notifications.receive',
+            ],
 
-        // Disbursement Officer (Dalle) — disbursement and payables
-        $createdRoles['disbursement_officer']->givePermissionTo([
-            'visa.prepare_cash_voucher',
-            'visa.release_cash',
-            'payables.prepare_voucher',
-            'payables.prepare_deposit_slip',
-            'payables.record_access_files',
-            'payables.send_access_files',
-            'payables.email_proof_of_payment',
-            'payables.generate_report',
-            'payables.segregate_by_branch',
-            'cashbond.check_balances',
-            'cashbond.prepare_reload_request',
-            'cashbond.deposit_and_notify',
-            'cashbond.update_monitoring',
-            'bills.monitor_due_dates',
-            'bills.prepare_voucher',
-            'bills.process_payment',
-            'bills.update_monitoring',
-            'bir.view_transactions',
-            'bir.generate_forms',
-            'bir.receive_reminders',
-            'bir.send_to_external_accounting',
-        ]);
+            'disbursement_officer' => [
+                'visa.view', 'visa.prepare_voucher', 'visa.release_cash',
+                'payables.view', 'payables.prepare_voucher', 'payables.prepare_deposit_slip', 'payables.record_access_files', 'payables.send_access_files', 'payables.email_proof', 'payables.generate_report',
+                'disbursement.view', 'disbursement.record',
+                'cashbond.view', 'cashbond.check_balances', 'cashbond.prepare_requisition', 'cashbond.deposit', 'cashbond.update_monitoring',
+                'bills.view', 'bills.monitor', 'bills.prepare_voucher', 'bills.process_payment', 'bills.update_monitoring',
+                'creditcard.view', 'creditcard.monitor', 'creditcard.prepare_voucher', 'creditcard.process_payment', 'creditcard.update_monitoring',
+                'iata.view', 'iata.prepare_payment', 'iata.process_payment',
+                'bir.view', 'bir.generate_forms', 'bir.receive_reminders', 'bir.send_reports',
+                'contacts.view', 'contacts.create', 'contacts.edit',
+                'documents.view', 'documents.generate_cv', 'documents.generate_check_voucher',
+                'notifications.view', 'notifications.receive',
+            ],
 
-        // Admin Auditor — audit view only across all modules
-        $createdRoles['admin_auditor']->givePermissionTo([
-            'reservation.view_quotations',
-            'reservation.view_sales_report',
-            'visa.audit_voucher',
-            'payables.audit_voucher',
-            'ar.process_refund',
-            'ar.report_to_audit',
-            'ar.view_all',
-            'cashbond.audit_request',
-            'bills.audit',
-            'sales.view_own_department',
-            'sales.view_consolidated',
-            'sales.view_progress_report',
-            'sales.export',
-            'bir.view_transactions',
-            'bir.receive_reminders',
-        ]);
+            'admin_auditor' => [
+                'reservation.view',
+                'reservation.view_sales_report',
+                'visa.view', 'visa.audit_voucher',
+                'ar.view', 'ar.process_refund', 'ar.report_audit',
+                'payables.view', 'payables.audit_voucher',
+                'disbursement.view', 'disbursement.audit',
+                'cashbond.view', 'cashbond.audit',
+                'bills.view', 'bills.audit',
+                'creditcard.view', 'creditcard.audit',
+                'iata.view', 'iata.audit',
+                'bir.view', 'bir.receive_reminders',
+                'hr.view',
+                'attendance.view_all',
+                'marketing.view',
+                'sales.view_own', 'sales.view_consolidated', 'sales.view_progress', 'sales.export',
+                'contacts.view', 'contacts.create', 'contacts.edit', 'contacts.delete',
+                'documents.view',
+                'notifications.view', 'notifications.receive',
+            ],
 
-        // HR & Admin Officer — HR, attendance, bills
-        $createdRoles['hr_admin_officer']->givePermissionTo([
-            'hr.manage_employee',
-            'hr.view_all_attendance',
-            'hr.generate_attendance_report',
-            'hr.manage_leave',
-            'hr.track_regularization',
-            'bills.monitor_due_dates',
-            'bills.prepare_voucher',
-            'bills.process_payment',
-            'bills.update_monitoring',
-            'attendance.record_own',
-            'attendance.view_own',
-        ]);
+            'hr_admin_officer' => [
+                'bills.view', 'bills.monitor', 'bills.prepare_voucher', 'bills.process_payment', 'bills.update_monitoring',
+                'creditcard.view', 'creditcard.monitor', 'creditcard.prepare_voucher', 'creditcard.process_payment', 'creditcard.update_monitoring',
+                'hr.view', 'hr.manage_employees', 'hr.manage_leave', 'hr.track_regularization', 'hr.generate_report',
+                'attendance.view_own', 'attendance.view_all', 'attendance.record_own', 'attendance.edit_all', 'attendance.generate_report',
+                'contacts.view',
+                'notifications.view', 'notifications.receive',
+            ],
 
-        // Liaison Officer — task-based, no reporting
-        $createdRoles['liaison_officer']->givePermissionTo([
-            'visa.physical_payment',
-            'visa.return_or',
-        ]);
+            'liaison_officer' => [
+                'visa.view', 'visa.pay_embassy', 'visa.return_or',
+                'contacts.view',
+                'attendance.view_own', 'attendance.record_own',
+                'notifications.view', 'notifications.receive',
+            ],
 
-        // RESA Officer (Ms. Jhona Ramos + others) — head office records only
-        $createdRoles['resa_officer']->givePermissionTo([
-            'reservation.create_inquiry',
-            'reservation.view_quotations',
-            'reservation.confirm_booking',
-            'reservation.issue_soa_po',
-            'reservation.input_monthly_sales',
-            'reservation.view_sales_report_own',
-            'reservation.issue_acknowledgement_receipt',
-            'reservation.forward_to_accounting',
-            'ar.originate_transaction',
-            'ar.issue_receipt',
-            'ar.submit_documents',
-            'ar.view_own',
-            'sales.view_own_department',
-        ]);
+            'resa_officer' => [
+                'reservation.view', 'reservation.create_inquiry', 'reservation.confirm_booking',
+                'reservation.issue_soa', 'reservation.issue_po', 'reservation.input_sales', 'reservation.issue_ar', 'reservation.forward_documents',
+                'reservation.view_sales_report_own',
+                'ar.view', 'ar.originate', 'ar.issue_receipt', 'ar.submit_documents',
+                'sales.view_own',
+                'contacts.view',
+                'documents.view', 'documents.generate_ar', 'documents.generate_soa',
+                'attendance.view_own', 'attendance.record_own',
+                'notifications.view', 'notifications.receive',
+            ],
 
-        // Ormoc Branch Officer — Ormoc records only
-        $createdRoles['ormoc_branch_officer']->givePermissionTo([
-            'reservation.create_inquiry',
-            'reservation.view_quotations',
-            'reservation.confirm_booking',
-            'reservation.issue_soa_po',
-            'reservation.escalate_international',
-            'reservation.input_monthly_sales',
-            'reservation.view_sales_report_own',
-            'reservation.issue_acknowledgement_receipt',
-            'reservation.forward_to_accounting',
-            'ar.originate_transaction',
-            'ar.issue_receipt',
-            'ar.submit_documents',
-            'ar.view_own',
-            'sales.view_own_department',
-        ]);
+            'ormoc_branch_officer' => [
+                'reservation.view', 'reservation.create_inquiry', 'reservation.confirm_booking',
+                'reservation.issue_soa', 'reservation.issue_po', 'reservation.escalate_international', 'reservation.input_sales', 'reservation.issue_ar', 'reservation.forward_documents',
+                'reservation.view_sales_report_own',
+                'ar.view', 'ar.originate', 'ar.issue_receipt', 'ar.submit_documents',
+                'sales.view_own',
+                'contacts.view',
+                'documents.view', 'documents.generate_ar', 'documents.generate_soa',
+                'attendance.view_own', 'attendance.record_own',
+                'notifications.view', 'notifications.receive',
+            ],
 
-        // Visa & Documentation Officer — visa records only
-        $createdRoles['visa_documentation_officer']->givePermissionTo([
-            'visa.create_application',
-            'visa.update_status',
-            'visa.record_transaction',
-            'visa.request_payment',
-            'visa.collect_and_endorse_or',
-            'ar.originate_transaction',
-            'ar.issue_receipt',
-            'ar.submit_documents',
-            'ar.view_own',
-            'sales.view_own_department',
-        ]);
+            'visa_documentation_officer' => [
+                'visa.view', 'visa.create_application', 'visa.update_status', 'visa.record_transaction',
+                'visa.request_payment', 'visa.collect_or',
+                'ar.view', 'ar.originate', 'ar.issue_receipt', 'ar.submit_documents',
+                'sales.view_own',
+                'contacts.view',
+                'documents.view', 'documents.generate_ar', 'documents.generate_soa',
+                'attendance.view_own', 'attendance.record_own',
+                'notifications.view', 'notifications.receive',
+            ],
 
-        // Marketing Officer — marketing module only
-        $createdRoles['marketing_officer']->givePermissionTo([
-            'marketing.create_material',
-            'marketing.submit_for_review',
-            'marketing.publish',
-            'marketing.create_itinerary',
-            'marketing.run_campaigns',
-            'marketing.monitor_analytics',
-            'marketing.send_email_blasts',
-            'marketing.view_expense_report',
-        ]);
+            'marketing_officer' => [
+                'marketing.view', 'marketing.create_material', 'marketing.submit_material',
+                'marketing.publish', 'marketing.run_campaigns', 'marketing.monitor_analytics',
+                'marketing.send_blasts', 'marketing.view_expense_report',
+                'contacts.view',
+                'attendance.view_own', 'attendance.record_own',
+                'notifications.view', 'notifications.receive',
+            ],
+        ];
 
-        // ── 5. PLACEHOLDER USERS ──────────────────────────────────────────────
-        // All use AmkorIMS2026! — must_change_password = true forces reset on first login.
-        // Real names and emails for COO, GSM, Admin Auditor are pending (OQ-1, OQ-2, OQ-3).
-        $defaultPassword = Hash::make('AmkorIMS2026!');
+        foreach ($rolePermissions as $roleName => $perms) {
+            $role = Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
+            $role->syncPermissions($perms);
+        }
+
+        // ── 4. Placeholder users ──────────────────────────────────────────────
+        $password = Hash::make('AmkorIMS2026!');
 
         $users = [
-            [
-                'name' => 'JRT',
-                'email' => 'jrt@amkor.ph',
-                'branch_id' => $qcMain->id,
-                'role' => 'general_manager',
-                'must_change_password' => false,  // Owner — no force-reset
-            ],
-            [
-                'name' => 'Chief Operations Officer',
-                'email' => 'coo@amkor.ph',
-                'branch_id' => $qcMain->id,
-                'role' => 'chief_operations_officer',
-                'must_change_password' => true,   // Placeholder — update name when OQ-2 resolved
-            ],
-            [
-                'name' => 'General Sales Manager',
-                'email' => 'gsm@amkor.ph',
-                'branch_id' => $qcMain->id,
-                'role' => 'general_sales_manager',
-                'must_change_password' => true,   // Placeholder — update name when OQ-3 resolved
-            ],
-            [
-                'name' => 'Accounting Officer',
-                'email' => 'accounting@amkor.ph',
-                'branch_id' => $qcMain->id,
-                'role' => 'accounting_officer',
-                'must_change_password' => true,
-            ],
-            [
-                'name' => 'Dalle',
-                'email' => 'dalle@amkor.ph',
-                'branch_id' => $qcMain->id,
-                'role' => 'disbursement_officer',
-                'must_change_password' => true,
-            ],
-            [
-                'name' => 'Admin Auditor',
-                'email' => 'auditor@amkor.ph',
-                'branch_id' => $qcMain->id,
-                'role' => 'admin_auditor',
-                'must_change_password' => true,   // Placeholder — update name when OQ-1 resolved
-            ],
-            [
-                'name' => 'HR & Admin Officer',
-                'email' => 'hradmin@amkor.ph',
-                'branch_id' => $qcMain->id,
-                'role' => 'hr_admin_officer',
-                'must_change_password' => true,
-            ],
-            [
-                'name' => 'Liaison Officer',
-                'email' => 'liaison@amkor.ph',
-                'branch_id' => $qcMain->id,
-                'role' => 'liaison_officer',
-                'must_change_password' => true,
-            ],
-            [
-                'name' => 'Ms. Jhona Ramos',
-                'email' => 'jhona@amkor.ph',
-                'branch_id' => $qcMain->id,
-                'role' => 'resa_officer',
-                'must_change_password' => true,
-            ],
-            [
-                'name' => 'Ormoc Branch Officer',
-                'email' => 'ormoc@amkor.ph',
-                'branch_id' => $ormoc->id,
-                'role' => 'ormoc_branch_officer',
-                'must_change_password' => true,
-            ],
-            [
-                'name' => 'Visa & Documentation Officer',
-                'email' => 'visa@amkor.ph',
-                'branch_id' => $visCentre->id,
-                'role' => 'visa_documentation_officer',
-                'must_change_password' => true,
-            ],
-            [
-                'name' => 'Marketing Officer',
-                'email' => 'marketing@amkor.ph',
-                'branch_id' => $qcMain->id,
-                'role' => 'marketing_officer',
-                'must_change_password' => true,
-            ],
+            ['name' => 'JRT',                    'email' => 'jrt@amkor.ph',        'role' => 'general_manager',            'branch_id' => $qcMain],
+            ['name' => 'Dalle',                  'email' => 'dalle@amkor.ph',      'role' => 'disbursement_officer',       'branch_id' => $qcMain],
+            ['name' => 'Ms. Jhona Ramos',        'email' => 'jhona@amkor.ph',      'role' => 'resa_officer',               'branch_id' => $qcMain],
+            ['name' => '[COO]',                  'email' => 'coo@amkor.ph',        'role' => 'chief_operations_officer',   'branch_id' => $qcMain],
+            ['name' => '[GSM]',                  'email' => 'gsm@amkor.ph',        'role' => 'general_sales_manager',      'branch_id' => $qcMain],
+            ['name' => '[Accounting Officer]',   'email' => 'accounting@amkor.ph', 'role' => 'accounting_officer',         'branch_id' => $qcMain],
+            ['name' => '[Admin Auditor]',        'email' => 'auditor@amkor.ph',    'role' => 'admin_auditor',              'branch_id' => $qcMain],
+            ['name' => '[HR & Admin Officer]',   'email' => 'hradmin@amkor.ph',    'role' => 'hr_admin_officer',           'branch_id' => $qcMain],
+            ['name' => '[Liaison Officer]',      'email' => 'liaison@amkor.ph',    'role' => 'liaison_officer',            'branch_id' => $qcMain],
+            ['name' => '[Ormoc Branch Officer]', 'email' => 'ormoc@amkor.ph',      'role' => 'ormoc_branch_officer',       'branch_id' => $ormoc],
+            ['name' => '[Visa Officer]',         'email' => 'visa@amkor.ph',       'role' => 'visa_documentation_officer', 'branch_id' => $visaCentre],
+            ['name' => '[Marketing Officer]',    'email' => 'marketing@amkor.ph',  'role' => 'marketing_officer',          'branch_id' => $qcMain],
         ];
 
         foreach ($users as $userData) {
             $role = $userData['role'];
             unset($userData['role']);
 
-            $user = User::create([
-                ...$userData,
-                'password' => $defaultPassword,
-                'email_verified_at' => now(),
-            ]);
+            $user = User::updateOrCreate(
+                ['email' => $userData['email']],
+                array_merge($userData, [
+                    'password' => $password,
+                    'is_active' => true,
+                    'must_change_password' => true,
+                ])
+            );
 
-            $user->assignRole($role);
+            $user->syncRoles([$role]);
         }
 
-        // ── 6. AGENT CODES ────────────────────────────────────────────────────
-        // RESA sub-groups: Individual and Groups
-        $resaIndividual = ['RT', 'RP', 'EJ', 'KG', 'CM', 'JR', 'EB', 'JF'];
-        $resaGroups = ['MMT', 'AL', 'KL'];
-        $jmmt = ['JMMT']; // sole JMMT code — sub_group: individual per brief context
+        // ── 5. Agent codes ────────────────────────────────────────────────────
+        $agentCodes = [
+            // RESA — Individual sub-group
+            ['code' => 'RT',   'department' => 'resa', 'sub_group' => 'individual'],
+            ['code' => 'RP',   'department' => 'resa', 'sub_group' => 'individual'],
+            ['code' => 'EJ',   'department' => 'resa', 'sub_group' => 'individual'],
+            ['code' => 'KG',   'department' => 'resa', 'sub_group' => 'individual'],
+            ['code' => 'CM',   'department' => 'resa', 'sub_group' => 'individual'],
+            ['code' => 'JR',   'department' => 'resa', 'sub_group' => 'individual'],
+            ['code' => 'EB',   'department' => 'resa', 'sub_group' => 'individual'],
+            ['code' => 'JF',   'department' => 'resa', 'sub_group' => 'individual'],
+            // RESA — Groups sub-group
+            ['code' => 'MMT',  'department' => 'resa', 'sub_group' => 'groups'],
+            ['code' => 'AL',   'department' => 'resa', 'sub_group' => 'groups'],
+            ['code' => 'KL',   'department' => 'resa', 'sub_group' => 'groups'],
+            ['code' => 'JMMT', 'department' => 'resa', 'sub_group' => 'groups'],
 
-        foreach ($resaIndividual as $code) {
-            DB::table('agent_codes')->insert([
-                'code' => $code,
-                'department' => 'resa',
-                'sub_group' => 'individual',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
+            // Visa
+            ['code' => 'ALEX',  'department' => 'visa', 'sub_group' => null],
+            ['code' => 'RICCI', 'department' => 'visa', 'sub_group' => null],
+            ['code' => 'MEL',   'department' => 'visa', 'sub_group' => null],
+            ['code' => 'KAE',   'department' => 'visa', 'sub_group' => null],
+            ['code' => 'MIMI',  'department' => 'visa', 'sub_group' => null],
+            ['code' => 'MMT',   'department' => 'visa', 'sub_group' => null],
 
-        foreach ($resaGroups as $code) {
-            DB::table('agent_codes')->insert([
-                'code' => $code,
-                'department' => 'resa',
-                'sub_group' => 'groups',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
+            // Ormoc
+            ['code' => 'AM',  'department' => 'ormoc', 'sub_group' => null],
+            ['code' => 'LB',  'department' => 'ormoc', 'sub_group' => null],
+            ['code' => 'RD',  'department' => 'ormoc', 'sub_group' => null],
+            ['code' => 'KP',  'department' => 'ormoc', 'sub_group' => null],
+            ['code' => 'MMT', 'department' => 'ormoc', 'sub_group' => null],
+        ];
 
-        foreach ($jmmt as $code) {
-            DB::table('agent_codes')->insert([
-                'code' => $code,
-                'department' => 'resa',
-                'sub_group' => 'individual',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
-
-        // Visa agent codes (MMT also appears here — different department row)
-        $visaCodes = ['ALEX', 'RICCI', 'MEL', 'KAE', 'MIMI', 'MMT'];
-        foreach ($visaCodes as $code) {
-            DB::table('agent_codes')->insert([
-                'code' => $code,
-                'department' => 'visa',
-                'sub_group' => null,
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
-
-        // Ormoc agent codes (MMT also appears here — different department row)
-        $ormocCodes = ['AM', 'LB', 'RD', 'KP', 'MMT'];
-        foreach ($ormocCodes as $code) {
-            DB::table('agent_codes')->insert([
-                'code' => $code,
-                'department' => 'ormoc',
-                'sub_group' => null,
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+        foreach ($agentCodes as $code) {
+            DB::table('agent_codes')->updateOrInsert(
+                ['code' => $code['code'], 'department' => $code['department']],
+                array_merge($code, ['is_active' => true, 'created_at' => now(), 'updated_at' => now()])
+            );
         }
     }
 }

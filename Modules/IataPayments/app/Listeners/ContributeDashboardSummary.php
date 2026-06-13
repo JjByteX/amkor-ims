@@ -18,6 +18,14 @@ class ContributeDashboardSummary
         $query = IataPayment::query();
 
         $collector->addCard('finance', 'Finance', 'IATA payments', $query->count(), 'Building2', 'primary', href: '/iata');
-        $collector->addAttention('finance', 'Finance', 'IATA pending', (clone $query)->where('status', 'pending')->count(), 'warning', '/iata');
+
+        // Count pending+overdue payments using due_date logic so the figure is
+        // never stale. We count all unpaid records here so both "pending" and
+        // "overdue" (past-due-but-not-yet-swept) are included.
+        $collector->addAttention(
+            'finance', 'Finance', 'IATA pending',
+            (clone $query)->where('status', '!=', 'paid')->count(),
+            'warning', '/iata'
+        );
     }
 }

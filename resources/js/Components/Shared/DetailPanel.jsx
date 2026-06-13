@@ -295,40 +295,50 @@ export default function DetailPanel({
                 overflow      : 'hidden',
             }}
         >
-            {/* Header */}
+            {/* Header — two rows: title+badges, then subtitle */}
             <div style={{
                 display      : 'flex',
-                alignItems   : 'flex-start',
-                gap          : 12,
-                padding      : '18px 22px 14px',
+                alignItems   : 'center',
+                gap          : 10,
+                padding      : '10px 14px 10px 22px',
                 borderBottom : 'var(--border-container)',
                 flexShrink   : 0,
             }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                    <h2 className="font-heading font-bold" style={{
-                        fontSize    : 'var(--font-size-heading)',
-                        lineHeight  : 'var(--line-height-tight)',
-                        color       : 'var(--color-text)',
-                        margin      : 0,
-                        overflow    : 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace  : 'nowrap',
-                    }}>
-                        {loading ? <span style={{ opacity: 0.4 }}>Loading…</span> : title}
-                    </h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
+                        <h2 className="font-heading font-bold" style={{
+                            fontSize    : 'var(--font-size-base)',
+                            lineHeight  : 1,
+                            color       : 'var(--color-text)',
+                            margin      : 0,
+                            overflow    : 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace  : 'nowrap',
+                            flexShrink  : 0,
+                        }}>
+                            {loading ? <span style={{ opacity: 0.4 }}>Loading…</span> : title}
+                        </h2>
+                        {!loading && badges && (
+                            <div className="flex items-center" style={{ gap: 4, flexShrink: 0 }}>
+                                {badges}
+                            </div>
+                        )}
+                    </div>
                     {!loading && subtitle && (
-                        <div className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)', marginTop: 2 }}>
+                        <div className="font-body" style={{
+                            fontSize    : 'var(--font-size-small)',
+                            color       : 'var(--color-text-muted)',
+                            marginTop   : 3,
+                            overflow    : 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace  : 'nowrap',
+                        }}>
                             {subtitle}
-                        </div>
-                    )}
-                    {!loading && badges && (
-                        <div className="flex flex-wrap items-center" style={{ gap: 6, marginTop: 8 }}>
-                            {badges}
                         </div>
                     )}
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, paddingTop: 2 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                     {!loading && editHref && (
                         <button type="button" onClick={() => router.get(editHref)}
                             className="font-body font-medium"

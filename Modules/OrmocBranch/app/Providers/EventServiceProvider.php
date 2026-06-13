@@ -11,6 +11,11 @@ class EventServiceProvider extends ServiceProvider
     /**
      * The event handler mappings for the application.
      *
+     * OrmocBookingForwardedToAccounting is listened to by the AccountsReceivable
+     * module — see Modules/AccountsReceivable/app/Providers/EventServiceProvider.php.
+     * No listeners need to be registered here for that event; the cross-module
+     * registration lives in the consumer module.
+     *
      * @var array<string, array<int, string>>
      */
     protected $listen = [

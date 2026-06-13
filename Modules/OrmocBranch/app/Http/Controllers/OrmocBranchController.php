@@ -11,8 +11,12 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Http\JsonResponse;
 use Modules\OrmocBranch\Http\Requests\StoreOrmocBookingRequest;
+use Modules\OrmocBranch\Events\OrmocBookingForwardedToAccounting;
 use Modules\OrmocBranch\Mail\OrmocEscalationMail;
 use Modules\OrmocBranch\Models\OrmocBooking;
+use Modules\Contacts\Models\Contact;
+use Modules\Reservation\Models\ReservationBooking;
+use Modules\Visa\Models\VisaApplication;
 
 class OrmocBranchController extends Controller
 {
@@ -92,6 +96,9 @@ class OrmocBranchController extends Controller
             'bookingTypes' => OrmocBooking::BOOKING_TYPES,
             'agentCodes' => OrmocBooking::AGENT_CODES,
             'paymentModes' => OrmocBooking::PAYMENT_MODES,
+            // URL for the contact typeahead picker — lets the form search contacts
+            // by name/TIN without loading the full list upfront.
+            'contactsSearchUrl' => route('contacts.search'),
         ]);
     }
 
@@ -146,7 +153,80 @@ class OrmocBranchController extends Controller
             abort(403);
         }
 
-        $ormoc->load(['branch', 'createdBy', 'updatedBy', 'escalatedBy']);
+        $ormoc->load(['branch', 'createdBy', 'updatedBy', 'escalatedBy', 'contact']);
+
+        // ── Related transactions (Gap B) ────────────────────────────────────
+        $relatedTransactions = [];
+        if ($ormoc->contact_id) {
+            $statusVariants = [
+                'inquiry'    => 'neutral',
+                'quoted'     => 'info',
+                'confirmed'  => 'success',
+                'cancelled'  => 'error',
+                'pending'    => 'warning',
+                'on_process' => 'info',
+                'completed'  => 'success',
+                'approved'   => 'success',
+                'denied'     => 'error',
+                'forfeited'  => 'error',
+                'refunded'   => 'neutral',
+            ];
+
+            $reservations = ReservationBooking::where('contact_id', $ormoc->contact_id)
+                ->orderByDesc('date')
+                ->limit(10)
+                ->get(['id', 'booking_no', 'status', 'selling_price'])
+                ->map(fn ($r) => [
+                    'id'             => $r->id,
+                    'type'           => 'reservation',
+                    'type_label'     => 'RESA',
+                    'label'          => $r->booking_no,
+                    'status'         => $r->status,
+                    'status_label'   => ReservationBooking::STATUSES[$r->status] ?? $r->status,
+                    'status_variant' => $statusVariants[$r->status] ?? 'neutral',
+                    'selling_price'  => $r->selling_price,
+                    'href'           => route('reservation.show', $r->id),
+                ]);
+
+            $visas = VisaApplication::where('contact_id', $ormoc->contact_id)
+                ->orderByDesc('date')
+                ->limit(10)
+                ->get(['id', 'customer_name', 'status', 'selling_price'])
+                ->map(fn ($v) => [
+                    'id'             => $v->id,
+                    'type'           => 'visa',
+                    'type_label'     => 'VISA',
+                    'label'          => $v->customer_name,
+                    'status'         => $v->status,
+                    'status_label'   => VisaApplication::STATUSES[$v->status] ?? $v->status,
+                    'status_variant' => $statusVariants[$v->status] ?? 'neutral',
+                    'selling_price'  => $v->selling_price,
+                    'href'           => route('visa.show', $v->id),
+                ]);
+
+            $ormocOthers = OrmocBooking::where('contact_id', $ormoc->contact_id)
+                ->where('id', '!=', $ormoc->id)
+                ->orderByDesc('date')
+                ->limit(10)
+                ->get(['id', 'client_name', 'status', 'selling_price'])
+                ->map(fn ($o) => [
+                    'id'             => $o->id,
+                    'type'           => 'ormoc',
+                    'type_label'     => 'ORMOC',
+                    'label'          => $o->client_name,
+                    'status'         => $o->status,
+                    'status_label'   => OrmocBooking::STATUSES[$o->status] ?? $o->status,
+                    'status_variant' => $statusVariants[$o->status] ?? 'neutral',
+                    'selling_price'  => $o->selling_price,
+                    'href'           => route('ormoc.show', $o->id),
+                ]);
+
+            $relatedTransactions = $reservations->concat($visas)->concat($ormocOthers)
+                ->sortByDesc('id')
+                ->values()
+                ->all();
+        }
+        // ────────────────────────────────────────────────────────────────────
 
         if ($request->wantsJson() || $request->get('json')) {
             return response()->json([
@@ -155,6 +235,8 @@ class OrmocBranchController extends Controller
             'bookingTypes' => OrmocBooking::BOOKING_TYPES,
             'paymentModes' => OrmocBooking::PAYMENT_MODES,
             'canWrite' => $this->canWrite($request),
+            'contactsSearchUrl' => route('contacts.search'),
+            'relatedTransactions' => $relatedTransactions,
         ]);
         }
         return Inertia::render('OrmocBranch/Show', [
@@ -163,6 +245,8 @@ class OrmocBranchController extends Controller
             'bookingTypes' => OrmocBooking::BOOKING_TYPES,
             'paymentModes' => OrmocBooking::PAYMENT_MODES,
             'canWrite' => $this->canWrite($request),
+            'contactsSearchUrl' => route('contacts.search'),
+            'relatedTransactions' => $relatedTransactions,
         ]);
     }
 
@@ -178,12 +262,17 @@ class OrmocBranchController extends Controller
                 ->with('flash', ['type' => 'error', 'message' => 'Booking is locked — forwarded to Accounting. Contact Admin Auditor to unlock.']);
         }
 
+        // Eager-load contact so the form can pre-populate the picker with the
+        // currently linked contact's name without an extra round-trip.
+        $ormoc->load('contact');
+
         return Inertia::render('OrmocBranch/Edit', [
             'booking' => $ormoc,
             'statuses' => OrmocBooking::STATUSES,
             'bookingTypes' => OrmocBooking::BOOKING_TYPES,
             'agentCodes' => OrmocBooking::AGENT_CODES,
             'paymentModes' => OrmocBooking::PAYMENT_MODES,
+            'contactsSearchUrl' => route('contacts.search'),
         ]);
     }
 
@@ -345,7 +434,67 @@ class OrmocBranchController extends Controller
             'updated_by' => $request->user()->id,
         ]);
 
+        event(new OrmocBookingForwardedToAccounting(
+            bookingId: $ormoc->id,
+            clientName: $ormoc->client_name,
+            agentCode: $ormoc->agent_code,
+            date: $ormoc->date?->toDateString(),
+            sellingPrice: $ormoc->selling_price,
+            poNumber: $ormoc->po_number,
+            soaNumber: $ormoc->soa_number,
+            siNumber: $ormoc->si_number,
+            arNumber: $ormoc->ar_number,
+            branchId: $ormoc->branch_id,
+            actorId: $request->user()->id,
+        ));
+
         return back()->with('flash', ['type' => 'success', 'message' => 'Forwarded to Accounting. Booking is now locked.']);
+    }
+
+    // ─── Link / Unlink Contact ─────────────────────────────────────────────────
+    //
+    // Lets Accounting attach a Contacts record to a booking from the Show page.
+    // Once linked, TIN/address/business_style auto-fill on the BIR transaction
+    // generated when the booking is forwarded to Accounting. Available to any
+    // role that can view this record (not gated by canWrite/requireWriteAccess,
+    // since linking a contact is an Accounting task, not a branch-officer task).
+
+    public function linkContact(Request $request, OrmocBooking $ormoc): RedirectResponse
+    {
+        $role = $request->user()?->getRoleNames()->first();
+
+        if (! in_array($role, self::VIEW_ROLES, true)) {
+            abort(403);
+        }
+
+        $data = $request->validate([
+            'contact_id' => ['required', 'integer', 'exists:contacts,id'],
+        ]);
+
+        $ormoc->update([
+            'contact_id' => $data['contact_id'],
+            'updated_by' => $request->user()->id,
+        ]);
+
+        $contact = Contact::find($data['contact_id']);
+
+        return back()->with('flash', ['type' => 'success', 'message' => 'Linked to '.($contact?->name ?? 'contact').'.']);
+    }
+
+    public function unlinkContact(Request $request, OrmocBooking $ormoc): RedirectResponse
+    {
+        $role = $request->user()?->getRoleNames()->first();
+
+        if (! in_array($role, self::VIEW_ROLES, true)) {
+            abort(403);
+        }
+
+        $ormoc->update([
+            'contact_id' => null,
+            'updated_by' => $request->user()->id,
+        ]);
+
+        return back()->with('flash', ['type' => 'success', 'message' => 'Contact unlinked.']);
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────

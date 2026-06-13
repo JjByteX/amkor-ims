@@ -97,8 +97,8 @@ export default function ReservationIndex({ bookings, summary, filters, statuses,
                             onClose={() => { setShowPanel(false); panel.close(); }}
                             loading={panel.loading}
                             error={panel.error}
-                            title={d?.booking?.booking_no ?? ''}
-                            subtitle={d?.booking?.client_name ?? ''}
+                            title={d?.booking?.client_name ?? ''}
+                            subtitle={d?.booking?.booking_no ?? ''}
                             badges={d?.booking && (
                                 <>
                                     <Badge variant={STATUS_VARIANT[d.booking.status] ?? 'neutral'}>{d.statuses?.[d.booking.status] ?? d.booking.status}</Badge>

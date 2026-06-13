@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     PanelLeftOpen,
     Gauge,
-    PlaneTakeoff, FileCheck2, MapPinned,
+    PlaneTakeoff, FileCheck2, MapPinned, Ticket,
     ChartNoAxesCombined,
     CreditCard, Landmark, WalletCards, ShieldCheck, ReceiptText, Building2, Files,
     UsersRound, CalendarClock, Megaphone,
@@ -53,11 +53,12 @@ const NAV_SECTIONS = [
         label: 'Operations',
         items: [
             {
-                key  : 'reservation',
-                href : '/reservation',
-                icon : <PlaneTakeoff size={20} />,
-                label: 'Reservation & Booking',
-                roles: ['general_manager', 'resa_officer', 'ormoc_branch_officer', 'accounting_officer', 'admin_auditor', 'chief_operations_officer', 'general_sales_manager'],
+                key       : 'reservation',
+                href      : '/reservation',
+                icon      : <PlaneTakeoff size={20} />,
+                label     : 'Reservation & Booking',
+                inactiveOn: ['/reservation/sales-report'],
+                roles     : ['general_manager', 'resa_officer', 'ormoc_branch_officer', 'accounting_officer', 'admin_auditor', 'chief_operations_officer', 'general_sales_manager'],
             },
             {
                 key  : 'reservation-sales',
@@ -65,6 +66,13 @@ const NAV_SECTIONS = [
                 icon : <ChartNoAxesCombined size={20} />,
                 label: 'RESA Sales Report',
                 roles: ['general_manager', 'chief_operations_officer', 'general_sales_manager', 'accounting_officer', 'admin_auditor', 'resa_officer', 'ormoc_branch_officer'],
+            },
+            {
+                key  : 'airline-rates',
+                href : '/airline-rates',
+                icon : <Ticket size={20} />,
+                label: 'Airline Rates',
+                roles: ['general_manager', 'chief_operations_officer', 'general_sales_manager', 'accounting_officer', 'resa_officer', 'ormoc_branch_officer', 'admin_auditor', 'visa_documentation_officer'],
             },
             {
                 key  : 'visa',

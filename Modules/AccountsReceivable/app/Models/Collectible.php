@@ -16,6 +16,8 @@ class Collectible extends Model
     protected $table = 'collectibles';
 
     protected $fillable = [
+        'source_type',
+        'source_id',
         'department',
         'agent_code',
         'date',
@@ -194,6 +196,18 @@ class Collectible extends Model
         return $query->whereYear('date', $year)->whereMonth('date', $month);
     }
 
+    /**
+     * Records where due_date has passed and the balance is not yet cleared.
+     * Used by the dashboard and index summary counts so overdue figures are
+     * always computed from the actual date rather than the stored status column.
+     */
+    public function scopeEffectivelyOverdue($query)
+    {
+        return $query->where('due_date', '<', now()->toDateString())
+            ->whereNotIn('status', ['paid', 'refunded']);
+    }
+
+    /** @deprecated Use scopeEffectivelyOverdue for counts; kept for query compatibility. */
     public function scopeOverdue($query)
     {
         return $query->where('due_date', '<', now()->toDateString())
@@ -206,6 +220,25 @@ class Collectible extends Model
     public function isFullyApproved(): bool
     {
         return $this->approved_by_coo_at && $this->approved_by_gsm_at;
+    }
+
+    /**
+     * Live status derived purely from due_date and balance — never stale.
+     * Use this accessor when displaying status in the UI instead of the raw
+     * stored `status` column. The stored column is updated on save/recalculate
+     * and kept clean by the nightly sweep, but this accessor is always correct.
+     */
+    public function getLiveStatusAttribute(): string
+    {
+        if ($this->balance_php <= 0 && $this->balance_usd <= 0) {
+            return 'paid';
+        }
+
+        if ($this->due_date && $this->due_date->isPast()) {
+            return 'overdue';
+        }
+
+        return 'current';
     }
 
     /** Recompute and store balances + overdue flag. Call after any payment update. */

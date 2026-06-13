@@ -1,264 +1,280 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
-    BanknoteArrowDown,
-    BanknoteArrowUp,
-    BellDot,
-    Building2,
-    CalendarCheck2,
-    ChartSpline,
-    CircleCheckBig,
-    ClipboardCheck,
-    ClipboardList,
-    ContactRound,
-    CreditCard,
-    FileCheck2,
-    FileClock,
-    FileWarning,
-    Gauge,
-    Landmark,
-    MapPinned,
-    Megaphone,
-    PlaneTakeoff,
-    ReceiptText,
-    Send,
-    ShieldCheck,
-    Target,
-    UserRoundCheck,
-    UsersRound,
-    WalletCards,
-    Files,
+    BanknoteArrowDown, BanknoteArrowUp, BellDot, CalendarCheck2, CalendarClock,
+    ChartSpline, CircleCheckBig, ClipboardCheck, ClipboardList, CreditCard,
+    FileCheck2, FileClock, FileWarning, Files, Gauge, Landmark, MapPinned,
+    Megaphone, PlaneTakeoff, ReceiptText, Send, Target, UserRoundCheck,
+    UsersRound, WalletCards,
 } from 'lucide-react';
 import AppShell from '../Components/Layout/AppShell';
-import Badge from '../Components/UI/Badge';
 import Card from '../Components/UI/Card';
-import PageHeader from '../Components/Shared/PageHeader';
 import PageStack from '../Components/Shared/PageStack';
-import StatGrid from '../Components/Shared/StatGrid';
-import StatCard from '../Components/Shared/StatCard';
+import ProfileTimePanel from '../Components/Dashboard/ProfileTimePanel';
+import DashboardCharts from '../Components/Dashboard/DashboardCharts';
+import { getRoleConfig } from '../Components/Dashboard/dashboardConfig';
 
-const ROLE_LABELS = {
-    general_manager            : 'General Manager',
-    chief_operations_officer   : 'Chief Operations Officer',
-    general_sales_manager      : 'General Sales Manager',
-    accounting_officer         : 'Accounting Officer',
-    disbursement_officer       : 'Disbursement Officer',
-    admin_auditor              : 'Admin Auditor',
-    hr_admin_officer           : 'HR & Admin Officer',
-    liaison_officer            : 'Liaison Officer',
-    resa_officer               : 'RESA Officer',
-    ormoc_branch_officer       : 'Ormoc Branch Officer',
-    visa_documentation_officer : 'Visa & Documentation Officer',
-    marketing_officer          : 'Marketing Officer',
-};
-
+/* ── Icon registry ───────────────────────────────────────────────────────── */
 const ICONS = {
-    BanknoteArrowDown,
-    BanknoteArrowUp,
-    BellDot,
-    Building2,
-    CalendarCheck2,
-    ChartSpline,
-    CircleCheckBig,
-    ClipboardCheck,
-    ClipboardList,
-    ContactRound,
-    CreditCard,
-    FileCheck2,
-    FileClock,
-    FileWarning,
-    Files,
-    Gauge,
-    Landmark,
-    MapPinned,
-    Megaphone,
-    PlaneTakeoff,
-    ReceiptText,
-    Send,
-    ShieldCheck,
-    Target,
-    UserRoundCheck,
-    UsersRound,
-    WalletCards,
+    BanknoteArrowDown, BanknoteArrowUp, BellDot, CalendarCheck2, CalendarClock,
+    ChartSpline, CircleCheckBig, ClipboardCheck, ClipboardList, CreditCard,
+    FileCheck2, FileClock, FileWarning, Files, Gauge, Landmark, MapPinned,
+    Megaphone, PlaneTakeoff, ReceiptText, Send, Target, UserRoundCheck,
+    UsersRound, WalletCards,
 };
 
-function Dashboard({ dashboardSections = [] }) {
+/**
+ * Dashboard
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Layout:
+ *   LEFT  col  — profile card (avatar, role, branch) + attendance button
+ *                + attention/alert badges + login history
+ *   RIGHT area — KPI card grid (auto-fit columns, equal height per role)
+ *                + chart panels below the KPI grid
+ *
+ * The right column fills all available horizontal space. KPI cards are
+ * distributed via auto-fill so they stretch evenly with no trailing whitespace.
+ * The left column is sticky and scrolls independently on tall pages.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+function Dashboard({ dashboardSections = [], loginActivity = [] }) {
     const { auth } = usePage().props;
-    const user = auth?.user;
-    const roleLabel = ROLE_LABELS[user?.role] ?? user?.role ?? 'Account';
+    const role     = auth?.user?.role ?? '';
+    const config   = getRoleConfig(role);
+
+    /* ── Resolve live values ───────────────────────────────────────────────── */
+    const sectionMap = Object.fromEntries(dashboardSections.map(s => [s.key, s]));
+
+    const resolvedWidgets = config.widgets.map(widget => {
+        const section = sectionMap[widget.section];
+        const card    = section?.cards?.find(
+            c => c.label?.toLowerCase() === widget.label?.toLowerCase()
+        );
+        return {
+            ...widget,
+            value: card?.value ?? '—',
+            tone : card?.tone  ?? 'default',
+            sub  : card?.sub   ?? null,
+            href : card?.href  ?? widget.href ?? null,
+            icon : card?.icon  ?? widget.icon,
+        };
+    });
+
+    /* ── Attention items ───────────────────────────────────────────────────── */
+    const attentionItems = dashboardSections
+        .filter(s => config.attention?.includes(s.key))
+        .flatMap(s => (s.attention ?? []).filter(a => a.value > 0));
+
+    /* ── KPI grid column count — distribute evenly based on widget count ───── */
+    const widgetCount = resolvedWidgets.length;
+    // For 1-4: fill row; for 5-6: 3 cols; for 7-8: 4 cols; otherwise auto-fill
+    const colCount = widgetCount <= 4
+        ? widgetCount
+        : widgetCount <= 6 ? 3
+        : widgetCount <= 8 ? 4
+        : 'auto-fill';
+
+    const kpiGridStyle = colCount === 'auto-fill'
+        ? {
+            display            : 'grid',
+            gridTemplateColumns: `repeat(auto-fill, minmax(var(--dash-card-min, 160px), 1fr))`,
+            gap                : 'var(--space-2)',
+        }
+        : {
+            display            : 'grid',
+            gridTemplateColumns: `repeat(${colCount}, 1fr)`,
+            gap                : 'var(--space-2)',
+        };
 
     return (
-        <PageStack>
-            <PageHeader
-                title="Dashboard"
-                subtitle="Read-only operational overview"
-            />
+        <PageStack gap={0}>
+            {/* ── Page heading ──────────────────────────────────────────── */}
+            <h1
+                className="font-heading font-bold text-[var(--color-text)]"
+                style={{
+                    fontSize     : 'var(--font-size-heading)',
+                    lineHeight   : 'var(--line-height-tight)',
+                    margin       : 0,
+                    marginBottom : 'var(--space-2)',
+                    flexShrink   : 0,
+                }}
+            >
+                Dashboard
+            </h1>
 
-            <div className="grid gap-3 md:grid-cols-3">
-                <ContextTile label="Signed in" value={user?.name ?? 'User'} icon={UserRoundCheck} />
-                <ContextTile label="Role" value={roleLabel} icon={ShieldCheck} />
-                <ContextTile label="Branch" value={user?.branch_name ?? 'Unassigned'} icon={Building2} />
+            {/* ── Two-column grid — fills all remaining height ──────────── */}
+            <div
+                className="dashboard-grid"
+                style={{
+                    display            : 'grid',
+                    gridTemplateColumns: 'var(--dash-profile-col, 280px) 1fr',
+                    gap                : 'var(--space-2)',
+                    alignItems         : 'stretch',
+                    flex               : '1 1 0',
+                    minHeight          : 0,
+                    overflow           : 'hidden',
+                }}
+            >
+                {/* ── LEFT — natural height, scrolls if content overflows ── */}
+                <div style={{
+                    overflowY    : 'auto',
+                    height       : '100%',
+                    scrollbarWidth: 'none',
+                }}>
+                    <ProfileTimePanel
+                        attentionItems={attentionItems}
+                        loginActivity={loginActivity}
+                    />
+                </div>
+
+                {/* ── RIGHT — KPI cards + charts, this column scrolls ────── */}
+                <div style={{ minWidth: 0, height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', scrollbarWidth: 'thin' }}>
+
+                    {/* KPI card grid — fills width, no trailing whitespace */}
+                    {resolvedWidgets.length > 0 ? (
+                        <div className="dash-kpi-grid" style={kpiGridStyle}>
+                            {resolvedWidgets.map((w, i) => {
+                                const Icon = ICONS[w.icon] ?? Gauge;
+                                const card = <DashKpiCard key={i} icon={Icon} widget={w} />;
+                                return w.href
+                                    ? <Link key={i} href={w.href} className="block no-underline">{card}</Link>
+                                    : <div key={i}>{card}</div>;
+                            })}
+                        </div>
+                    ) : (
+                        <Card>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                                <div style={{
+                                    width         : 'var(--dash-card-icon-size, 44px)',
+                                    height        : 'var(--dash-card-icon-size, 44px)',
+                                    borderRadius  : 'var(--dash-card-icon-br, 10px)',
+                                    background    : 'color-mix(in srgb, var(--color-primary) 9%, var(--color-card))',
+                                    color         : 'var(--color-primary)',
+                                    display       : 'flex',
+                                    alignItems    : 'center',
+                                    justifyContent: 'center',
+                                    flexShrink    : 0,
+                                }}>
+                                    <Gauge size={20} />
+                                </div>
+                                <div>
+                                    <h2 className="font-heading font-bold text-[var(--color-text)]" style={{ fontSize: 16 }}>
+                                        No dashboard data yet
+                                    </h2>
+                                    <p className="font-body text-[var(--color-text-muted)]" style={{ fontSize: 'var(--font-size-small)', marginTop: 3 }}>
+                                        Module summaries appear here once records exist.
+                                    </p>
+                                </div>
+                            </div>
+                        </Card>
+                    )}
+
+                    {/* ── Charts ───────────────────────────────────────── */}
+                    <DashboardCharts
+                        charts={config.charts ?? []}
+                        dashboardSections={dashboardSections}
+                    />
+
+                </div>
             </div>
 
-            {dashboardSections.length > 0 ? (
-                <div className="grid gap-4 xl:grid-cols-2">
-                    {dashboardSections.map((section) => (
-                        <DashboardSection key={section.key} section={section} />
-                    ))}
-                </div>
-            ) : (
-                <Card>
-                    <div className="flex items-center gap-3">
-                        <div
-                            className="flex h-10 w-10 items-center justify-center text-[var(--color-primary)]"
-                            style={{
-                                borderRadius: 'var(--radius-md)',
-                                border: '1px solid color-mix(in srgb, var(--color-primary) 14%, var(--color-border))',
-                                background: 'color-mix(in srgb, var(--color-primary) 9%, var(--color-card))',
-                            }}
-                        >
-                            <Gauge size={18} />
-                        </div>
-                        <div>
-                            <h2 className="font-heading font-bold text-[var(--color-text)]" style={{ fontSize: 18 }}>
-                                No dashboard summaries available
-                            </h2>
-                            <p className="font-body text-[var(--color-text-muted)]" style={{ fontSize: 'var(--font-size-small)', marginTop: 3 }}>
-                                Your accessible modules will appear here once records are available.
-                            </p>
-                        </div>
-                    </div>
-                </Card>
-            )}
+            {/* Responsive collapse */}
+            <style>{`
+                @media (max-width: 860px) {
+                    .dashboard-grid { grid-template-columns: 1fr !important; overflow: auto !important; }
+                    .dash-kpi-grid  { grid-template-columns: repeat(2, 1fr) !important; }
+                }
+                .dashboard-grid > div:first-child::-webkit-scrollbar { display: none; }
+                .dashboard-grid > div:last-child::-webkit-scrollbar { width: 4px; }
+                .dashboard-grid > div:last-child::-webkit-scrollbar-track { background: transparent; }
+                .dashboard-grid > div:last-child::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
+            `}</style>
         </PageStack>
     );
 }
 
-function ContextTile({ label, value, icon: Icon }) {
+/* ── DashKpiCard ─────────────────────────────────────────────────────────────
+ * Matches the StatCard layout used on every other page:
+ *   icon box on the left, label (uppercase small) + big value on the right.
+ * height: 100% so every card in a row stretches to the same height naturally.
+ * ──────────────────────────────────────────────────────────────────────────── */
+const TONE_COLORS = {
+    default: 'var(--color-text)',
+    success: 'var(--color-success)',
+    warning: 'var(--color-warning)',
+    error  : 'var(--color-error)',
+    info   : 'var(--color-info)',
+    primary: 'var(--color-primary)',
+};
+
+function DashKpiCard({ icon: Icon, widget }) {
+    const toneColor = TONE_COLORS[widget.tone] ?? TONE_COLORS.default;
+    const iconColor = toneColor === 'var(--color-text)' ? 'var(--color-primary)' : toneColor;
+
     return (
-        <Card compact>
-            <div className="flex items-center gap-3">
-                <div
-                    className="flex h-10 w-10 shrink-0 items-center justify-center text-[var(--color-primary)]"
-                    style={{
-                        borderRadius: 'var(--radius-md)',
-                        border: '1px solid color-mix(in srgb, var(--color-primary) 14%, var(--color-border))',
-                        background: 'color-mix(in srgb, var(--color-primary) 9%, var(--color-card))',
-                    }}
-                >
-                    <Icon size={18} />
+        <Card
+            compact
+            style={{ height: '100%' }}
+        >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, height: '100%' }}>
+                {/* Icon box */}
+                <div style={{
+                    width         : 40,
+                    height        : 40,
+                    flexShrink    : 0,
+                    borderRadius  : 'var(--radius-md)',
+                    background    : 'color-mix(in srgb, var(--color-primary) 9%, var(--color-card))',
+                    color         : iconColor,
+                    display       : 'flex',
+                    alignItems    : 'center',
+                    justifyContent: 'center',
+                }}>
+                    <Icon size={18} strokeWidth={1.75} />
                 </div>
-                <div className="min-w-0">
-                    <div className="font-body font-bold uppercase text-[var(--color-text-muted)]" style={{ fontSize: 11 }}>
-                        {label}
+
+                {/* Label + value */}
+                <div style={{ minWidth: 0 }}>
+                    <div style={{
+                        fontSize     : 11,
+                        fontFamily   : 'var(--font-body)',
+                        fontWeight   : 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.04em',
+                        color        : 'var(--color-text-muted)',
+                        lineHeight   : 1.2,
+                    }}>
+                        {widget.label}
                     </div>
-                    <div className="truncate font-heading font-bold text-[var(--color-text)]" style={{ fontSize: 18, marginTop: 4 }}>
-                        {value}
+                    <div style={{
+                        marginTop   : 5,
+                        fontSize    : 21,
+                        fontFamily  : 'var(--font-heading)',
+                        fontWeight  : 800,
+                        lineHeight  : 1.1,
+                        color       : toneColor,
+                        overflow    : 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace  : 'nowrap',
+                    }}>
+                        {widget.value}
                     </div>
+                    {widget.sub && (
+                        <div style={{
+                            marginTop   : 3,
+                            fontSize    : 'var(--font-size-small)',
+                            fontFamily  : 'var(--font-body)',
+                            color       : 'var(--color-text-muted)',
+                            overflow    : 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace  : 'nowrap',
+                        }}>
+                            {widget.sub}
+                        </div>
+                    )}
                 </div>
             </div>
         </Card>
     );
 }
 
-function DashboardSection({ section }) {
-    const cards = section.cards ?? [];
-    const attention = section.attention ?? [];
-
-    return (
-        <section className="flex flex-col" style={{ gap: 'var(--space-2)' }}>
-            <div>
-                <h2 className="font-heading font-bold text-[var(--color-text)]" style={{ fontSize: 18 }}>
-                    {section.label}
-                </h2>
-            </div>
-
-            {cards.length > 0 && (
-                <StatGrid min="160px">
-                    {cards.map((card, index) => {
-                        const Icon = ICONS[card.icon] ?? ClipboardList;
-                        const stat = (
-                            <StatCard
-                                icon={Icon}
-                                label={card.label}
-                                value={card.value}
-                                sub={card.sub}
-                                tone={card.tone}
-                            />
-                        );
-
-                        return card.href ? (
-                            <Link key={`${card.label}-${index}`} href={card.href} className="block no-underline">
-                                {stat}
-                            </Link>
-                        ) : (
-                            <div key={`${card.label}-${index}`}>
-                                {stat}
-                            </div>
-                        );
-                    })}
-                </StatGrid>
-            )}
-
-            {attention.length > 0 && (
-                <div
-                    className="grid gap-2"
-                    style={{
-                        paddingTop: cards.length > 0 ? 'var(--space-1)' : 0,
-                        borderTop: cards.length > 0 ? '1px solid var(--color-border-soft)' : 'none',
-                    }}
-                >
-                    {attention.slice(0, 4).map((item, index) => (
-                        <AttentionRow key={`${item.label}-${index}`} item={item} />
-                    ))}
-                </div>
-            )}
-        </section>
-    );
-}
-
-function AttentionRow({ item }) {
-    const content = (
-        <div className="flex items-center justify-between gap-3">
-            <span className="font-body font-semibold text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-small)' }}>
-                {item.label}
-            </span>
-            <Badge variant={item.tone === 'error' ? 'error' : item.tone === 'success' ? 'success' : 'warning'}>
-                {item.value}
-            </Badge>
-        </div>
-    );
-
-    if (item.href) {
-        return (
-            <Link
-                href={item.href}
-                className="block no-underline"
-                style={{
-                    padding: '10px 12px',
-                    border: '1px solid var(--color-border-soft)',
-                    borderRadius: 'var(--radius-md)',
-                    background: 'var(--color-bg)',
-                }}
-            >
-                {content}
-            </Link>
-        );
-    }
-
-    return (
-        <div
-            style={{
-                padding: '10px 12px',
-                border: '1px solid var(--color-border-soft)',
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--color-bg)',
-            }}
-        >
-            {content}
-        </div>
-    );
-}
-
 Dashboard.layout = (page) => <AppShell>{page}</AppShell>;
-
 export default Dashboard;

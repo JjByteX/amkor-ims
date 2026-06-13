@@ -138,6 +138,7 @@ class SalesSummaryController extends Controller
             ->whereNull('reservation_bookings.deleted_at')
             ->whereYear('reservation_bookings.date', $filters['year'])
             ->whereMonth('reservation_bookings.date', $filters['month'])
+            ->whereIn('reservation_bookings.status', ['confirmed'])
             ->get([
                 'reservation_bookings.id',
                 'reservation_bookings.booking_no as reference',
@@ -166,6 +167,7 @@ class SalesSummaryController extends Controller
             ->whereNull('ormoc_bookings.deleted_at')
             ->whereYear('ormoc_bookings.date', $filters['year'])
             ->whereMonth('ormoc_bookings.date', $filters['month'])
+            ->whereIn('ormoc_bookings.status', ['confirmed'])
             ->get([
                 'ormoc_bookings.id',
                 'ormoc_bookings.po_number as reference',
@@ -194,6 +196,7 @@ class SalesSummaryController extends Controller
             ->whereNull('visa_applications.deleted_at')
             ->whereYear('visa_applications.date', $filters['year'])
             ->whereMonth('visa_applications.date', $filters['month'])
+            ->whereIn('visa_applications.status', ['approved', 'completed'])
             ->get([
                 'visa_applications.id',
                 'visa_applications.ar_number as reference',

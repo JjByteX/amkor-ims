@@ -4,7 +4,9 @@ namespace Modules\Disbursement\Providers;
 
 use App\Events\DashboardSummaryRequested;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
+use Modules\AccountsReceivable\Events\CollectibleEndorsedToDisbursement;
 use Modules\Disbursement\Listeners\ContributeDashboardSummary;
+use Modules\Disbursement\Listeners\CreateVoucherFromCollectible;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -16,6 +18,11 @@ class EventServiceProvider extends ServiceProvider
     protected $listen = [
         DashboardSummaryRequested::class => [
             ContributeDashboardSummary::class,
+        ],
+
+        // Phase 2 — Approved Collectible → Disbursement Auto-Creation
+        CollectibleEndorsedToDisbursement::class => [
+            CreateVoucherFromCollectible::class,
         ],
     ];
 

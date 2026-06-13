@@ -14,6 +14,8 @@ import Select from '../../Components/UI/Select';
 import Modal from '../../Components/UI/Modal';
 import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
 import ConfirmDialog from '../../Components/Shared/ConfirmDialog';
+import ContactLinkPanel from '../../Components/Shared/ContactLinkPanel';
+import RelatedTransactionsPanel from '../../Components/Shared/RelatedTransactionsPanel';
 
 const STATUS_VARIANT = {
     pending   : 'warning',
@@ -36,7 +38,7 @@ function StepRow({ done, label }) {
     );
 }
 
-export function VisaContent({ application, statuses, paymentModes, canWrite, canEndorse }) {
+export function VisaContent({ application, statuses, paymentModes, canWrite, canEndorse, contactsSearchUrl, relatedTransactions }) {
 
     const { url } = usePage();
     const isPanel = url?.includes('panel=1');
@@ -121,6 +123,19 @@ export function VisaContent({ application, statuses, paymentModes, canWrite, can
                         </PanelFieldRow>
                         <PanelField label="AR #" value={application.ar_number} mono />
                     </PanelSection>
+
+                    <PanelDivider />
+
+                    <PanelSection title="Contact Link">
+                        <ContactLinkPanel
+                            contact={application.contact}
+                            contactsSearchUrl={contactsSearchUrl}
+                            linkUrl={route('visa.link-contact', application.id)}
+                            unlinkUrl={route('visa.unlink-contact', application.id)}
+                            canLink={canWrite}
+                        />
+                    </PanelSection>
+                    <RelatedTransactionsPanel transactions={relatedTransactions} />
 
                     <PanelMeta>
                         <PanelMetaItem label="Created by" value={application.created_by?.name} />
@@ -275,7 +290,7 @@ export function VisaContent({ application, statuses, paymentModes, canWrite, can
     return content;
 }
 
-export default function VisaShow({ application, statuses, paymentModes, canWrite, canEndorse }) {
+export default function VisaShow({ application, statuses, paymentModes, canWrite, canEndorse, contactsSearchUrl, relatedTransactions }) {
     const { url } = usePage();
     const isPanel = url?.includes('panel=1');
 
@@ -292,10 +307,10 @@ export default function VisaShow({ application, statuses, paymentModes, canWrite
                 </Badge>
                 }
             >
-                <VisaContent application={application} statuses={statuses} paymentModes={paymentModes} canWrite={canWrite} canEndorse={canEndorse} />
+                <VisaContent application={application} statuses={statuses} paymentModes={paymentModes} canWrite={canWrite} canEndorse={canEndorse} contactsSearchUrl={contactsSearchUrl} relatedTransactions={relatedTransactions} />
             </DetailPanel>
         );
     }
 
-    return <AppShell><VisaContent application={application} statuses={statuses} paymentModes={paymentModes} canWrite={canWrite} canEndorse={canEndorse} /></AppShell>;
+    return <AppShell><VisaContent application={application} statuses={statuses} paymentModes={paymentModes} canWrite={canWrite} canEndorse={canEndorse} contactsSearchUrl={contactsSearchUrl} relatedTransactions={relatedTransactions} /></AppShell>;
 }

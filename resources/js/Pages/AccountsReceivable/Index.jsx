@@ -251,7 +251,7 @@ export default function ARIndex({
                 </>
             )}
             >
-                {d?.collectible && <ARContent collectible={d.collectible} departments={d.departments} statuses={d.statuses} approvalStatuses={d.approvalStatuses} canWrite={d.canWrite} canApprove={d.canApprove} canAudit={d.canAudit} />}
+                {d?.collectible && <ARContent collectible={d.collectible} departments={d.departments} statuses={d.statuses} approvalStatuses={d.approvalStatuses} canWrite={d.canWrite} canApprove={d.canApprove} canApproveCoo={d.canApproveCoo} canApproveGsm={d.canApproveGsm} canAudit={d.canAudit} hydrating={panel.hydrating} onApprove={() => { panel.invalidate(panel.id); panel.open(panel.id); }} />}
             </DetailPanel>
                     }
                 >

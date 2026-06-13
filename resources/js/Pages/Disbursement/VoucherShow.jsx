@@ -117,8 +117,8 @@ export function VoucherContent({
                             </Button>
                         )}
                         {['approved', 'released'].includes(voucher.approval_status) && (
-                            <Button variant="ghost" icon={FileText} loading={submitting}
-                                onClick={() => doPost('disbursement.vouchers.pdf')} style={{ width: '100%' }}>
+                            <Button variant="ghost" icon={FileText}
+                                onClick={() => window.open(route(voucher.type === 'check' ? 'documents.check-voucher' : 'documents.cash-voucher', voucher.id), '_blank')} style={{ width: '100%' }}>
                                 Generate PDF
                             </Button>
                         )}

@@ -18,6 +18,13 @@ class ContributeDashboardSummary
         $query = Collectible::query();
 
         $collector->addCard('finance', 'Finance', 'Receivable balance', 'PHP '.number_format((float) (clone $query)->sum('balance_php'), 2), 'ReceiptText', 'error', href: '/ar');
-        $collector->addAttention('finance', 'Finance', 'Open receivables', (clone $query)->whereNotIn('status', ['paid', 'refunded'])->count(), 'warning', '/ar');
+
+        // Count open receivables using a whereNotIn rather than a stored-status
+        // filter so the figure is always current regardless of the sweep.
+        $collector->addAttention(
+            'finance', 'Finance', 'Open receivables',
+            (clone $query)->whereNotIn('status', ['paid', 'refunded'])->count(),
+            'warning', '/ar'
+        );
     }
 }

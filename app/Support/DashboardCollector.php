@@ -7,7 +7,7 @@ use App\Models\User;
 class DashboardCollector
 {
     /**
-     * @var array<string, array{label: string, cards: array<int, array<string, mixed>>, attention: array<int, array<string, mixed>>}>
+     * @var array<string, array{label: string, cards: array, attention: array, chartData: array}>
      */
     private array $sections = [];
 
@@ -40,10 +40,10 @@ class DashboardCollector
         $this->sections[$section]['cards'][] = [
             'label' => $label,
             'value' => $value,
-            'icon' => $icon,
-            'tone' => $tone,
-            'sub' => $sub,
-            'href' => $href,
+            'icon'  => $icon,
+            'tone'  => $tone,
+            'sub'   => $sub,
+            'href'  => $href,
         ];
     }
 
@@ -60,9 +60,44 @@ class DashboardCollector
         $this->sections[$section]['attention'][] = [
             'label' => $label,
             'value' => $value,
-            'tone' => $tone,
-            'href' => $href,
+            'tone'  => $tone,
+            'href'  => $href,
         ];
+    }
+
+    /**
+     * addChartData
+     * ─────────────────────────────────────────────────────────────────────────
+     * Attaches chart data to a section. The front-end (DashboardCharts.jsx)
+     * reads section.chartData[$dataKey] and normalises it for Recharts.
+     *
+     * Supported shapes:
+     *
+     *   Bar / Line / Area  (dataKey e.g. 'monthly_by_department'):
+     *     [
+     *       'labels' => ['Jan', 'Feb', …],
+     *       'series' => [
+     *           ['name' => 'RESA',   'data' => [0, 1500, …]],
+     *           ['name' => 'Groups', 'data' => [0, 800, …]],
+     *       ],
+     *     ]
+     *
+     *   Donut  (dataKey e.g. 'status_breakdown'):
+     *     [
+     *       'slices' => [
+     *           ['name' => 'Pending',   'value' => 4],
+     *           ['name' => 'Completed', 'value' => 12],
+     *       ],
+     *     ]
+     */
+    public function addChartData(
+        string $section,
+        string $sectionLabel,
+        string $dataKey,
+        array $data,
+    ): void {
+        $this->ensureSection($section, $sectionLabel);
+        $this->sections[$section]['chartData'][$dataKey] = $data;
     }
 
     /**
@@ -72,10 +107,11 @@ class DashboardCollector
     {
         return collect($this->sections)
             ->map(fn (array $section, string $key) => [
-                'key' => $key,
-                'label' => $section['label'],
-                'cards' => $section['cards'],
+                'key'       => $key,
+                'label'     => $section['label'],
+                'cards'     => $section['cards'],
                 'attention' => $section['attention'],
+                'chartData' => $section['chartData'] ?? [],
             ])
             ->values()
             ->all();
@@ -84,9 +120,10 @@ class DashboardCollector
     private function ensureSection(string $key, string $label): void
     {
         $this->sections[$key] ??= [
-            'label' => $label,
-            'cards' => [],
+            'label'     => $label,
+            'cards'     => [],
             'attention' => [],
+            'chartData' => [],
         ];
     }
 }

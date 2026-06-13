@@ -49,6 +49,9 @@ Route::middleware(['auth'])->group(function () {
     Route::put('disbursement/ledger/{entry}', [DisbursementController::class, 'ledgerUpdate'])->name('disbursement.ledger.update');
     Route::delete('disbursement/ledger/{entry}', [DisbursementController::class, 'ledgerDestroy'])->name('disbursement.ledger.destroy');
 
-    // ── Access file export stub ───────────────────────────────────────────
-    Route::post('disbursement/access-file-export', [DisbursementController::class, 'accessFileExport'])->name('disbursement.access-file-export');
+    // ── Access file export ────────────────────────────────────────────────
+    // Phase 9: GET so the browser downloads the file directly.
+    // Pass ?period=first_half or ?period=second_half to override auto-detection.
+    // Pass ?branch_id= (GM / Auditor only) to scope to a specific branch.
+    Route::get('disbursement/access-file-export', [DisbursementController::class, 'accessFileExport'])->name('disbursement.access-file-export');
 });

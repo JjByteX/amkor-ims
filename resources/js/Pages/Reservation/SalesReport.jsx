@@ -24,6 +24,13 @@ export default function SalesReport({ bookings, summary, filters, statuses, serv
         router.get(route('reservation.sales-report'), { ...filters, search, ...overrides }, { preserveState: true, preserveScroll: true });
     }
 
+    function clearFilters() {
+        setSearch('');
+        router.get(route('reservation.sales-report'), {}, { preserveState: false });
+    }
+
+    const hasActiveFilters = filters.search || filters.status || filters.agent || filters.serviceType || filters.month;
+
     const columns = [
         {
             key: 'booking',
@@ -106,7 +113,9 @@ export default function SalesReport({ bookings, summary, filters, statuses, serv
                             <FilterField>
                                 <Select value={filters.serviceType ?? ''} onChange={(e) => apply({ service_type: e.target.value })} placeholder="All types" options={[{ value: '', label: 'All types' }, ...Object.entries(serviceTypes).map(([value, label]) => ({ value, label }))]} />
                             </FilterField>
-                            <Button variant="secondary" onClick={() => apply()}>Apply</Button>
+                            {hasActiveFilters && (
+                                <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                            )}
                         </FilterStrip>
                     }
                 />

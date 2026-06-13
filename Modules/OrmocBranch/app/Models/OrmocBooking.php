@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Contacts\Models\Contact;
 
 class OrmocBooking extends Model
 {
@@ -20,6 +21,7 @@ class OrmocBooking extends Model
         'client_name',
         'contact_number',
         'email',
+        'contact_id',
         'booking_type',
         'destination',
         'travel_date',
@@ -118,6 +120,11 @@ class OrmocBooking extends Model
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function contact(): BelongsTo
+    {
+        return $this->belongsTo(Contact::class);
     }
 
     public function createdBy(): BelongsTo

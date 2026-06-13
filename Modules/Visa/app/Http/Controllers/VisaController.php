@@ -10,9 +10,14 @@ use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Http\JsonResponse;
+use Modules\Visa\Events\VisaOrReceived;
+use Modules\Visa\Events\VisaPaymentRequested;
 use Modules\Visa\Http\Requests\StoreVisaApplicationRequest;
 use Modules\Visa\Mail\VisaPaymentRequestMail;
 use Modules\Visa\Models\VisaApplication;
+use Modules\Contacts\Models\Contact;
+use Modules\Reservation\Models\ReservationBooking;
+use Modules\OrmocBranch\Models\OrmocBooking;
 
 class VisaController extends Controller
 {
@@ -88,6 +93,9 @@ class VisaController extends Controller
             'agentCodes' => VisaApplication::AGENT_CODES,
             'statuses' => VisaApplication::STATUSES,
             'paymentModes' => VisaApplication::PAYMENT_MODES,
+            // URL for the contact typeahead picker — lets the form search contacts
+            // by name/TIN without loading the full list upfront.
+            'contactsSearchUrl' => route('contacts.search'),
         ]);
     }
 
@@ -97,7 +105,7 @@ class VisaController extends Controller
     {
         $this->requireWriteAccess($request);
 
-        $data = $request->validated();
+        $data = $request->validated();;
         $data['created_by'] = $request->user()->id;
         $data['updated_by'] = $request->user()->id;
         $data['branch_id'] = $request->user()->branch_id;
@@ -125,7 +133,80 @@ class VisaController extends Controller
             abort(403);
         }
 
-        $visa->load(['branch', 'createdBy', 'updatedBy', 'orEndorsedBy']);
+        $visa->load(['branch', 'createdBy', 'updatedBy', 'orEndorsedBy', 'contact']);
+
+        // ── Related transactions (Gap B) ────────────────────────────────────
+        $relatedTransactions = [];
+        if ($visa->contact_id) {
+            $statusVariants = [
+                'inquiry'    => 'neutral',
+                'quoted'     => 'info',
+                'confirmed'  => 'success',
+                'cancelled'  => 'error',
+                'pending'    => 'warning',
+                'on_process' => 'info',
+                'completed'  => 'success',
+                'approved'   => 'success',
+                'denied'     => 'error',
+                'forfeited'  => 'error',
+                'refunded'   => 'neutral',
+            ];
+
+            $reservations = ReservationBooking::where('contact_id', $visa->contact_id)
+                ->orderByDesc('date')
+                ->limit(10)
+                ->get(['id', 'booking_no', 'status', 'selling_price'])
+                ->map(fn ($r) => [
+                    'id'             => $r->id,
+                    'type'           => 'reservation',
+                    'type_label'     => 'RESA',
+                    'label'          => $r->booking_no,
+                    'status'         => $r->status,
+                    'status_label'   => ReservationBooking::STATUSES[$r->status] ?? $r->status,
+                    'status_variant' => $statusVariants[$r->status] ?? 'neutral',
+                    'selling_price'  => $r->selling_price,
+                    'href'           => route('reservation.show', $r->id),
+                ]);
+
+            $visas = VisaApplication::where('contact_id', $visa->contact_id)
+                ->where('id', '!=', $visa->id)
+                ->orderByDesc('date')
+                ->limit(10)
+                ->get(['id', 'customer_name', 'status', 'selling_price'])
+                ->map(fn ($v) => [
+                    'id'             => $v->id,
+                    'type'           => 'visa',
+                    'type_label'     => 'VISA',
+                    'label'          => $v->customer_name,
+                    'status'         => $v->status,
+                    'status_label'   => VisaApplication::STATUSES[$v->status] ?? $v->status,
+                    'status_variant' => $statusVariants[$v->status] ?? 'neutral',
+                    'selling_price'  => $v->selling_price,
+                    'href'           => route('visa.show', $v->id),
+                ]);
+
+            $ormoc = OrmocBooking::where('contact_id', $visa->contact_id)
+                ->orderByDesc('date')
+                ->limit(10)
+                ->get(['id', 'client_name', 'status', 'selling_price'])
+                ->map(fn ($o) => [
+                    'id'             => $o->id,
+                    'type'           => 'ormoc',
+                    'type_label'     => 'ORMOC',
+                    'label'          => $o->client_name,
+                    'status'         => $o->status,
+                    'status_label'   => OrmocBooking::STATUSES[$o->status] ?? $o->status,
+                    'status_variant' => $statusVariants[$o->status] ?? 'neutral',
+                    'selling_price'  => $o->selling_price,
+                    'href'           => route('ormoc.show', $o->id),
+                ]);
+
+            $relatedTransactions = $reservations->concat($visas)->concat($ormoc)
+                ->sortByDesc('id')
+                ->values()
+                ->all();
+        }
+        // ────────────────────────────────────────────────────────────────────
 
         if ($request->wantsJson() || $request->get('json')) {
             return response()->json([
@@ -134,6 +215,8 @@ class VisaController extends Controller
             'paymentModes' => VisaApplication::PAYMENT_MODES,
             'canWrite' => $this->canWrite($request),
             'canEndorse' => $role === 'visa_documentation_officer' && $visa->or_number && ! $visa->isEndorsed(),
+            'contactsSearchUrl' => route('contacts.search'),
+            'relatedTransactions' => $relatedTransactions,
         ]);
         }
         return Inertia::render('Visa/Show', [
@@ -142,6 +225,8 @@ class VisaController extends Controller
             'paymentModes' => VisaApplication::PAYMENT_MODES,
             'canWrite' => $this->canWrite($request),
             'canEndorse' => $role === 'visa_documentation_officer' && $visa->or_number && ! $visa->isEndorsed(),
+            'contactsSearchUrl' => route('contacts.search'),
+            'relatedTransactions' => $relatedTransactions,
         ]);
     }
 
@@ -151,12 +236,17 @@ class VisaController extends Controller
     {
         $this->requireWriteAccess($request);
 
+        // Eager-load contact so the form can pre-populate the picker with the
+        // currently linked contact's name without an extra round-trip.
+        $visa->load('contact');
+
         return Inertia::render('Visa/Edit', [
             'application' => $visa,
             'visaTypes' => VisaApplication::VISA_TYPES,
             'agentCodes' => VisaApplication::AGENT_CODES,
             'statuses' => VisaApplication::STATUSES,
             'paymentModes' => VisaApplication::PAYMENT_MODES,
+            'contactsSearchUrl' => route('contacts.search'),
         ]);
     }
 
@@ -265,6 +355,9 @@ class VisaController extends Controller
             'updated_by' => $request->user()->id,
         ]);
 
+        // Phase 3 — fire event so AP can auto-create the Payable
+        VisaPaymentRequested::dispatch($visa);
+
         return back()->with('flash', ['type' => 'success', 'message' => 'Payment request queued for Disbursement Officer.']);
     }
 
@@ -283,6 +376,14 @@ class VisaController extends Controller
             'or_received_at' => now(),
             'updated_by' => $request->user()->id,
         ]);
+
+        // Phase 7 — fire event so BirCompliance can auto-create the SI transaction
+        VisaOrReceived::dispatch(
+            $visa->id,
+            $request->or_number,
+            $visa->branch_id,
+            $request->user()->id,
+        );
 
         return back()->with('flash', ['type' => 'success', 'message' => 'OR number recorded.']);
     }
@@ -311,6 +412,51 @@ class VisaController extends Controller
         ]);
 
         return back()->with('flash', ['type' => 'success', 'message' => 'OR endorsed to Accounting Disbursement.']);
+    }
+
+    // ─── Link / Unlink Contact ─────────────────────────────────────────────────
+    //
+    // Lets Accounting attach a Contacts record to a visa application from the
+    // Show page. Once linked, TIN/address/business_style auto-fill on the BIR
+    // transaction generated when the OR number is recorded. Available to any
+    // role that can view this record.
+
+    public function linkContact(Request $request, VisaApplication $visa): RedirectResponse
+    {
+        $role = $request->user()?->getRoleNames()->first();
+
+        if (! in_array($role, self::VIEW_ROLES, true)) {
+            abort(403);
+        }
+
+        $data = $request->validate([
+            'contact_id' => ['required', 'integer', 'exists:contacts,id'],
+        ]);
+
+        $visa->update([
+            'contact_id' => $data['contact_id'],
+            'updated_by' => $request->user()->id,
+        ]);
+
+        $contact = Contact::find($data['contact_id']);
+
+        return back()->with('flash', ['type' => 'success', 'message' => 'Linked to '.($contact?->name ?? 'contact').'.']);
+    }
+
+    public function unlinkContact(Request $request, VisaApplication $visa): RedirectResponse
+    {
+        $role = $request->user()?->getRoleNames()->first();
+
+        if (! in_array($role, self::VIEW_ROLES, true)) {
+            abort(403);
+        }
+
+        $visa->update([
+            'contact_id' => null,
+            'updated_by' => $request->user()->id,
+        ]);
+
+        return back()->with('flash', ['type' => 'success', 'message' => 'Contact unlinked.']);
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────

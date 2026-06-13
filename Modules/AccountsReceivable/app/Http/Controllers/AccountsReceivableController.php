@@ -8,6 +8,9 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Http\JsonResponse;
+use Modules\AccountsReceivable\Events\CollectibleEndorsedToDisbursement;
+use Modules\AccountsReceivable\Events\CollectibleFullyApproved;
+use Modules\AccountsReceivable\Events\CollectibleSubmittedForApproval;
 use Modules\AccountsReceivable\Http\Requests\StoreCollectibleRequest;
 use Modules\AccountsReceivable\Models\Collectible;
 
@@ -97,6 +100,8 @@ class AccountsReceivableController extends Controller
             'approvalStatuses' => Collectible::APPROVAL_STATUSES,
             'canWrite' => $this->canOriginate($request),
             'canApprove' => $this->canApprove($request),
+            'canApproveCoo' => $this->canApproveCoo($request),
+            'canApproveGsm' => $this->canApproveGsm($request),
         ]);
     }
 
@@ -149,6 +154,9 @@ class AccountsReceivableController extends Controller
 
         $collectible = Collectible::create($data);
 
+        // Notify COO and GSM that a new collectible is pending their approval
+        CollectibleSubmittedForApproval::dispatch($collectible);
+
         return redirect()
             ->route('ar.show', $collectible)
             ->with('flash', ['type' => 'success', 'message' => 'Collectible recorded.']);
@@ -174,6 +182,8 @@ class AccountsReceivableController extends Controller
             'approvalStatuses' => Collectible::APPROVAL_STATUSES,
             'canWrite' => $this->canOriginate($request),
             'canApprove' => $this->canApprove($request),
+            'canApproveCoo' => $this->canApproveCoo($request),
+            'canApproveGsm' => $this->canApproveGsm($request),
             'canAudit' => $role === 'admin_auditor' || $role === 'general_manager',
         ]);
         }
@@ -184,6 +194,8 @@ class AccountsReceivableController extends Controller
             'approvalStatuses' => Collectible::APPROVAL_STATUSES,
             'canWrite' => $this->canOriginate($request),
             'canApprove' => $this->canApprove($request),
+            'canApproveCoo' => $this->canApproveCoo($request),
+            'canApproveGsm' => $this->canApproveGsm($request),
             'canAudit' => $role === 'admin_auditor' || $role === 'general_manager',
         ]);
     }
@@ -281,6 +293,10 @@ class AccountsReceivableController extends Controller
             'updated_by' => $request->user()->id,
         ]);
 
+        if ($newApprovalStatus === 'approved') {
+            CollectibleFullyApproved::dispatch($ar->fresh());
+        }
+
         $msg = $newApprovalStatus === 'approved'
             ? 'Fully approved — both COO and GSM have signed off.'
             : 'COO approval recorded. Awaiting GSM approval.';
@@ -310,6 +326,10 @@ class AccountsReceivableController extends Controller
             'approval_status' => $newApprovalStatus,
             'updated_by' => $request->user()->id,
         ]);
+
+        if ($newApprovalStatus === 'approved') {
+            CollectibleFullyApproved::dispatch($ar->fresh());
+        }
 
         $msg = $newApprovalStatus === 'approved'
             ? 'Fully approved — both COO and GSM have signed off.'
@@ -371,6 +391,9 @@ class AccountsReceivableController extends Controller
             'endorsed_to_disbursement_at' => now(),
             'updated_by' => $request->user()->id,
         ]);
+
+        // Phase 2 — auto-create a Voucher in Disbursement
+        CollectibleEndorsedToDisbursement::dispatch($ar->fresh());
 
         return back()->with('flash', ['type' => 'success', 'message' => 'Endorsed to Disbursement.']);
     }
@@ -436,6 +459,24 @@ class AccountsReceivableController extends Controller
         return in_array(
             $request->user()?->getRoleNames()->first() ?? '',
             ['chief_operations_officer', 'general_sales_manager', 'general_manager'],
+            true
+        );
+    }
+
+    private function canApproveCoo(Request $request): bool
+    {
+        return in_array(
+            $request->user()?->getRoleNames()->first() ?? '',
+            ['chief_operations_officer', 'general_manager'],
+            true
+        );
+    }
+
+    private function canApproveGsm(Request $request): bool
+    {
+        return in_array(
+            $request->user()?->getRoleNames()->first() ?? '',
+            ['general_sales_manager', 'general_manager'],
             true
         );
     }

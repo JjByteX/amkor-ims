@@ -3,11 +3,14 @@
 namespace Modules\Disbursement\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Branch;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Http\JsonResponse;
+use Maatwebsite\Excel\Facades\Excel;
+use Modules\Disbursement\Exports\DisbursementAccessFileExport;
 use Modules\Disbursement\Http\Requests\StoreDisbursementEntryRequest;
 use Modules\Disbursement\Http\Requests\StoreVoucherRequest;
 use Modules\Disbursement\Models\DisbursementEntry;
@@ -294,20 +297,39 @@ class DisbursementController extends Controller
         return back()->with('flash', ['type' => 'success', 'message' => 'Voucher released.']);
     }
 
-    // ─── PDF stub ─────────────────────────────────────────────────────────
+    // ─── PDF generation ────────────────────────────────────────────────────
+    //
+    // Delegates to DocumentGeneration module routes, which use DomPDF.
+    // The button in VoucherShow posts here; we redirect the browser to the
+    // correct PDF endpoint as a GET so the file streams directly.
+    //
+    // Cash vouchers  → documents.cash-voucher
+    // Check vouchers → documents.check-voucher
 
-    public function voucherPdf(Request $request, Voucher $voucher): RedirectResponse
+    public function voucherPdf(Request $request, Voucher $voucher): \Illuminate\Http\RedirectResponse
     {
-        // PDF generation stub — full PDF implementation in Phase 9 via DomPDF
-        $voucher->update([
-            'pdf_generated' => true,
-            'pdf_generated_at' => now(),
-        ]);
+        $role = $request->user()?->getRoleNames()->first();
+        $allowed = ['disbursement_officer', 'accounting_officer', 'admin_auditor', 'general_manager'];
 
-        return back()->with('flash', [
-            'type' => 'info',
-            'message' => "PDF for {$voucher->voucher_no} will be generated in Phase 9 (Document Generation module).",
-        ]);
+        if (! in_array($role, $allowed, true)) {
+            abort(403, 'You do not have permission to generate voucher PDFs.');
+        }
+
+        $routeName = match ($voucher->type) {
+            'cash'  => 'documents.cash-voucher',
+            'check' => 'documents.check-voucher',
+            default => null,
+        };
+
+        if (! $routeName) {
+            return back()->with('flash', [
+                'type'    => 'error',
+                'message' => "Unknown voucher type '{$voucher->type}'. Cannot generate PDF.",
+            ]);
+        }
+
+        // Redirect to the DocumentGeneration GET endpoint, which streams the PDF.
+        return redirect()->to(route($routeName, $voucher->id));
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -430,15 +452,103 @@ class DisbursementController extends Controller
             ->with('flash', ['type' => 'success', 'message' => 'Entry removed.']);
     }
 
-    // ─── Access file export stub ──────────────────────────────────────────
+    // ─── Access file export ───────────────────────────────────────────────
 
-    public function accessFileExport(Request $request): RedirectResponse
+    /**
+     * Phase 9 — Disbursement Access File Export.
+     *
+     * Generates the bimonthly Excel ledger that Dalle sends to the Admin Auditor
+     * every 15th and end-of-month. The period is inferred from today's date:
+     *
+     *   - Running on or before the 15th  → 1st–15th of the current month
+     *   - Running after the 15th         → 16th–EOM of the current month
+     *
+     * Optionally the caller can pass ?period=first_half or ?period=second_half
+     * to override the auto-detection (useful for re-exports or manual runs).
+     *
+     * Branch scoping follows the same rule as the ledger index: disbursement
+     * officers see only their own branch; GM and admin auditor see all or can
+     * pass ?branch_id= to narrow.
+     */
+    public function accessFileExport(Request $request)
     {
-        // Full export in Phase 9; stub records the period
-        return back()->with('flash', [
-            'type' => 'info',
-            'message' => 'Access file export will be fully implemented in Phase 9 (Document Generation module). Reminder has been noted.',
-        ]);
+        $this->requirePreparer($request);
+
+        $role  = $request->user()?->getRoleNames()->first();
+        $today = now();
+
+        // ── Determine period ─────────────────────────────────────────────
+        $periodOverride = $request->get('period'); // 'first_half' | 'second_half'
+
+        if ($periodOverride === 'first_half' || ($periodOverride === null && $today->day <= 15)) {
+            $periodStart = $today->copy()->startOfMonth();
+            $periodEnd   = $today->copy()->startOfMonth()->day(15);
+            $periodLabel = '1st-15th';
+            $periodDate  = $periodEnd->toDateString();   // stored on entries: YYYY-MM-15
+        } else {
+            $periodStart = $today->copy()->startOfMonth()->day(16);
+            $periodEnd   = $today->copy()->endOfMonth();
+            $periodLabel = '16th-EOM';
+            $periodDate  = $periodEnd->toDateString();   // stored on entries: YYYY-MM-{last}
+        }
+
+        // ── Branch scoping ───────────────────────────────────────────────
+        $branchId   = null;
+        $branchName = 'All Branches';
+
+        if (! in_array($role, ['general_manager', 'admin_auditor'], true)) {
+            // Disbursement officer is always scoped to their own branch
+            $branchId   = $request->user()->branch_id;
+            $branchName = $request->user()->branch?->name ?? 'Branch';
+        } elseif ($request->has('branch_id')) {
+            $branchId   = (int) $request->get('branch_id');
+            $branchName = Branch::find($branchId)?->name ?? 'Branch';
+        }
+
+        // ── Query ────────────────────────────────────────────────────────
+        $query = DisbursementEntry::with(['branch', 'createdBy', 'voucher'])
+            ->whereBetween('date', [$periodStart->toDateString(), $periodEnd->toDateString()])
+            ->orderBy('date')
+            ->orderBy('id');
+
+        if ($branchId) {
+            $query->forBranch($branchId);
+        }
+
+        $entries = $query->get();
+
+        // ── Empty guard ──────────────────────────────────────────────────
+        if ($entries->isEmpty()) {
+            return back()->with('flash', [
+                'type'    => 'warning',
+                'message' => "No disbursement entries found for the {$periodLabel} period of {$today->format('F Y')}.",
+            ]);
+        }
+
+        // ── Stamp entries with access_file_period (first export only) ────
+        // This marks the batch so it is visible in the ledger after export.
+        DisbursementEntry::whereIn('id', $entries->pluck('id'))
+            ->whereNull('access_file_period')
+            ->update(['access_file_period' => $periodDate]);
+
+        // ── Download ─────────────────────────────────────────────────────
+        $filename = sprintf(
+            'Disbursement-AccessFile-%s-%s-%s.xlsx',
+            $today->format('Y'),
+            $today->format('m'),
+            $periodLabel,
+        );
+
+        return Excel::download(
+            new DisbursementAccessFileExport(
+                entries:     $entries,
+                periodLabel: $periodLabel,
+                periodDate:  $periodDate,
+                branchName:  $branchName,
+                monthYear:   $today->format('F Y'),
+            ),
+            $filename,
+        );
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────

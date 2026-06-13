@@ -57,6 +57,30 @@ class ContactsController extends Controller
         ]);
     }
 
+    // ─── Typeahead search (JSON) ───────────────────────────────────────────────
+    //
+    // GET /contacts/search?q=Acme&limit=10
+    //
+    // Returns a slim list of matching active contacts for the contact_id picker
+    // used on booking and visa forms. Only fields needed to populate TIN, address,
+    // and business_style are returned — no PII beyond what the form already shows.
+    //
+    // Available to all authenticated roles (same read access as contacts.index).
+
+    public function search(Request $request): JsonResponse
+    {
+        $term  = $request->string('q')->trim()->toString();
+        $limit = min((int) $request->get('limit', 10), 25);
+
+        $contacts = Contact::active()
+            ->search($term)
+            ->orderBy('name')
+            ->limit($limit)
+            ->get(['id', 'name', 'tin', 'address', 'type']);
+
+        return response()->json($contacts);
+    }
+
     // ─── Create ───────────────────────────────────────────────────────────────
 
     public function create(Request $request): Response

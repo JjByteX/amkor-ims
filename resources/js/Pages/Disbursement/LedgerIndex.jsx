@@ -146,7 +146,8 @@ export default function LedgerIndex({
                                 <>
                                     <Button
                                         variant="primary"
-                                        onClick={() => router.post(route('disbursement.access-file-export'))}
+                                        icon={<Download size={16} />}
+                                        onClick={() => { window.location.href = route('disbursement.access-file-export'); }}
                                     >
                                         Export Access File
                                     </Button>
@@ -180,7 +181,7 @@ export default function LedgerIndex({
                     <StatGrid>
                         <StatCard icon={Banknote} label="Total Disbursed" value={<CurrencyDisplay amount={summary.total_amount ?? 0} currency="PHP" />} />
                         <StatCard icon={Files} label="Total Entries" value={summary.total_count ?? 0} />
-                        <StatCard icon={Download} label="Access File Export" value="Phase 9" sub="Full export workflow" />
+                        <StatCard icon={Download} label="Access File Export" value="Bimonthly" sub="1st–15th and 16th–EOM" />
                     </StatGrid>
                 )}
 

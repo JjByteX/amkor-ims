@@ -3,6 +3,7 @@
 namespace Modules\AccountsReceivable\Providers;
 
 use Illuminate\Console\Scheduling\Schedule;
+use Modules\AccountsReceivable\Console\Commands\SweepOverdue;
 use Nwidart\Modules\Support\ModuleServiceProvider;
 
 class AccountsReceivableServiceProvider extends ModuleServiceProvider
@@ -18,11 +19,13 @@ class AccountsReceivableServiceProvider extends ModuleServiceProvider
     protected string $nameLower = 'accountsreceivable';
 
     /**
-     * Command classes to register.
+     * Artisan commands provided by this module.
      *
      * @var string[]
      */
-    // protected array $commands = [];
+    protected array $commands = [
+        SweepOverdue::class,
+    ];
 
     /**
      * Provider classes to register.
@@ -35,12 +38,16 @@ class AccountsReceivableServiceProvider extends ModuleServiceProvider
     ];
 
     /**
-     * Define module schedules.
+     * Scheduled tasks for the AccountsReceivable module.
      *
-     * @param  $schedule
+     * Phase 4b: nightly sweep keeps the stored status column consistent with
+     * due_date reality so raw SQL reports and exports are always accurate.
      */
-    // protected function configureSchedules(Schedule $schedule): void
-    // {
-    //     $schedule->command('inspire')->hourly();
-    // }
+    protected function configureSchedules(Schedule $schedule): void
+    {
+        // Runs at 1:00 AM daily — sweeps all four finance tables and marks
+        // any past-due unpaid records as overdue, then notifies the
+        // disbursement officer with a batched summary if anything changed.
+        $schedule->command('finance:sweep-overdue')->dailyAt('01:00');
+    }
 }

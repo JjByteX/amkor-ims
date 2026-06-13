@@ -3,6 +3,7 @@
 namespace Modules\Cashbond\Providers;
 
 use Illuminate\Console\Scheduling\Schedule;
+use Modules\Cashbond\Console\Commands\CheckCashbondBalances;
 use Nwidart\Modules\Support\ModuleServiceProvider;
 
 class CashbondServiceProvider extends ModuleServiceProvider
@@ -18,11 +19,13 @@ class CashbondServiceProvider extends ModuleServiceProvider
     protected string $nameLower = 'cashbond';
 
     /**
-     * Command classes to register.
+     * Artisan commands provided by this module.
      *
      * @var string[]
      */
-    // protected array $commands = [];
+    protected array $commands = [
+        CheckCashbondBalances::class,
+    ];
 
     /**
      * Provider classes to register.
@@ -35,12 +38,16 @@ class CashbondServiceProvider extends ModuleServiceProvider
     ];
 
     /**
-     * Define module schedules.
+     * Scheduled tasks for the Cashbond module.
      *
-     * @param  $schedule
+     * Phase 12: daily low-balance check — notifies the disbursement officer
+     * whenever any active portal's balance is below its maintaining threshold.
+     * A per-portal cooldown prevents duplicate alerts on the same day.
      */
-    // protected function configureSchedules(Schedule $schedule): void
-    // {
-    //     $schedule->command('inspire')->hourly();
-    // }
+    protected function configureSchedules(Schedule $schedule): void
+    {
+        // Runs at 8:00 AM daily — checks all active portals and alerts the
+        // disbursement officer for any that are below their maintaining balance.
+        $schedule->command('finance:check-cashbond-balances')->dailyAt('08:00');
+    }
 }
