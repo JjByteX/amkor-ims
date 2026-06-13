@@ -345,12 +345,20 @@ class MarketingController extends Controller
             'amount' => ['required', 'numeric', 'min:0.01'],
             'currency' => ['nullable', 'in:'.implode(',', MarketingExpense::CURRENCIES)],
             'expense_date' => ['required', 'date'],
-            'period_month' => ['required', 'integer', 'min:1', 'max:12'],
-            'period_year' => ['required', 'integer', 'min:2020', 'max:2099'],
+            'period_month' => ['nullable', 'integer', 'min:1', 'max:12'],
+            'period_year' => ['nullable', 'integer', 'min:2020', 'max:2099'],
             'vendor' => ['nullable', 'string', 'max:255'],
             'remarks' => ['nullable', 'string'],
             'material_id' => ['nullable', 'exists:marketing_materials,id'],
         ]);
+
+        $expenseDate = \Illuminate\Support\Carbon::parse($data['expense_date']);
+
+        // Auto-derive the reporting period from expense_date when not
+        // explicitly provided, matching the Excel "Summary — Marketing
+        // Expenses" tab, which buckets every row by its transaction month.
+        $data['period_month'] = $data['period_month'] ?? $expenseDate->month;
+        $data['period_year'] = $data['period_year'] ?? $expenseDate->year;
 
         $data['currency'] = $data['currency'] ?? 'PHP';
         $data['status'] = 'draft';

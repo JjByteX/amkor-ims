@@ -4,10 +4,14 @@ namespace Modules\Visa\Providers;
 
 use App\Events\DashboardSummaryRequested;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
+use Modules\AccountsPayable\Events\PayableReceived;
+use Modules\AccountsPayable\Events\PayableReleased;
 use Modules\Visa\Events\VisaOrReceived;
 use Modules\Visa\Events\VisaPaymentRequested;
 use Modules\Visa\Listeners\ContributeDashboardSummary;
 use Modules\Visa\Listeners\MarkPaymentRequestSent;
+use Modules\Visa\Listeners\SyncCvNumberOnPayableRelease;
+use Modules\Visa\Listeners\SyncDateReceivedOnPayableReceived;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -31,6 +35,16 @@ class EventServiceProvider extends ServiceProvider
         // to auto-create the BIR SI transaction. No local listener needed here.
         // Registered in Modules/BirCompliance/app/Providers/EventServiceProvider.php.
         VisaOrReceived::class => [],
+
+        // Phase 7 — write CV number / date requested / date received back
+        // onto the originating visa application as its linked AP Payable
+        // moves through release → received.
+        PayableReleased::class => [
+            SyncCvNumberOnPayableRelease::class,
+        ],
+        PayableReceived::class => [
+            SyncDateReceivedOnPayableReceived::class,
+        ],
     ];
 
     /**

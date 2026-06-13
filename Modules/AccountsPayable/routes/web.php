@@ -32,6 +32,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('payables/{ap}/check', [AccountsPayableController::class, 'check'])->name('ap.check');
     Route::post('payables/{ap}/approve', [AccountsPayableController::class, 'approve'])->name('ap.approve');
     Route::post('payables/{ap}/release', [AccountsPayableController::class, 'release'])->name('ap.release');
+    Route::post('payables/{ap}/receive', [AccountsPayableController::class, 'markReceived'])->name('ap.receive');
 
     // ── Payment recording ─────────────────────────────────────────────────
     Route::post('payables/{ap}/payment', [AccountsPayableController::class, 'recordPayment'])->name('ap.record-payment');

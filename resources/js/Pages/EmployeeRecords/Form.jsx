@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
-import { Save, X, Plus, Trash2 } from 'lucide-react';
+import { Save, X, Plus, Trash2, UserCheck, Lock } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
 import { FormLayout, FormCard, FormRow, FormActions } from '../../Components/Shared/FormLayout';
@@ -9,6 +9,7 @@ import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
 import Textarea from '../../Components/UI/Textarea';
 import Checkbox from '../../Components/UI/Checkbox';
+import Toggle from '../../Components/UI/Toggle';
 
 // ── Uniform issuance editor ───────────────────────────────────────────────────
 
@@ -54,7 +55,10 @@ function UniformEditor({ records, onChange }) {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-export default function EmployeeForm({ employee, statuses, departments, genders, civilStatuses, branches }) {
+// Roles that default to is_agent = true
+const AGENT_DEFAULT_ROLES = ['resa_officer', 'ormoc_branch_officer', 'visa_documentation_officer'];
+
+export default function EmployeeForm({ employee, statuses, departments, genders, civilStatuses, branches, agentCodeLocked = false, reservedCodes = [] }) {
     const { errors } = usePage().props;
     const isEdit = !!employee;
 
@@ -90,6 +94,8 @@ export default function EmployeeForm({ employee, statuses, departments, genders,
         data_privacy_consent          : employee?.data_privacy_consent ?? false,
         data_privacy_consent_date     : employee?.data_privacy_consent_date?.substring(0, 10) ?? '',
         remarks                       : employee?.remarks ?? '',
+        is_agent                      : employee?.is_agent ?? false,
+        agent_code                    : employee?.agent_code ?? '',
     });
 
     const [submitting, setSubmitting] = useState(false);
@@ -185,6 +191,96 @@ export default function EmployeeForm({ employee, statuses, departments, genders,
                             <Input label="SIL Total (days)" type="number" min={0} value={form.sil_total} onChange={set('sil_total')} />
                             <Input label="SIL Used (days)" type="number" min={0} value={form.sil_used} onChange={set('sil_used')} />
                         </FormRow>
+
+                        {/* ── Agent ──────────────────────────────────────── */}
+                        <div style={{
+                            borderTop    : '1px solid var(--color-border-soft)',
+                            paddingTop   : 'var(--space-2)',
+                            marginTop    : 'var(--space-1)',
+                            display      : 'flex',
+                            flexDirection: 'column',
+                            gap          : 'var(--space-2)',
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <div>
+                                    <div style={{
+                                        display      : 'flex',
+                                        alignItems   : 'center',
+                                        gap          : 6,
+                                        fontSize     : 'var(--font-size-small)',
+                                        fontWeight   : 700,
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.04em',
+                                        color        : 'var(--color-text-muted)',
+                                    }}>
+                                        <UserCheck size={13} strokeWidth={2} />
+                                        Sales Agent
+                                    </div>
+                                    <p style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 3 }}>
+                                        Enables agent code — required for booking &amp; visa attribution
+                                    </p>
+                                </div>
+                                <Toggle
+                                    checked={form.is_agent}
+                                    onChange={(e) => setForm(prev => ({
+                                        ...prev,
+                                        is_agent  : e.target.checked,
+                                        agent_code: e.target.checked ? prev.agent_code : '',
+                                    }))}
+                                />
+                            </div>
+
+                            {form.is_agent && (
+                                <div>
+                                    <Input
+                                        label={
+                                            agentCodeLocked
+                                                ? <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                                                    Agent Code
+                                                    <span style={{
+                                                        display     : 'inline-flex',
+                                                        alignItems  : 'center',
+                                                        gap         : 3,
+                                                        fontSize    : 10,
+                                                        fontWeight  : 600,
+                                                        color       : 'var(--color-text-muted)',
+                                                        background  : 'var(--color-bg)',
+                                                        border      : '1px solid var(--color-border)',
+                                                        borderRadius: 4,
+                                                        padding     : '1px 5px',
+                                                    }}>
+                                                        <Lock size={9} /> Locked
+                                                    </span>
+                                                  </span>
+                                                : 'Agent Code *'
+                                        }
+                                        value={form.agent_code}
+                                        disabled={agentCodeLocked}
+                                        maxLength={5}
+                                        placeholder="e.g. JHONA"
+                                        error={errors?.agent_code}
+                                        onChange={(e) => {
+                                            const val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                                            setForm(prev => ({ ...prev, agent_code: val }));
+                                        }}
+                                        style={{ fontFamily: 'var(--font-mono, monospace)', letterSpacing: '0.08em' }}
+                                    />
+                                    {!agentCodeLocked && (
+                                        <p style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 4 }}>
+                                            Up to 5 uppercase letters/numbers. Cannot be changed once the agent has transactions.
+                                            {reservedCodes.length > 0 && (
+                                                <> Reserved: <strong>{reservedCodes.join(', ')}</strong></>
+                                            )}
+                                        </p>
+                                    )}
+                                    {agentCodeLocked && (
+                                        <p style={{ fontSize: 11, color: 'var(--color-warning)', marginTop: 4 }}>
+                                            This code is locked because it has existing transactions. Contact an administrator to change it.
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </FormCard>
 
                     {/* Card 3 — Uniform, Compliance & Notes */}

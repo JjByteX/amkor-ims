@@ -10,18 +10,65 @@ use Modules\SalesSummary\Models\SalesTarget;
 class ContributeDashboardSummary
 {
     /**
-     * Source tables that contribute to sales figures.
-     * [table, date_col, status_col, confirmed_statuses]
+     * Sales sources — each entry is [table, date_col, status_col, confirmed_statuses, label, ?where_clause].
      *
-     * Verified against actual migrations:
-     *   reservation_bookings — status: inquiry|quoted|confirmed|cancelled
-     *   ormoc_bookings       — status: inquiry|quoted|confirmed|cancelled
-     *   visa_applications    — status: pending|on_process|approved|completed|denied|forfeited|refunded
+     * IMPORTANT: reservation_bookings is split into two logical departments:
+     *
+     *   RESA   = FIT + Corporate bookings (transaction_type IN ('fit', 'corporate') OR NULL)
+     *   Groups = Group + Blocking bookings (transaction_type IN ('group', 'blocking'))
+     *
+     * This matches the four-panel Excel Sales Summary exactly:
+     *   Resa | Groups | Visa | Ormoc
+     *
+     * transaction_type was added in migration 2026_06_14_000002. Rows that
+     * predate this migration have transaction_type = NULL — these are treated
+     * as RESA (legacy FIT/corporate entries).
+     *
+     * Verified status values against actual migrations:
+     *   reservation_bookings — confirmed
+     *   ormoc_bookings       — confirmed
+     *   visa_applications    — approved | completed
      */
     private const SOURCES = [
-        ['reservation_bookings', 'date', 'status', ['confirmed'],             'RESA'],
-        ['ormoc_bookings',       'date', 'status', ['confirmed'],             'Ormoc'],
-        ['visa_applications',    'date', 'status', ['approved', 'completed'], 'Visa'],
+        // RESA — FIT and Corporate (excludes group/blocking rows)
+        [
+            'table'    => 'reservation_bookings',
+            'date_col' => 'date',
+            'status_col' => 'status',
+            'statuses' => ['confirmed'],
+            'label'    => 'RESA',
+            'where'    => "transaction_type IS NULL OR transaction_type IN ('fit', 'corporate')",
+        ],
+
+        // Groups — Group and Blocking bookings from the same table
+        [
+            'table'    => 'reservation_bookings',
+            'date_col' => 'date',
+            'status_col' => 'status',
+            'statuses' => ['confirmed'],
+            'label'    => 'Groups',
+            'where'    => "transaction_type IN ('group', 'blocking')",
+        ],
+
+        // Ormoc
+        [
+            'table'    => 'ormoc_bookings',
+            'date_col' => 'date',
+            'status_col' => 'status',
+            'statuses' => ['confirmed'],
+            'label'    => 'Ormoc',
+            'where'    => null,
+        ],
+
+        // Visa
+        [
+            'table'    => 'visa_applications',
+            'date_col' => 'date',
+            'status_col' => 'status',
+            'statuses' => ['approved', 'completed'],
+            'label'    => 'Visa',
+            'where'    => null,
+        ],
     ];
 
     public function handle(DashboardSummaryRequested $event): void
@@ -43,53 +90,69 @@ class ContributeDashboardSummary
             ->map(fn ($m) => \Carbon\Carbon::create($year, $m)->format('M'))
             ->values()->all();
 
-        // ── KPI: Sales MTD ────────────────────────────────────────────────
+        // ── KPI: Sales MTD ────────────────────────────────────────────────────
         $salesMtd = 0.0;
-        foreach (self::SOURCES as [$table, $dateCol, $statusCol, $statuses]) {
-            if (! Schema::hasTable($table)) continue;
-            $salesMtd += (float) DB::table($table)
-                ->whereNull("{$table}.deleted_at")
-                ->whereYear("{$table}.{$dateCol}", $year)
-                ->whereMonth("{$table}.{$dateCol}", $month)
-                ->whereIn("{$table}.{$statusCol}", $statuses)
-                ->sum("{$table}.income");
+        foreach (self::SOURCES as $src) {
+            if (! Schema::hasTable($src['table'])) {
+                continue;
+            }
+            $q = DB::table($src['table'])
+                ->whereNull("{$src['table']}.deleted_at")
+                ->whereYear("{$src['table']}.{$src['date_col']}", $year)
+                ->whereMonth("{$src['table']}.{$src['date_col']}", $month)
+                ->whereIn("{$src['table']}.{$src['status_col']}", $src['statuses']);
+            if ($src['where']) {
+                $q->whereRaw($src['where']);
+            }
+            $salesMtd += (float) $q->sum("{$src['table']}.income");
         }
 
         $collector->addCard('sales', 'Sales', 'Sales MTD',
-            'PHP ' . number_format($salesMtd, 2),
+            'PHP '.number_format($salesMtd, 2),
             'ChartSpline', 'primary', href: '/sales'
         );
 
-        // ── KPI: Sales YTD ────────────────────────────────────────────────
+        // ── KPI: Sales YTD ────────────────────────────────────────────────────
         $salesYtd = 0.0;
-        foreach (self::SOURCES as [$table, $dateCol, $statusCol, $statuses]) {
-            if (! Schema::hasTable($table)) continue;
-            $salesYtd += (float) DB::table($table)
-                ->whereNull("{$table}.deleted_at")
-                ->whereYear("{$table}.{$dateCol}", $year)
-                ->whereIn("{$table}.{$statusCol}", $statuses)
-                ->sum("{$table}.income");
+        foreach (self::SOURCES as $src) {
+            if (! Schema::hasTable($src['table'])) {
+                continue;
+            }
+            $q = DB::table($src['table'])
+                ->whereNull("{$src['table']}.deleted_at")
+                ->whereYear("{$src['table']}.{$src['date_col']}", $year)
+                ->whereIn("{$src['table']}.{$src['status_col']}", $src['statuses']);
+            if ($src['where']) {
+                $q->whereRaw($src['where']);
+            }
+            $salesYtd += (float) $q->sum("{$src['table']}.income");
         }
 
         $collector->addCard('sales', 'Sales', 'Sales YTD',
-            'PHP ' . number_format($salesYtd, 2),
+            'PHP '.number_format($salesYtd, 2),
             'Target', 'primary', href: '/sales'
         );
 
-        // ── Chart: monthly sales by department ────────────────────────────
+        // ── Chart: monthly sales by department (4 series: RESA/Groups/Ormoc/Visa) ──
         $series = [];
-        foreach (self::SOURCES as [$table, $dateCol, $statusCol, $statuses, $label]) {
-            if (! Schema::hasTable($table)) continue;
-            $monthlyData = collect(range(1, 12))->map(fn ($m) =>
-                round((float) DB::table($table)
-                    ->whereNull("{$table}.deleted_at")
-                    ->whereYear("{$table}.{$dateCol}", $year)
-                    ->whereMonth("{$table}.{$dateCol}", $m)
-                    ->whereIn("{$table}.{$statusCol}", $statuses)
-                    ->sum("{$table}.income"), 2)
-            )->values()->all();
+        foreach (self::SOURCES as $src) {
+            if (! Schema::hasTable($src['table'])) {
+                continue;
+            }
+            $monthlyData = collect(range(1, 12))->map(function ($m) use ($src, $year) {
+                $q = DB::table($src['table'])
+                    ->whereNull("{$src['table']}.deleted_at")
+                    ->whereYear("{$src['table']}.{$src['date_col']}", $year)
+                    ->whereMonth("{$src['table']}.{$src['date_col']}", $m)
+                    ->whereIn("{$src['table']}.{$src['status_col']}", $src['statuses']);
+                if ($src['where']) {
+                    $q->whereRaw($src['where']);
+                }
 
-            $series[] = ['name' => $label, 'data' => $monthlyData];
+                return round((float) $q->sum("{$src['table']}.income"), 2);
+            })->values()->all();
+
+            $series[] = ['name' => $src['label'], 'data' => $monthlyData];
         }
 
         if (! empty($series)) {
@@ -99,7 +162,7 @@ class ContributeDashboardSummary
             ]);
         }
 
-        // ── Chart: progress curve — cumulative target vs achieved ─────────
+        // ── Chart: progress curve — cumulative target vs achieved ─────────────
         $annualTarget = (float) SalesTarget::query()
             ->where('year', $year)
             ->whereNull('agent_code')
@@ -119,17 +182,24 @@ class ContributeDashboardSummary
         $runAchieved   = 0.0;
 
         foreach (range(1, 12) as $m) {
-            $runTarget += $monthlyTarget;
+            $runTarget   += $monthlyTarget;
             $monthIncome = 0.0;
-            foreach (self::SOURCES as [$table, $dateCol, $statusCol, $statuses]) {
-                if (! Schema::hasTable($table)) continue;
-                $monthIncome += (float) DB::table($table)
-                    ->whereNull("{$table}.deleted_at")
-                    ->whereYear("{$table}.{$dateCol}", $year)
-                    ->whereMonth("{$table}.{$dateCol}", $m)
-                    ->whereIn("{$table}.{$statusCol}", $statuses)
-                    ->sum("{$table}.income");
+
+            foreach (self::SOURCES as $src) {
+                if (! Schema::hasTable($src['table'])) {
+                    continue;
+                }
+                $q = DB::table($src['table'])
+                    ->whereNull("{$src['table']}.deleted_at")
+                    ->whereYear("{$src['table']}.{$src['date_col']}", $year)
+                    ->whereMonth("{$src['table']}.{$src['date_col']}", $m)
+                    ->whereIn("{$src['table']}.{$src['status_col']}", $src['statuses']);
+                if ($src['where']) {
+                    $q->whereRaw($src['where']);
+                }
+                $monthIncome += (float) $q->sum("{$src['table']}.income");
             }
+
             $runAchieved  += $monthIncome;
             $cumTarget[]   = round($runTarget, 2);
             $cumAchieved[] = round($runAchieved, 2);
@@ -143,31 +213,45 @@ class ContributeDashboardSummary
             ],
         ]);
 
-        // ── Chart: top performers this month ──────────────────────────────
-        // Aggregate income by agent_code across all confirmed source tables.
-        // reservation_bookings.agent_code is nullable; ormoc/visa are NOT NULL.
-        $performerMap = [];
-        foreach (self::SOURCES as [$table, $dateCol, $statusCol, $statuses]) {
-            if (! Schema::hasTable($table)) continue;
-            $rows = DB::table($table)
-                ->whereNull("{$table}.deleted_at")
-                ->whereYear("{$table}.{$dateCol}", $year)
-                ->whereMonth("{$table}.{$dateCol}", $month)
-                ->whereIn("{$table}.{$statusCol}", $statuses)
-                ->whereNotNull("{$table}.agent_code")
-                ->where("{$table}.agent_code", '!=', '')
-                ->selectRaw("agent_code, SUM(income) as total")
-                ->groupBy('agent_code')
-                ->get();
+        // ── Chart: top performers by department — 4-panel breakdown ──────────
+        // Mirrors the Excel four-panel "Top Performers" layout: RESA | Groups | Visa | Ormoc
+        $departmentPerformers = [];
 
-            foreach ($rows as $row) {
-                $code = strtoupper(trim($row->agent_code));
-                $performerMap[$code] = ($performerMap[$code] ?? 0.0) + (float) $row->total;
+        foreach (self::SOURCES as $src) {
+            if (! Schema::hasTable($src['table'])) {
+                continue;
             }
+            $q = DB::table($src['table'])
+                ->whereNull("{$src['table']}.deleted_at")
+                ->whereYear("{$src['table']}.{$src['date_col']}", $year)
+                ->whereMonth("{$src['table']}.{$src['date_col']}", $month)
+                ->whereIn("{$src['table']}.{$src['status_col']}", $src['statuses'])
+                ->whereNotNull("{$src['table']}.agent_code")
+                ->where("{$src['table']}.agent_code", '!=', '')
+                ->selectRaw('agent_code, SUM(income) as total')
+                ->groupBy('agent_code');
+            if ($src['where']) {
+                $q->whereRaw($src['where']);
+            }
+
+            $map = [];
+            foreach ($q->get() as $row) {
+                $code        = strtoupper(trim($row->agent_code));
+                $map[$code]  = ($map[$code] ?? 0.0) + (float) $row->total;
+            }
+            arsort($map);
+            $departmentPerformers[$src['label']] = array_slice($map, 0, 5, true);
         }
 
-        arsort($performerMap);
-        $top = array_slice($performerMap, 0, 8, true);
+        // Flat top-performers chart (all departments merged) for compact dashboard widget
+        $allPerformers = [];
+        foreach ($departmentPerformers as $deptMap) {
+            foreach ($deptMap as $code => $total) {
+                $allPerformers[$code] = ($allPerformers[$code] ?? 0.0) + $total;
+            }
+        }
+        arsort($allPerformers);
+        $top = array_slice($allPerformers, 0, 8, true);
 
         if (! empty($top)) {
             $collector->addChartData('sales', 'Sales', 'top_performers', [
@@ -175,6 +259,19 @@ class ContributeDashboardSummary
                 'series' => [
                     ['name' => 'Income MTD', 'data' => array_map(fn ($v) => round($v, 2), array_values($top))],
                 ],
+            ]);
+        }
+
+        // Department-split performers — for the full Sales Summary page 4-panel view
+        if (! empty($departmentPerformers)) {
+            $collector->addChartData('sales', 'Sales', 'top_performers_by_department', [
+                'departments' => array_map(function ($deptMap) {
+                    return [
+                        'labels' => array_keys($deptMap),
+                        'data'   => array_map(fn ($v) => round($v, 2), array_values($deptMap)),
+                    ];
+                }, $departmentPerformers),
+                'department_names' => array_keys($departmentPerformers),
             ]);
         }
     }

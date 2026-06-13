@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { router, usePage, useForm } from '@inertiajs/react';
-import { CheckCircle, ThumbsUp, Package, CreditCard } from 'lucide-react';
+import { CheckCircle, ThumbsUp, Package, CreditCard, Inbox } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import DetailPanel, {PanelActions, PanelCol, PanelColRight, PanelColumns, PanelDivider, PanelField, PanelFieldRow, PanelSection} from '../../Components/Shared/DetailPanel';
 import Button from '../../Components/UI/Button';
@@ -11,10 +11,11 @@ import Textarea from '../../Components/UI/Textarea';
 import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
 
 const STATUS_VARIANT = {
-    pending: 'warning',
-    overdue: 'error',
-    paid:    'success',
-    filed:   'neutral',
+    pending:  'warning',
+    overdue:  'error',
+    paid:     'success',
+    received: 'info',
+    filed:    'neutral',
 };
 
 const APPROVAL_VARIANT = {
@@ -35,6 +36,7 @@ export function APContent({
     const [paymentModal, setPaymentModal] = useState(false);
     const [releaseModal, setReleaseModal] = useState(false);
     const [checkModal,   setCheckModal  ] = useState(false);
+    const [receiveModal, setReceiveModal] = useState(false);
     const [submitting,   setSubmitting  ] = useState(false);
 
     const paymentForm = useForm({
@@ -49,6 +51,9 @@ export function APContent({
     const releaseForm = useForm({
         payment_date:          payable.payment_date ?? '',
         deposit_slip_attached: payable.deposit_slip_attached ?? false,
+    });
+    const receiveForm = useForm({
+        date_received: payable.date_received ?? '',
     });
 
     function doApprove() {
@@ -82,6 +87,7 @@ export function APContent({
                         </PanelFieldRow>
                         <PanelField label="Mode of Payment"  value={paymentModes[payable.mode_of_payment] ?? payable.mode_of_payment} />
                         {payable.payment_date && <PanelField label="Payment Date" value={fmt(payable.payment_date)} />}
+                        {payable.date_received && <PanelField label="Date Received" value={fmt(payable.date_received)} />}
                         {payable.remarks && <PanelField label="Remarks" value={payable.remarks} />}
                     </PanelSection>
 
@@ -142,7 +148,7 @@ export function APContent({
                     <PanelDivider />
 
                     <PanelActions>
-                        {canWrite && !['paid', 'filed'].includes(payable.status) && (
+                        {canWrite && !['paid', 'received', 'filed'].includes(payable.status) && (
                             <Button variant="secondary" icon={CreditCard} onClick={() => setPaymentModal(true)} style={{ width: '100%' }}>
                                 Record Payment
                             </Button>
@@ -162,10 +168,24 @@ export function APContent({
                                 Release &amp; File
                             </Button>
                         )}
-                        {payable.approval_status === 'released' && (
-                            <div style={{ padding: 'var(--space-2)', background: 'color-mix(in srgb, var(--color-success) 10%, var(--color-card))', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
-                                <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-success)' }}>
-                                    Released &amp; Filed ✓
+                        {payable.approval_status === 'released' && payable.status !== 'received' && (
+                            <>
+                                <div style={{ padding: 'var(--space-2)', background: 'color-mix(in srgb, var(--color-success) 10%, var(--color-card))', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
+                                    <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-success)' }}>
+                                        Released &amp; Filed ✓
+                                    </span>
+                                </div>
+                                {canWrite && (
+                                    <Button variant="secondary" icon={Inbox} onClick={() => setReceiveModal(true)} style={{ width: '100%' }}>
+                                        Mark Received
+                                    </Button>
+                                )}
+                            </>
+                        )}
+                        {payable.status === 'received' && (
+                            <div style={{ padding: 'var(--space-2)', background: 'color-mix(in srgb, var(--color-info) 10%, var(--color-card))', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
+                                <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-info)' }}>
+                                    Received{payable.date_received ? ` — ${fmt(payable.date_received)}` : ''} ✓
                                 </span>
                             </div>
                         )}
@@ -240,6 +260,29 @@ export function APContent({
                             Deposit slip attached and filed
                         </span>
                     </label>
+                </div>
+            </Modal>
+
+            {/* Mark Received Modal */}
+            <Modal open={receiveModal} onClose={() => setReceiveModal(false)} title="Mark as Received"
+                footer={
+                    <>
+                        <Button variant="ghost" onClick={() => setReceiveModal(false)}>Cancel</Button>
+                        <Button variant="primary" loading={receiveForm.processing}
+                            onClick={() => receiveForm.post(route('ap.receive', payable.id), { onSuccess: () => setReceiveModal(false) })}>
+                            Confirm Received
+                        </Button>
+                    </>
+                }
+            >
+                <div className="flex flex-col gap-[var(--space-2)]">
+                    <p className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)', margin: 0 }}>
+                        Confirms the operator/embassy has acknowledged receipt of this CV. Used by Visa to update the linked application's "Date Received".
+                    </p>
+                    <Input label="Date Received" type="date"
+                        value={receiveForm.data.date_received}
+                        onChange={(e) => receiveForm.setData('date_received', e.target.value)}
+                    />
                 </div>
             </Modal>
         </>

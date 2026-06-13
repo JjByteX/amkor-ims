@@ -20,21 +20,26 @@ class ReservationBooking extends Model
         'date',
         'agent_code',
         'client_name',
+        'date_of_birth',            // Gap #17 — passenger DOB
         'contact_number',
         'email',
         'corporate_account',
         'contact_id',
         'destination',
+        'airline',                  // Gap #13 — carrier name
         'travel_date',
         'return_date',
         'pax_count',
         'service_type',
+        'transaction_type',         // Gap #16 — FIT / Corporate / Group / Blocking
         'particulars',
         'inclusions',
         'exclusions',
         'selling_price',
         'net_payable',
         'income',
+        'excess',                   // Gap #14 — overpayment / rounding column
+        'insurance_nett',           // Gap #15 — net insurance cost
         'mode_of_payment',
         'payment_due_date',
         'soa_number',
@@ -50,49 +55,67 @@ class ReservationBooking extends Model
         'confirmed_by',
         'remarks',
         'audit_remarks',
+        'source',                   // Gap #17 (cont.) — referral source
         'branch_id',
         'created_by',
         'updated_by',
     ];
 
     protected $casts = [
-        'date' => 'date',
-        'travel_date' => 'date',
-        'return_date' => 'date',
-        'payment_due_date' => 'date',
-        'selling_price' => 'decimal:2',
-        'net_payable' => 'decimal:2',
-        'income' => 'decimal:2',
-        'forwarded_to_accounting' => 'boolean',
+        'date'                       => 'date',
+        'date_of_birth'              => 'date',
+        'travel_date'                => 'date',
+        'return_date'                => 'date',
+        'payment_due_date'           => 'date',
+        'selling_price'              => 'decimal:2',
+        'net_payable'                => 'decimal:2',
+        'income'                     => 'decimal:2',
+        'excess'                     => 'decimal:2',
+        'insurance_nett'             => 'decimal:2',
+        'forwarded_to_accounting'    => 'boolean',
         'forwarded_to_accounting_at' => 'datetime',
-        'confirmed_at' => 'datetime',
+        'confirmed_at'               => 'datetime',
     ];
 
+    // ─── Constants ────────────────────────────────────────────────────────────
+
     public const STATUSES = [
-        'inquiry' => 'Inquiry',
-        'quoted' => 'Quoted',
+        'inquiry'   => 'Inquiry',
+        'quoted'    => 'Quoted',
         'confirmed' => 'Confirmed',
         'cancelled' => 'Cancelled',
     ];
 
     public const SERVICE_TYPES = [
-        'package' => 'Tour Package',
+        'package'   => 'Tour Package',
         'ticketing' => 'Ticketing',
-        'hotel' => 'Hotel',
-        'transfer' => 'Transfer',
+        'hotel'     => 'Hotel',
+        'transfer'  => 'Transfer',
         'insurance' => 'Travel Insurance',
-        'other' => 'Other',
+        'other'     => 'Other',
+    ];
+
+    // Transaction types as labelled in Excel (For Collection / Sales Ledger columns)
+    public const TRANSACTION_TYPES = [
+        'fit'       => 'FIT',
+        'corporate' => 'Corporate',
+        'group'     => 'Group',
+        'blocking'  => 'Blocking',
     ];
 
     public const PAYMENT_MODES = [
-        'cash' => 'Cash',
+        'cash'         => 'Cash',
         'bank_transfer' => 'Bank Transfer / Deposit',
-        'credit_card' => 'Credit Card',
-        'check' => 'Check',
-        'on_account' => 'On Account',
+        'credit_card'  => 'Credit Card',
+        'check'        => 'Check',
+        'on_account'   => 'On Account',
     ];
 
-    public const AGENT_CODES = ['RT', 'JHONA', 'JRT', 'MMT', 'RESA'];
+    // Fixed: was hardcoded to ['RT','JHONA','JRT','MMT','RESA'] — now matches seeder
+    // Source of truth remains the agent_codes table; this constant is for validation fallback only.
+    public const AGENT_CODES = ['RT', 'RP', 'EJ', 'KG', 'CM', 'JR', 'EB', 'JF', 'MMT', 'AL', 'KL', 'JMMT'];
+
+    // ─── Relationships ────────────────────────────────────────────────────────
 
     public function branch(): BelongsTo
     {
@@ -123,6 +146,8 @@ class ReservationBooking extends Model
     {
         return $this->belongsTo(User::class, 'forwarded_to_accounting_by');
     }
+
+    // ─── Scopes ───────────────────────────────────────────────────────────────
 
     public function scopeForBranch($query, ?int $branchId)
     {
@@ -162,15 +187,29 @@ class ReservationBooking extends Model
                 ->orWhere('client_name', 'ilike', "%{$term}%")
                 ->orWhere('corporate_account', 'ilike', "%{$term}%")
                 ->orWhere('destination', 'ilike', "%{$term}%")
+                ->orWhere('airline', 'ilike', "%{$term}%")
                 ->orWhere('agent_code', 'ilike', "%{$term}%")
                 ->orWhere('soa_number', 'ilike', "%{$term}%")
                 ->orWhere('po_number', 'ilike', "%{$term}%");
         });
     }
 
+    // ─── Helpers ──────────────────────────────────────────────────────────────
+
     public function recalculateIncome(): void
     {
         $this->income = max(0, (float) $this->selling_price - (float) $this->net_payable);
+    }
+
+    /**
+     * Recalculate excess (SP - NP - Income).
+     * Excess is the residual after income is already fixed by a rate agreement.
+     */
+    public function recalculateExcess(): void
+    {
+        $this->excess = (float) $this->selling_price
+            - (float) $this->net_payable
+            - (float) $this->income;
     }
 
     public static function nextNumber(): string

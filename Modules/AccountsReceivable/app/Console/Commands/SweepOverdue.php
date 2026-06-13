@@ -12,32 +12,30 @@ use Modules\Notifications\Services\NotificationDispatcher;
 /**
  * SweepOverdue
  *
- * Phase 4b — Nightly Overdue Sweep Command.
- * Scheduled daily at 01:00 by AccountsReceivableServiceProvider::configureSchedules().
+ * Nightly command that promotes past-due unpaid records to 'overdue' status.
+ * Scheduled daily at 01:00 by AccountsReceivableServiceProvider.
  *
- * Finds all records across the four finance tables (Collectibles, Payables,
- * Bills, IataPayments) where:
- *   - due_date < today
- *   - status is not 'paid', 'refunded', 'filed', or 'cancelled'
+ * IMPORTANT: days_outstanding is NO LONGER a stored column on collectibles or
+ * payables. It is a computed accessor (getDaysOutstandingAttribute) on both
+ * models — always accurate, never stale. This command no longer updates it.
+ * For sorting by "most overdue", order by due_date ASC in queries.
  *
- * Updates the stored status column to 'overdue' and recalculates days_outstanding
- * so that raw SQL reports, CSV exports, and any future tools that read the column
- * directly always reflect the correct state without a manual re-save.
+ * What this sweep still does:
+ *   - Promotes collectibles/payables/bills/IATA payments to 'overdue' when
+ *     due_date < today and the record is not already closed.
+ *   - Calls recalculate() on each record which recomputes balances and sets
+ *     the auto-status correctly.
+ *   - Notifies the disbursement_officer role when records flip to overdue.
  *
- * Collectible and Payable delegate to their own recalculate() method.
- * Bill and IataPayment have recalculate() added in Phase 4b.
- *
- * After sweeping, dispatches a single batched WorkflowNotification to the
- * disbursement_officer role listing how many records became overdue today.
- * This notification is only sent when at least one record flipped — no noise
- * on quiet nights.
+ * Collectible note: recalculate() will NOT override MANUAL_STATUSES
+ * (ibayad, blocking, query, cancelled) — those are intentionally preserved.
  */
 class SweepOverdue extends Command
 {
     protected $signature = 'finance:sweep-overdue
                             {--dry-run : Log what would change without saving}';
 
-    protected $description = 'Mark all past-due unpaid records as overdue and update days_outstanding.';
+    protected $description = 'Mark all past-due unpaid records as overdue.';
 
     public function __construct(private readonly NotificationDispatcher $dispatcher)
     {
@@ -57,10 +55,15 @@ class SweepOverdue extends Command
         ];
 
         // ── Collectibles ──────────────────────────────────────────────────
+        // Exclude MANUAL_STATUSES — recalculate() won't touch them anyway,
+        // but skipping them here avoids unnecessary DB reads.
         Collectible::query()
             ->where('due_date', '<', $today)
-            ->whereNotIn('status', ['paid', 'refunded', 'cancelled'])
-            ->where('status', '!=', 'overdue')
+            ->whereNotIn('status', array_merge(
+                Collectible::CLOSED_STATUSES,
+                Collectible::MANUAL_STATUSES,
+                ['overdue']
+            ))
             ->each(function (Collectible $record) use ($dryRun, &$counts) {
                 $this->line("  Collectible #{$record->id} — {$record->customer_name}");
 
@@ -75,8 +78,7 @@ class SweepOverdue extends Command
         // ── Payables ──────────────────────────────────────────────────────
         Payable::query()
             ->where('due_date', '<', $today)
-            ->whereNotIn('status', ['paid', 'filed', 'cancelled'])
-            ->where('status', '!=', 'overdue')
+            ->whereNotIn('status', ['paid', 'filed', 'overdue'])
             ->each(function (Payable $record) use ($dryRun, &$counts) {
                 $this->line("  Payable #{$record->id} — {$record->supplier_name}");
 
@@ -91,8 +93,7 @@ class SweepOverdue extends Command
         // ── Bills ─────────────────────────────────────────────────────────
         Bill::query()
             ->where('due_date', '<', $today)
-            ->whereNotIn('status', ['paid', 'cancelled'])
-            ->where('status', '!=', 'overdue')
+            ->whereNotIn('status', ['paid', 'cancelled', 'overdue'])
             ->each(function (Bill $record) use ($dryRun, &$counts) {
                 $this->line("  Bill #{$record->id} — {$record->name}");
 
@@ -107,8 +108,7 @@ class SweepOverdue extends Command
         // ── IATA Payments ─────────────────────────────────────────────────
         IataPayment::query()
             ->where('due_date', '<', $today)
-            ->whereNotIn('status', ['paid', 'cancelled'])
-            ->where('status', '!=', 'overdue')
+            ->whereNotIn('status', ['paid', 'cancelled', 'overdue'])
             ->each(function (IataPayment $record) use ($dryRun, &$counts) {
                 $this->line("  IATA Payment #{$record->id} — {$record->operator_name}");
 
@@ -140,7 +140,6 @@ class SweepOverdue extends Command
             $counts['iata_payments'],
         ));
 
-        // Notify disbursement officer (skipped on dry-run)
         if (! $dryRun) {
             $parts = [];
             if ($counts['collectibles']) {

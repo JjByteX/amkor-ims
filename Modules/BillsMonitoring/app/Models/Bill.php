@@ -148,26 +148,39 @@ class Bill extends Model
     }
 
     /**
-     * Recompute status and days_outstanding from due_date.
+     * Days outstanding — computed live from due_date. NOT stored in the DB.
+     * Replaces the dropped days_outstanding column.
+     * Returns 0 when not overdue or when status is paid.
+     * For sorting in queries, order by due_date ASC instead.
+     */
+    public function getDaysOutstandingAttribute(): int
+    {
+        if (
+            ! $this->due_date
+            || $this->status === 'paid'
+            || ! $this->due_date->isPast()
+        ) {
+            return 0;
+        }
+
+        return (int) $this->due_date->diffInDays(now());
+    }
+
+    /**
+     * Recompute auto-status from due_date.
+     * days_outstanding is no longer stored — it is a computed accessor.
      * Call after any payment update or from the nightly sweep command.
-     *
-     * Phase 4b — added to match the pattern on Collectible and Payable so the
-     * SweepOverdue command can call it uniformly across all four finance models.
      */
     public function recalculate(): void
     {
         if ($this->status === 'paid') {
-            $this->days_outstanding = 0;
-
             return;
         }
 
         if ($this->due_date && $this->due_date->isPast()) {
-            $this->status           = 'overdue';
-            $this->days_outstanding = (int) $this->due_date->diffInDays(now());
+            $this->status = 'overdue';
         } else {
-            $this->status           = 'pending';
-            $this->days_outstanding = 0;
+            $this->status = 'pending';
         }
     }
 

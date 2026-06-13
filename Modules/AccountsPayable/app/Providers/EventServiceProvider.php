@@ -4,6 +4,8 @@ namespace Modules\AccountsPayable\Providers;
 
 use App\Events\DashboardSummaryRequested;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
+use Modules\AccountsPayable\Events\PayableReceived;
+use Modules\AccountsPayable\Events\PayableReleased;
 use Modules\AccountsPayable\Listeners\ContributeDashboardSummary;
 use Modules\AccountsPayable\Listeners\CreatePayableFromVisaPaymentRequest;
 use Modules\Visa\Events\VisaPaymentRequested;
@@ -24,6 +26,14 @@ class EventServiceProvider extends ServiceProvider
         VisaPaymentRequested::class => [
             CreatePayableFromVisaPaymentRequest::class,
         ],
+
+        // Phase 7 — PayableReleased / PayableReceived are consumed by the
+        // Visa module to write CV number / date requested / date received
+        // back onto the originating visa application. No local listener
+        // needed here. Registered in
+        // Modules/Visa/app/Providers/EventServiceProvider.php.
+        PayableReleased::class => [],
+        PayableReceived::class => [],
     ];
 
     /**

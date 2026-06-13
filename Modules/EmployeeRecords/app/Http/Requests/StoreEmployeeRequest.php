@@ -69,6 +69,21 @@ class StoreEmployeeRequest extends FormRequest
             'data_privacy_consent' => ['nullable', 'boolean'],
             'data_privacy_consent_date' => ['nullable', 'date'],
 
+            // Agent
+            'is_agent'   => ['nullable', 'boolean'],
+            'agent_code' => [
+                'nullable',
+                'string',
+                'max:5',
+                'regex:/^[A-Z0-9]+$/',
+                "unique:employees,agent_code,{$employeeId}",
+                function ($attribute, $value, $fail) {
+                    if ($value && in_array(strtoupper($value), \Modules\EmployeeRecords\Models\Employee::RESERVED_AGENT_CODES, true)) {
+                        $fail("'{$value}' is a reserved code and cannot be assigned to an individual.");
+                    }
+                },
+            ],
+
             // Other
             'user_id' => ['nullable', 'integer', 'exists:users,id'],
             'remarks' => ['nullable', 'string'],
@@ -84,6 +99,9 @@ class StoreEmployeeRequest extends FormRequest
             'employment_status.required' => 'Employment status is required.',
             'date_hired.required' => 'Date hired is required.',
             'employee_code.unique' => 'This employee code is already in use.',
+            'agent_code.unique'    => 'This agent code is already assigned to another employee.',
+            'agent_code.max'       => 'Agent code must be 5 characters or fewer.',
+            'agent_code.regex'     => 'Agent code may only contain uppercase letters and numbers.',
         ];
     }
 }

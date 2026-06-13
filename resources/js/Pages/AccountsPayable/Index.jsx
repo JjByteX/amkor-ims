@@ -19,10 +19,11 @@ import ConfirmDialog from '../../Components/Shared/ConfirmDialog';
 import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
 
 const STATUS_VARIANT = {
-    pending: 'warning',
-    overdue: 'error',
-    paid:    'success',
-    filed:   'neutral',
+    pending:  'warning',
+    overdue:  'error',
+    paid:     'success',
+    received: 'info',
+    filed:    'neutral',
 };
 
 const APPROVAL_VARIANT = {

@@ -28,6 +28,10 @@ class StoreCollectibleRequest extends FormRequest
             'payment_received_php' => ['nullable', 'numeric', 'min:0'],
             'payment_received_usd' => ['nullable', 'numeric', 'min:0'],
             'due_date' => ['nullable', 'date'],
+            // Only the four manual flags may be set from the form — the
+            // auto-managed statuses (pending/current/overdue/paid) are derived
+            // server-side by Collectible::recalculate().
+            'status' => ['nullable', 'in:'.implode(',', \Modules\AccountsReceivable\Models\Collectible::MANUAL_STATUSES)],
             'or_number' => ['nullable', 'string', 'max:100'],
             'ar_number' => ['nullable', 'string', 'max:100'],
             'si_number' => ['nullable', 'string', 'max:100'],
