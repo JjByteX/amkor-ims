@@ -6,15 +6,20 @@ use Modules\AccountsPayable\Models\Payable;
 use Modules\Visa\Events\VisaPaymentRequested;
 
 /**
- * Phase 3 — Auto-create an AP Payable when a visa payment request is sent.
+ * Auto-create an AP Payable when a visa payment request is sent.
  *
  * Trigger : VisaPaymentRequested (fired by VisaController::sendPaymentRequest)
  * Result  : A pending Payable record pre-filled with the visa application's
- *           operator name, amount, due date, and a back-reference to the
- *           visa application via `acr` (used as a cross-module reference key).
+ *           supplier name, amount, due date, and a back-reference to the
+ *           visa application via `acr` and `visa_application_id`.
  *
- * Idempotency: the listener checks for an existing payable with the same
- * acr value before creating, so replaying the event is safe.
+ * Supplier name resolution (priority order):
+ *   1. embassy_name  — the actual embassy/consulate being paid (most specific)
+ *   2. agency        — the travel agency (intermediate)
+ *   3. customer_name — last resort when neither is set
+ *
+ * Idempotency: checks for an existing payable with the same `acr` value
+ * before creating, so replaying the event is safe.
  */
 class CreatePayableFromVisaPaymentRequest
 {
@@ -30,29 +35,28 @@ class CreatePayableFromVisaPaymentRequest
             return;
         }
 
-        // Derive the supplier name from the agency if present,
-        // falling back to the customer name.
-        $supplierName = filled($visa->agency)
-            ? $visa->agency
-            : $visa->customer_name;
+        // Supplier name: embassy first (most accurate), then agency, then customer
+        $supplierName = filled($visa->embassy_name)
+            ? $visa->embassy_name
+            : (filled($visa->agency) ? $visa->agency : $visa->customer_name);
 
         Payable::create([
-            'supplier_name'        => $supplierName,
-            'invoice_date'         => $visa->date,
-            'invoice_no'           => $visa->si_number,
-            'currency'             => 'PHP',
-            'invoice_amount_php'   => $visa->net_payable ?? 0,
-            'balance_php'          => $visa->net_payable ?? 0,
-            'due_date'             => $visa->payment_due_date,
-            'status'               => 'pending',
-            'approval_status'      => 'pending',
-            'acr'                  => $acr,         // human-readable back-reference
-            'visa_application_id'  => $visa->id,    // relational FK (Phase 3 migration)
-            'remarks'              => vsprintf(
+            'supplier_name'       => $supplierName,
+            'invoice_date'        => $visa->date,
+            'invoice_no'          => $visa->si_number,
+            'currency'            => 'PHP',
+            'invoice_amount_php'  => $visa->net_payable ?? 0,
+            // balance_php is NOT set here — recalculate() will derive it
+            'due_date'            => $visa->payment_due_date,
+            'status'              => 'pending',
+            'approval_status'     => 'pending',
+            'acr'                 => $acr,
+            'visa_application_id' => $visa->id,
+            'remarks'             => vsprintf(
                 'Auto-created from Visa Application #%d — %s (%s)',
                 [$visa->id, $visa->customer_name, $visa->visa_type]
             ),
-            'branch_id'            => $visa->branch_id,
+            'branch_id'           => $visa->branch_id,
         ]);
     }
 }

@@ -139,20 +139,18 @@ class AccountsReceivableController extends Controller
         $data['updated_by'] = $request->user()->id;
         $data['branch_id'] = $request->user()->branch_id;
 
-        // Compute balances before saving
-        $data['balance_php'] = max(0, (float) ($data['collectible_amount_php'] ?? 0) - (float) ($data['payment_received_php'] ?? 0));
-        $data['balance_usd'] = max(0, (float) ($data['collectible_amount_usd'] ?? 0) - (float) ($data['payment_received_usd'] ?? 0));
-
-        // Auto-status
-        if ($data['balance_php'] <= 0 && $data['balance_usd'] <= 0) {
-            $data['status'] = 'paid';
-        } elseif (! empty($data['due_date']) && now()->greaterThan($data['due_date'])) {
-            $data['status'] = 'overdue';
-        } else {
-            $data['status'] = 'current';
+        // Only the four manual flags (ibayad, blocking, query, cancelled) may be
+        // set from the form. Auto-statuses (pending/current/overdue/paid) are
+        // derived below by recalculate() and must never be taken from input.
+        if (! in_array($data['status'] ?? null, Collectible::MANUAL_STATUSES, true)) {
+            unset($data['status']);
         }
 
-        $collectible = Collectible::create($data);
+        // balance_php/balance_usd are NOT fillable — recalculate() computes them
+        // and also derives the auto-status (unless a manual flag was set above).
+        $collectible = new Collectible($data);
+        $collectible->recalculate();
+        $collectible->save();
 
         // Notify COO and GSM that a new collectible is pending their approval
         CollectibleSubmittedForApproval::dispatch($collectible);
@@ -232,20 +230,32 @@ class AccountsReceivableController extends Controller
         $data = $request->validated();
         $data['updated_by'] = $request->user()->id;
 
-        // Recompute balances
-        $data['balance_php'] = max(0, (float) ($data['collectible_amount_php'] ?? $ar->collectible_amount_php) - (float) ($data['payment_received_php'] ?? $ar->payment_received_php));
-        $data['balance_usd'] = max(0, (float) ($data['collectible_amount_usd'] ?? $ar->collectible_amount_usd) - (float) ($data['payment_received_usd'] ?? $ar->payment_received_usd));
-
-        $dueDateStr = $data['due_date'] ?? $ar->due_date?->toDateString();
-        if ($data['balance_php'] <= 0 && $data['balance_usd'] <= 0) {
-            $data['status'] = 'paid';
-        } elseif ($dueDateStr && now()->greaterThan($dueDateStr)) {
-            $data['status'] = 'overdue';
-        } else {
-            $data['status'] = 'current';
+        // Once a Collectible is linked to a source record (Reservation, Visa,
+        // or Ormoc booking), customer/account/particulars/travel info is owned
+        // by that source and must not be re-typed here. Only terms, due_date,
+        // remarks, payment, and reference numbers remain editable.
+        if ($ar->source_type && $ar->source_id) {
+            unset(
+                $data['customer_name'],
+                $data['corporate_account'],
+                $data['particulars'],
+                $data['travel_date'],
+                $data['agent_code'],
+            );
         }
 
-        $ar->update($data);
+        // Only the four manual flags (ibayad, blocking, query, cancelled) may be
+        // set from the form. Otherwise leave the existing status untouched and
+        // let recalculate() derive/preserve it.
+        if (! in_array($data['status'] ?? null, Collectible::MANUAL_STATUSES, true)) {
+            unset($data['status']);
+        }
+
+        // balance_php/balance_usd are NOT fillable — recalculate() computes them
+        // and also derives the auto-status (unless a manual flag was set above).
+        $ar->fill($data);
+        $ar->recalculate();
+        $ar->save();
 
         return redirect()
             ->route('ar.show', $ar)

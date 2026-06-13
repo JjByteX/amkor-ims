@@ -129,12 +129,14 @@ class EmployeeRecordsController extends Controller
         $this->requireManageAccess($request);
 
         return Inertia::render('EmployeeRecords/Form', [
-            'employee' => null,
-            'statuses' => Employee::EMPLOYMENT_STATUSES,
-            'departments' => Employee::DEPARTMENTS,
-            'genders' => Employee::GENDERS,
-            'civilStatuses' => Employee::CIVIL_STATUSES,
-            'branches' => Branch::orderBy('name')->get(['id', 'name', 'code']),
+            'employee'        => null,
+            'statuses'        => Employee::EMPLOYMENT_STATUSES,
+            'departments'     => Employee::DEPARTMENTS,
+            'genders'         => Employee::GENDERS,
+            'civilStatuses'   => Employee::CIVIL_STATUSES,
+            'branches'        => Branch::orderBy('name')->get(['id', 'name', 'code']),
+            'agentCodeLocked' => false,
+            'reservedCodes'   => Employee::RESERVED_AGENT_CODES,
         ]);
     }
 
@@ -147,6 +149,13 @@ class EmployeeRecordsController extends Controller
         // Auto-generate employee code if blank
         if (empty($data['employee_code'])) {
             $data['employee_code'] = 'AMK-'.str_pad(Employee::withTrashed()->count() + 1, 4, '0', STR_PAD_LEFT);
+        }
+
+        // Normalise agent_code to uppercase; clear if is_agent was toggled off
+        if (! empty($data['is_agent']) && ! empty($data['agent_code'])) {
+            $data['agent_code'] = strtoupper($data['agent_code']);
+        } else {
+            $data['agent_code'] = null;
         }
 
         $employee = Employee::create($data);
@@ -167,14 +176,17 @@ class EmployeeRecordsController extends Controller
 
         return Inertia::render('EmployeeRecords/Form', [
             'employee' => array_merge($employee->toArray(), [
-                'tenure' => $employee->tenure,
+                'tenure'        => $employee->tenure,
                 'sil_remaining' => $employee->sil_remaining,
             ]),
-            'statuses' => Employee::EMPLOYMENT_STATUSES,
-            'departments' => Employee::DEPARTMENTS,
-            'genders' => Employee::GENDERS,
-            'civilStatuses' => Employee::CIVIL_STATUSES,
-            'branches' => Branch::orderBy('name')->get(['id', 'name', 'code']),
+            'statuses'        => Employee::EMPLOYMENT_STATUSES,
+            'departments'     => Employee::DEPARTMENTS,
+            'genders'         => Employee::GENDERS,
+            'civilStatuses'   => Employee::CIVIL_STATUSES,
+            'branches'        => Branch::orderBy('name')->get(['id', 'name', 'code']),
+            // Agent code is locked once it has live transactions attached
+            'agentCodeLocked' => $employee->is_agent && $employee->hasAgentTransactions(),
+            'reservedCodes'   => Employee::RESERVED_AGENT_CODES,
         ]);
     }
 
@@ -186,6 +198,18 @@ class EmployeeRecordsController extends Controller
         // Auto set data_privacy_consent_date
         if (! empty($data['data_privacy_consent']) && ! $employee->data_privacy_consent_date) {
             $data['data_privacy_consent_date'] = now()->toDateString();
+        }
+
+        // Normalise agent_code; protect codes that are locked by live transactions
+        if (! empty($data['is_agent']) && ! empty($data['agent_code'])) {
+            // If code is locked, preserve the existing code regardless of input
+            if ($employee->is_agent && $employee->hasAgentTransactions()) {
+                $data['agent_code'] = $employee->agent_code;
+            } else {
+                $data['agent_code'] = strtoupper($data['agent_code']);
+            }
+        } else {
+            $data['agent_code'] = null;
         }
 
         $employee->update($data);

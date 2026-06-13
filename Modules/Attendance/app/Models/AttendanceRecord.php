@@ -41,46 +41,92 @@ class AttendanceRecord extends Model
     ];
 
     protected $casts = [
-        'work_date' => 'date',
-        'time_in_at' => 'datetime',
+        'work_date'   => 'date',
+        'time_in_at'  => 'datetime',
         'time_out_at' => 'datetime',
         'hr_override' => 'boolean',
     ];
 
     // ── Constants ─────────────────────────────────────────────────────────────
 
-    public const STANDARD_START = '08:00:00';   // 8:00 AM — base for late calculation
+    public const STANDARD_START = '08:00:00';
+    public const STANDARD_END   = '17:00:00';
+    public const STANDARD_HOURS = 8;
 
-    public const STANDARD_END = '17:00:00';   // 5:00 PM — base for undertime calculation
-
-    public const STANDARD_HOURS = 8;            // hours per workday
-
+    /**
+     * Status codes — updated to match the Excel timekeeping legend exactly.
+     *
+     * Excel legend codes:
+     *  P     → present
+     *  HD    → half_day
+     *  U     → undertime       (present but left early; separate from undertime minutes)
+     *  L     → late            (present but arrived late; separate from late minutes)
+     *  A     → absent
+     *  RD    → rest_day
+     *  RH    → regular_holiday
+     *  SNH   → special_non_working_holiday
+     *  P-RH  → present_regular_holiday   (worked on a regular holiday)
+     *  P-SH  → present_special_holiday   (worked on a special non-working holiday)
+     *  SIL   → on_sil                    (on Service Incentive Leave)
+     *  BL    → birthday_leave
+     */
     public const STATUSES = [
-        'present' => 'Present',
-        'absent' => 'Absent',
-        'half_day' => 'Half Day',
-        'on_leave' => 'On Leave',
-        'holiday' => 'Holiday',
-        'rest_day' => 'Rest Day',
+        'present'                  => 'Present (P)',
+        'late'                     => 'Late (L)',
+        'undertime'                => 'Undertime (U)',
+        'half_day'                 => 'Half Day (HD)',
+        'absent'                   => 'Absent (A)',
+        'rest_day'                 => 'Rest Day (RD)',
+        'regular_holiday'          => 'Regular Holiday (RH)',
+        'special_non_working_holiday' => 'Special Non-Working Holiday (SNH)',
+        'present_regular_holiday'  => 'Present on Regular Holiday (P-RH)',
+        'present_special_holiday'  => 'Present on Special Holiday (P-SH)',
+        'on_sil'                   => 'Service Incentive Leave (SIL)',
+        'birthday_leave'           => 'Birthday Leave (BL)',
+        'on_leave'                 => 'On Leave',        // general leave bucket
+    ];
+
+    // Excel code → status key mapping (for import / grid parsing)
+    public const EXCEL_CODE_MAP = [
+        'P'    => 'present',
+        'HD'   => 'half_day',
+        'U'    => 'undertime',
+        'L'    => 'late',
+        'A'    => 'absent',
+        'RD'   => 'rest_day',
+        'RH'   => 'regular_holiday',
+        'SNH'  => 'special_non_working_holiday',
+        'P-RH' => 'present_regular_holiday',
+        'P-SH' => 'present_special_holiday',
+        'SIL'  => 'on_sil',
+        'BL'   => 'birthday_leave',
     ];
 
     public const LEAVE_TYPES = [
-        'SIL' => 'Service Incentive Leave',
-        'VL' => 'Vacation Leave',
-        'SL' => 'Sick Leave',
-        'EL' => 'Emergency Leave',
+        'SIL'              => 'Service Incentive Leave',
+        'VL'               => 'Vacation Leave',
+        'SL'               => 'Sick Leave',
+        'EL'               => 'Emergency Leave',
+        'BL'               => 'Birthday Leave',
         'official_business' => 'Official Business',
-        'offsetting' => 'Offsetting',
-        'other' => 'Other',
+        'offsetting'       => 'Offsetting',
+        'other'            => 'Other',
     ];
 
     public const STATUS_COLORS = [
-        'present' => 'success',
-        'absent' => 'error',
-        'half_day' => 'warning',
-        'on_leave' => 'info',
-        'holiday' => 'neutral',
-        'rest_day' => 'neutral',
+        'present'                     => 'success',
+        'late'                        => 'warning',
+        'undertime'                   => 'warning',
+        'half_day'                    => 'warning',
+        'absent'                      => 'error',
+        'rest_day'                    => 'neutral',
+        'regular_holiday'             => 'neutral',
+        'special_non_working_holiday' => 'neutral',
+        'present_regular_holiday'     => 'success',
+        'present_special_holiday'     => 'success',
+        'on_sil'                      => 'info',
+        'birthday_leave'              => 'info',
+        'on_leave'                    => 'info',
     ];
 
     // ── Relationships ─────────────────────────────────────────────────────────
@@ -102,7 +148,6 @@ class AttendanceRecord extends Model
 
     // ── Accessors ─────────────────────────────────────────────────────────────
 
-    /** Human-readable hours worked string */
     public function getHoursWorkedAttribute(): string
     {
         if (! $this->minutes_worked) {
@@ -114,50 +159,55 @@ class AttendanceRecord extends Model
         return $m > 0 ? "{$h}h {$m}m" : "{$h}h";
     }
 
-    /** Whether the employee has clocked in but not yet out today */
     public function getIsClockedInAttribute(): bool
     {
         return $this->time_in_at !== null && $this->time_out_at === null;
     }
 
+    /**
+     * Returns the Excel legend code for this record's status.
+     */
+    public function getExcelCodeAttribute(): string
+    {
+        return array_search($this->status, self::EXCEL_CODE_MAP) ?: $this->status;
+    }
+
     // ── Computed helpers ──────────────────────────────────────────────────────
 
-    /**
-     * Compute minutes late given a time_in string (H:i:s).
-     * Returns 0 if on time or early.
-     */
     public static function computeLateMinutes(string $timeIn): int
     {
         $standard = Carbon::today()->setTimeFromTimeString(self::STANDARD_START);
-        $actual = Carbon::today()->setTimeFromTimeString($timeIn);
+        $actual   = Carbon::today()->setTimeFromTimeString($timeIn);
 
         return max(0, (int) $standard->diffInMinutes($actual, false));
     }
 
-    /**
-     * Compute minutes undertime given a time_out string (H:i:s).
-     * Returns 0 if left on time or late.
-     */
     public static function computeUndertimeMinutes(string $timeOut): int
     {
         $standard = Carbon::today()->setTimeFromTimeString(self::STANDARD_END);
-        $actual = Carbon::today()->setTimeFromTimeString($timeOut);
+        $actual   = Carbon::today()->setTimeFromTimeString($timeOut);
 
         return max(0, (int) $actual->diffInMinutes($standard, false));
     }
 
-    /**
-     * Compute total minutes worked between two H:i:s strings.
-     */
     public static function computeMinutesWorked(string $timeIn, string $timeOut): int
     {
-        $in = Carbon::today()->setTimeFromTimeString($timeIn);
+        $in  = Carbon::today()->setTimeFromTimeString($timeIn);
         $out = Carbon::today()->setTimeFromTimeString($timeOut);
         if ($out->lessThanOrEqualTo($in)) {
             return 0;
         }
 
         return (int) $in->diffInMinutes($out);
+    }
+
+    /**
+     * Resolve an Excel code (e.g. "P-RH") to a status key.
+     * Returns null if the code is not recognised.
+     */
+    public static function resolveExcelCode(string $code): ?string
+    {
+        return self::EXCEL_CODE_MAP[strtoupper(trim($code))] ?? null;
     }
 
     // ── Scopes ────────────────────────────────────────────────────────────────
