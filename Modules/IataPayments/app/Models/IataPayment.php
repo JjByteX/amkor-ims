@@ -136,6 +136,49 @@ class IataPayment extends Model
         return sprintf('IATA-%d-%05d', $year, $last + 1);
     }
 
+    /**
+     * Live status derived purely from due_date — never stale.
+     * Use this accessor when displaying status in the UI instead of the raw
+     * stored `status` column. The stored column is updated on save and kept
+     * clean by the nightly sweep, but this accessor is always correct.
+     */
+    public function getLiveStatusAttribute(): string
+    {
+        if ($this->status === 'paid') {
+            return 'paid';
+        }
+
+        if ($this->due_date && $this->due_date->isPast()) {
+            return 'overdue';
+        }
+
+        return 'pending';
+    }
+
+    /**
+     * Recompute status and days_outstanding from due_date.
+     * Call after any payment update or from the nightly sweep command.
+     *
+     * Phase 4b — added to match the pattern on Collectible and Payable so the
+     * SweepOverdue command can call it uniformly across all four finance models.
+     */
+    public function recalculate(): void
+    {
+        if ($this->status === 'paid') {
+            $this->days_outstanding = 0;
+
+            return;
+        }
+
+        if ($this->due_date && $this->due_date->isPast()) {
+            $this->status           = 'overdue';
+            $this->days_outstanding = (int) $this->due_date->diffInDays(now());
+        } else {
+            $this->status           = 'pending';
+            $this->days_outstanding = 0;
+        }
+    }
+
     // ─── Scopes ─────────────────────────────────────────────────────────────
 
     public function scopeSearch($query, ?string $term)
@@ -163,5 +206,16 @@ class IataPayment extends Model
     public function scopeForMonth($query, int $year, int $month)
     {
         return $query->whereYear('due_date', $year)->whereMonth('due_date', $month);
+    }
+
+    /**
+     * Records where due_date has passed and the payment is not yet paid.
+     * Use this for counts so overdue figures are always computed from the
+     * actual date rather than the stored status column.
+     */
+    public function scopeEffectivelyOverdue($query)
+    {
+        return $query->where('due_date', '<', now()->toDateString())
+            ->where('status', '!=', 'paid');
     }
 }

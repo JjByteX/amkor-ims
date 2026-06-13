@@ -29,6 +29,7 @@ Route::middleware(['auth'])->group(function () {
     Route::put('bir/transactions/{birTransaction}', [BirComplianceController::class, 'update'])->name('bir.update');
     Route::delete('bir/transactions/{birTransaction}', [BirComplianceController::class, 'destroy'])->name('bir.destroy');
 
-    // Monthly report export (full Excel in Phase 12)
-    Route::post('bir/export-monthly', [BirComplianceController::class, 'exportMonthly'])->name('bir.export-monthly');
+    // Monthly report export — GET so the browser can stream the file directly
+    // (POST via window.location is impossible; Inertia router.post intercepts binary responses)
+    Route::get('bir/export-monthly', [BirComplianceController::class, 'exportMonthly'])->name('bir.export-monthly');
 });

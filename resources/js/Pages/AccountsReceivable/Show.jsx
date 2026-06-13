@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { router, usePage, useForm } from '@inertiajs/react';
-import { Trash2, CheckCircle2, DollarSign, FileText, RotateCcw, Send } from 'lucide-react';
+import { Trash2, CheckCircle2, DollarSign, FileText, RotateCcw, Send, Clock, ArrowRight } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import DetailPanel, {PanelActions, PanelCol, PanelColRight, PanelColumns, PanelDivider, PanelField, PanelFieldRow, PanelFullRow, PanelMeta, PanelMetaItem, PanelSection} from '../../Components/Shared/DetailPanel';
 import Button from '../../Components/UI/Button';
@@ -14,10 +14,9 @@ import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
 const STATUS_VARIANT    = { current: 'info', overdue: 'error', paid: 'success' };
 const APPROVAL_VARIANT  = { pending: 'warning', coo_approved: 'info', gsm_approved: 'info', approved: 'success', rejected: 'error' };
 
-export function ARContent({ collectible, departments, statuses, approvalStatuses, canWrite, canApprove, canAudit }) {
+export function ARContent({ collectible, departments, statuses, approvalStatuses, canWrite, canApprove, canApproveCoo, canApproveGsm, canAudit, hydrating = false, onApprove }) {
 
     const { url } = usePage();
-    const isPanel = url?.includes('panel=1');
 
     const [deleteDialog, setDeleteDialog] = useState(false);
     const [deleting,     setDeleting    ] = useState(false);
@@ -50,12 +49,43 @@ export function ARContent({ collectible, departments, statuses, approvalStatuses
 
     const fmt   = (d) => d ? new Date(d).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
     const fmtDt = (d) => d ? new Date(d).toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : null;
-    const isApproved = collectible.approval_status === 'approved';
+    const isApproved     = collectible.approval_status === 'approved';
+    const needsApproval  = !isApproved;
+    const dueDatePast    = collectible.due_date && new Date(collectible.due_date) < new Date();
+
+    // ── Approval step state helpers ────────────────────────────────────────────
+    const cooApproved = !!collectible.approved_by_coo_at;
+    const gsmApproved = !!collectible.approved_by_gsm_at;
+
+    const stepStyle = (approved, isNext) => ({
+        flex: 1,
+        padding: '10px 14px',
+        borderRadius: 'var(--border-radius-md)',
+        border: approved
+            ? '0.5px solid var(--color-border-success)'
+            : isNext
+                ? '0.5px solid var(--color-border-warning)'
+                : '0.5px solid var(--color-border-tertiary)',
+        background: approved
+            ? 'var(--color-background-success)'
+            : isNext
+                ? 'var(--color-background-warning)'
+                : 'var(--color-background-secondary)',
+    });
+
+    const stepRoleStyle = {
+        fontSize: 11,
+        fontWeight: 600,
+        textTransform: 'uppercase',
+        letterSpacing: '0.06em',
+        marginBottom: 4,
+        color: 'var(--color-text-tertiary)',
+    };
 
     const content = (
         <>
             <PanelColumns>
-                {/* LEFT — amounts + approval trail */}
+                {/* LEFT — amounts */}
                 <PanelCol>
                     <PanelSection title="Amounts">
                         <PanelFieldRow>
@@ -79,66 +109,23 @@ export function ARContent({ collectible, departments, statuses, approvalStatuses
                         } />
                     </PanelSection>
 
-                    <PanelDivider />
-
-                    <PanelSection>
-                        <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 'var(--space-2)' }}>
-                            <div className="flex flex-col gap-2">
-                                <Badge variant={collectible.approved_by_coo_at ? 'success' : 'warning'}>
-                                    COO {collectible.approved_by_coo_at ? 'Approved' : 'Pending'}
-                                </Badge>
-                                {collectible.approved_by_coo_at && (
-                                    <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>
-                                        {collectible.coo_approver?.name ?? 'COO'} · {fmtDt(collectible.approved_by_coo_at)}
-                                    </span>
-                                )}
-                                {canApprove && !collectible.approved_by_coo_at && (
-                                    <Button variant="secondary" size="sm" icon={CheckCircle2}
-                                        onClick={() => router.post(route('ar.approve-coo', collectible.id))}>
-                                        Approve as COO
-                                    </Button>
-                                )}
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <Badge variant={collectible.approved_by_gsm_at ? 'success' : 'warning'}>
-                                    GSM {collectible.approved_by_gsm_at ? 'Approved' : 'Pending'}
-                                </Badge>
-                                {collectible.approved_by_gsm_at && (
-                                    <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>
-                                        {collectible.gsm_approver?.name ?? 'GSM'} · {fmtDt(collectible.approved_by_gsm_at)}
-                                    </span>
-                                )}
-                                {canApprove && !collectible.approved_by_gsm_at && (
-                                    <Button variant="secondary" size="sm" icon={CheckCircle2}
-                                        onClick={() => router.post(route('ar.approve-gsm', collectible.id))}>
-                                        Approve as GSM
-                                    </Button>
-                                )}
-                            </div>
-                        </div>
-                        {collectible.particulars && (
-                            <>
-                                <PanelDivider />
-                                <p className="font-body" style={{ fontSize: 'var(--font-size-small)', whiteSpace: 'pre-wrap', margin: 0 }}>
-                                    {collectible.particulars}
-                                </p>
-                            </>
-                        )}
-                    </PanelSection>
-
                     <PanelMeta>
                         <PanelMetaItem label="Created by" value={`${collectible.created_by?.name ?? '—'} · ${fmtDt(collectible.created_at)}`} />
                     </PanelMeta>
                 </PanelCol>
 
-                {/* RIGHT — transaction + actions */}
+                {/* RIGHT — transaction details */}
                 <PanelColRight>
                     <PanelSection title="Transaction">
                         <PanelField label="Agent Code"        value={collectible.agent_code} highlight />
                         <PanelField label="Corporate Account" value={collectible.corporate_account} />
                         <PanelFieldRow>
                             <PanelField label="Travel Date" value={fmt(collectible.travel_date)} />
-                            <PanelField label="Due Date"    value={fmt(collectible.due_date)} />
+                            <PanelField label="Due Date" value={
+                                <span style={{ color: dueDatePast && !isApproved ? 'var(--color-error)' : undefined }}>
+                                    {fmt(collectible.due_date) ?? '—'}
+                                </span>
+                            } />
                         </PanelFieldRow>
                         <PanelField label="Terms" value={collectible.terms} />
                     </PanelSection>
@@ -147,13 +134,15 @@ export function ARContent({ collectible, departments, statuses, approvalStatuses
 
                     <PanelSection>
                         <PanelFieldRow>
+                            <PanelField label="SI #" value={collectible.si_number} mono />
                             <PanelField label="OR #" value={collectible.or_number} mono />
-                            <PanelField label="AR #" value={collectible.ar_number} mono />
                         </PanelFieldRow>
-                        <PanelField label="SI #" value={collectible.si_number} mono />
-                        {collectible.remarks && <PanelField label="Remarks" value={collectible.remarks} />}
+                        <PanelField label="AR #" value={collectible.ar_number} mono />
+                        {collectible.particulars && <PanelField label="Particulars" value={collectible.particulars} />}
+                        {collectible.remarks     && <PanelField label="Remarks"     value={collectible.remarks} />}
                     </PanelSection>
 
+                    {/* Post-approval actions — only shown once fully approved */}
                     {isApproved && (
                         <>
                             <PanelDivider />
@@ -203,6 +192,68 @@ export function ARContent({ collectible, departments, statuses, approvalStatuses
                     )}
                 </PanelColRight>
             </PanelColumns>
+
+            {/* ── Approval zone — full width, own section ── */}
+            <PanelFullRow title={isApproved ? 'Approval' : 'Approval required'}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: (canApproveCoo || canApproveGsm) && !hydrating ? 14 : 0 }}>
+                    {/* COO step */}
+                    <div style={stepStyle(cooApproved, !cooApproved)}>
+                        <p style={stepRoleStyle}>COO</p>
+                        {cooApproved ? (
+                            <>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--color-success)', fontSize: 13, fontWeight: 500 }}>
+                                    <CheckCircle2 size={14} /> Approved
+                                </div>
+                                <p style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 3 }}>
+                                    {collectible.coo_approver?.name ?? 'COO'} · {fmtDt(collectible.approved_by_coo_at)}
+                                </p>
+                            </>
+                        ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--color-warning)', fontSize: 13, fontWeight: 500 }}>
+                                <Clock size={13} /> Pending
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Connector arrow */}
+                    <ArrowRight size={14} style={{ flexShrink: 0, color: 'var(--color-text-muted)' }} />
+
+                    {/* GSM step */}
+                    <div style={stepStyle(gsmApproved, cooApproved && !gsmApproved)}>
+                        <p style={stepRoleStyle}>GSM</p>
+                        {gsmApproved ? (
+                            <>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--color-success)', fontSize: 13, fontWeight: 500 }}>
+                                    <CheckCircle2 size={14} /> Approved
+                                </div>
+                                <p style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 3 }}>
+                                    {collectible.gsm_approver?.name ?? 'GSM'} · {fmtDt(collectible.approved_by_gsm_at)}
+                                </p>
+                            </>
+                        ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: cooApproved ? 'var(--color-warning)' : 'var(--color-text-muted)', fontSize: 13, fontWeight: 500 }}>
+                                <Clock size={13} /> Pending
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Approve button — only for the right role, only when not yet done */}
+                {!hydrating && canApproveCoo && !cooApproved && (
+                    <Button variant="secondary" size="sm" icon={CheckCircle2}
+                        onClick={() => router.post(route('ar.approve-coo', collectible.id), {}, { onSuccess: () => onApprove?.() })}
+                        style={{ width: '100%', marginTop: 2 }}>
+                        Approve as COO
+                    </Button>
+                )}
+                {!hydrating && canApproveGsm && !gsmApproved && (
+                    <Button variant="secondary" size="sm" icon={CheckCircle2}
+                        onClick={() => router.post(route('ar.approve-gsm', collectible.id), {}, { onSuccess: () => onApprove?.() })}
+                        style={{ width: '100%', marginTop: 2 }}>
+                        Approve as GSM
+                    </Button>
+                )}
+            </PanelFullRow>
 
             {/* Payment modal */}
             <Modal open={paymentModal} onClose={() => setPaymentModal(false)} title="Record Payment">
@@ -254,13 +305,13 @@ export function ARContent({ collectible, departments, statuses, approvalStatuses
         </>
     );
 
-
     return content;
 }
 
-export default function ARShow({ collectible, departments, statuses, approvalStatuses, canWrite, canApprove, canAudit }) {
+export default function ARShow({ collectible, departments, statuses, approvalStatuses, canWrite, canApprove, canApproveCoo, canApproveGsm, canAudit }) {
     const { url } = usePage();
     const isPanel = url?.includes('panel=1');
+    const fmt = (d) => d ? new Date(d).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
 
     if (isPanel) {
         return (
@@ -283,10 +334,10 @@ export default function ARShow({ collectible, departments, statuses, approvalSta
                 </>
                 }
             >
-                <ARContent collectible={collectible} departments={departments} statuses={statuses} approvalStatuses={approvalStatuses} canWrite={canWrite} canApprove={canApprove} canAudit={canAudit} />
+                <ARContent collectible={collectible} departments={departments} statuses={statuses} approvalStatuses={approvalStatuses} canWrite={canWrite} canApprove={canApprove} canApproveCoo={canApproveCoo} canApproveGsm={canApproveGsm} canAudit={canAudit} />
             </DetailPanel>
         );
     }
 
-    return <AppShell><ARContent collectible={collectible} departments={departments} statuses={statuses} approvalStatuses={approvalStatuses} canWrite={canWrite} canApprove={canApprove} canAudit={canAudit} /></AppShell>;
+    return <AppShell><ARContent collectible={collectible} departments={departments} statuses={statuses} approvalStatuses={approvalStatuses} canWrite={canWrite} canApprove={canApprove} canApproveCoo={canApproveCoo} canApproveGsm={canApproveGsm} canAudit={canAudit} /></AppShell>;
 }

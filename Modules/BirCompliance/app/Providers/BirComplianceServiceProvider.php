@@ -3,6 +3,7 @@
 namespace Modules\BirCompliance\Providers;
 
 use Illuminate\Console\Scheduling\Schedule;
+use Modules\BirCompliance\Console\Commands\SendBirDeadlineReminders;
 use Nwidart\Modules\Support\ModuleServiceProvider;
 
 class BirComplianceServiceProvider extends ModuleServiceProvider
@@ -18,11 +19,13 @@ class BirComplianceServiceProvider extends ModuleServiceProvider
     protected string $nameLower = 'bircompliance';
 
     /**
-     * Command classes to register.
+     * Artisan commands provided by this module.
      *
      * @var string[]
      */
-    // protected array $commands = [];
+    protected array $commands = [
+        SendBirDeadlineReminders::class,
+    ];
 
     /**
      * Provider classes to register.
@@ -35,12 +38,16 @@ class BirComplianceServiceProvider extends ModuleServiceProvider
     ];
 
     /**
-     * Define module schedules.
+     * Scheduled tasks for the BirCompliance module.
      *
-     * @param  $schedule
+     * Phase 15: daily deadline check — notifies accounting_officer and
+     * general_manager 7, 3, and 1 day(s) before each BIR filing deadline.
+     * A per-deadline-per-window cooldown prevents duplicate alerts on the same day.
      */
-    // protected function configureSchedules(Schedule $schedule): void
-    // {
-    //     $schedule->command('inspire')->hourly();
-    // }
+    protected function configureSchedules(Schedule $schedule): void
+    {
+        // Runs at 07:30 daily — after cc-monthly (07:00) but before the
+        // cashbond balance check (08:00), grouped with the morning alert batch.
+        $schedule->command('finance:bir-deadline-reminders')->dailyAt('07:30');
+    }
 }

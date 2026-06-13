@@ -83,6 +83,42 @@ function SortIcon({ active, dir }) {
     );
 }
 
+// ── Exported table style primitives ───────────────────────────────────────────
+// Use these in any page that renders a custom table so styles stay in sync
+// with DataTable automatically. Import: { tableThStyle, tableTdStyle }
+//
+// For alignment variants compose inline:
+//   <th style={{ ...tableThStyle, textAlign: 'center' }}>
+//   <td style={{ ...tableTdStyle, textAlign: 'right' }}>
+
+export const tableThStyle = {
+    paddingLeft  : 16,
+    paddingRight : 16,
+    paddingTop   : 0,
+    paddingBottom: 0,
+    height       : 'var(--height-table-header)',
+    fontSize     : '12px',
+    fontWeight   : 600,
+    fontFamily   : 'var(--font-body)',
+    color        : 'var(--color-text-muted)',
+    textTransform: 'uppercase',
+    letterSpacing: 0,
+    whiteSpace   : 'nowrap',
+    textAlign    : 'left',
+    // background is set on <thead> via className, not per-th
+};
+
+export const tableTdStyle = {
+    paddingLeft  : 16,
+    paddingRight : 16,
+    fontSize     : 'var(--font-size-small)',
+    color        : 'var(--color-text)',
+    verticalAlign: 'middle',
+    textAlign    : 'left',
+    overflow     : 'hidden',
+    // row height comes from <tr style={{ height: 'var(--height-table-row)' }}>
+};
+
 export default function DataTable({
     columns      = [],
     rows         = [],

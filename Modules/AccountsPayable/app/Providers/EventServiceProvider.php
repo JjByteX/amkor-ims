@@ -5,6 +5,8 @@ namespace Modules\AccountsPayable\Providers;
 use App\Events\DashboardSummaryRequested;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Modules\AccountsPayable\Listeners\ContributeDashboardSummary;
+use Modules\AccountsPayable\Listeners\CreatePayableFromVisaPaymentRequest;
+use Modules\Visa\Events\VisaPaymentRequested;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -16,6 +18,11 @@ class EventServiceProvider extends ServiceProvider
     protected $listen = [
         DashboardSummaryRequested::class => [
             ContributeDashboardSummary::class,
+        ],
+
+        // Phase 3 — auto-create a Payable when a visa payment request is sent
+        VisaPaymentRequested::class => [
+            CreatePayableFromVisaPaymentRequest::class,
         ],
     ];
 

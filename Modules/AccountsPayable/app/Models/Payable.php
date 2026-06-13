@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Contacts\Models\Contact;
 use Modules\Disbursement\Models\Voucher;
+use Modules\Visa\Models\VisaApplication;
 
 class Payable extends Model
 {
@@ -50,6 +51,7 @@ class Payable extends Model
         'deposit_slip_attached',
         'deposit_slip_attached_at',
         'voucher_id',
+        'visa_application_id',  // Phase 3 — FK to visa_applications
         'remarks',
         'audit_remarks',
         'branch_id',
@@ -115,6 +117,12 @@ class Payable extends Model
     public function voucher(): BelongsTo
     {
         return $this->belongsTo(Voucher::class);
+    }
+
+    /** Phase 3 — back-link to the source visa application (nullable). */
+    public function visaApplication(): BelongsTo
+    {
+        return $this->belongsTo(VisaApplication::class);
     }
 
     public function branch(): BelongsTo
@@ -195,6 +203,18 @@ class Payable extends Model
         return $query->whereYear('invoice_date', $year)->whereMonth('invoice_date', $month);
     }
 
+    /**
+     * Records where due_date has passed and the balance is not yet cleared.
+     * Used by the dashboard and index summary counts so overdue figures are
+     * always computed from the actual date rather than the stored status column.
+     */
+    public function scopeEffectivelyOverdue($query)
+    {
+        return $query->where('due_date', '<', now()->toDateString())
+            ->whereNotIn('status', ['paid', 'filed']);
+    }
+
+    /** @deprecated Use scopeEffectivelyOverdue for counts; kept for query compatibility. */
     public function scopeOverdue($query)
     {
         return $query->where('due_date', '<', now()->toDateString())
@@ -202,6 +222,31 @@ class Payable extends Model
     }
 
     // ─── Computed helpers ──────────────────────────────────────────────────
+
+    /**
+     * Live status derived purely from due_date and balance — never stale.
+     * Use this accessor when displaying status in the UI instead of the raw
+     * stored `status` column. The stored column is updated on save/recalculate
+     * and kept clean by the nightly sweep, but this accessor is always correct.
+     */
+    public function getLiveStatusAttribute(): string
+    {
+        if ($this->status === 'filed') {
+            return 'filed';
+        }
+
+        $allPaid = $this->balance_php <= 0 && $this->balance_usd <= 0 && $this->balance_jpy <= 0;
+
+        if ($allPaid) {
+            return 'paid';
+        }
+
+        if ($this->due_date && $this->due_date->isPast()) {
+            return 'overdue';
+        }
+
+        return 'pending';
+    }
 
     /** Recompute balances and status. Call after any payment update. */
     public function recalculate(): void

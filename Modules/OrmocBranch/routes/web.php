@@ -32,4 +32,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('ormoc/{ormoc}/escalate', [OrmocBranchController::class, 'escalate'])->name('ormoc.escalate');
     Route::post('ormoc/{ormoc}/mariposa', [OrmocBranchController::class, 'markPoToMariposa'])->name('ormoc.mariposa');
     Route::post('ormoc/{ormoc}/forward-accounting', [OrmocBranchController::class, 'forwardToAccounting'])->name('ormoc.forward-accounting');
+
+    // ── Contact link (TIN auto-pull) ────────────────────────────────────────
+    Route::post('ormoc/{ormoc}/link-contact', [OrmocBranchController::class, 'linkContact'])->name('ormoc.link-contact');
+    Route::delete('ormoc/{ormoc}/link-contact', [OrmocBranchController::class, 'unlinkContact'])->name('ormoc.unlink-contact');
 });

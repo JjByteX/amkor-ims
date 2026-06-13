@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Contacts\Models\Contact;
 
 class VisaApplication extends Model
 {
@@ -18,6 +19,7 @@ class VisaApplication extends Model
         'agent_code',
         'date',
         'agency',
+        'contact_id',
         'customer_name',
         'visa_type',
         'selling_price',
@@ -135,6 +137,11 @@ class VisaApplication extends Model
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function contact(): BelongsTo
+    {
+        return $this->belongsTo(Contact::class);
     }
 
     public function createdBy(): BelongsTo

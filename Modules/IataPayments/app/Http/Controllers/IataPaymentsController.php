@@ -50,14 +50,22 @@ class IataPaymentsController extends Controller
 
         $payments = $query->paginate(25)->withQueryString();
 
-        $summary = IataPayment::search($search)->forStatus($status)
-            ->selectRaw('
-                sum(amount) as total_amount,
-                count(*) as total_count,
-                sum(case when status = \'pending\' then 1 else 0 end) as pending_count,
-                sum(case when status = \'overdue\' then 1 else 0 end) as overdue_count,
-                sum(case when status = \'paid\' then 1 else 0 end) as paid_count
-            ')->first();
+        // Base query for summary — same filters as the listing.
+        // Count overdue using due_date < today so the figure is always accurate
+        // regardless of whether the stored status column has been swept yet.
+        $summaryBase = IataPayment::search($search)->forStatus($status);
+
+        $summary = (object) [
+            'total_amount'  => (clone $summaryBase)->sum('amount'),
+            'total_count'   => (clone $summaryBase)->count(),
+            'pending_count' => (clone $summaryBase)->where('status', '!=', 'paid')
+                                    ->where(function ($q) {
+                                        $q->whereNull('due_date')
+                                          ->orWhere('due_date', '>=', now()->toDateString());
+                                    })->count(),
+            'overdue_count' => (clone $summaryBase)->effectivelyOverdue()->count(),
+            'paid_count'    => (clone $summaryBase)->where('status', 'paid')->count(),
+        ];
 
         return Inertia::render('IataPayments/Index', [
             'payments' => $payments,

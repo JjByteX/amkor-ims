@@ -121,6 +121,57 @@
     --badge-px:          8px;  /* horizontal padding */
     --badge-py:          4px;  /* vertical padding   */
 
+    /* --- Dashboard tokens ---
+       Single source of truth for the entire dashboard layout and card sizing.
+       Change a value here → every card / panel updates with no JSX edits.
+
+       Layout
+       ──────
+       --dash-profile-col   : width of the left profile/attendance column
+       --dash-card-min      : minimum width of each KPI card in the auto-fit grid
+                              (raise to get fewer, bigger cards; lower for more columns)
+       --dash-card-height   : fixed height for every KPI card (keeps the grid uniform)
+
+       Card internals
+       ──────────────
+       --dash-card-pad      : padding inside every KPI card
+       --dash-card-icon-size: icon box width & height
+       --dash-card-icon-br  : icon box border-radius
+       --dash-card-icon-mb  : gap between icon box and label text
+
+       Typography
+       ──────────
+       --dash-card-label-size : small uppercase label above the value
+       --dash-card-value-size : the big KPI number
+       --dash-card-sub-size   : optional sub-label beneath the value
+
+       Attendance button
+       ─────────────────
+       --dash-timebtn-h     : height of the single Clock In / Clock Out button
+    */
+    --dash-profile-col     : 280px;
+    --dash-card-min        : 160px;
+    --dash-card-height     : 130px;
+    --dash-card-pad        : 20px;
+    --dash-card-icon-size  : 44px;
+    --dash-card-icon-br    : 10px;
+    --dash-card-icon-mb    : 12px;
+    --dash-card-label-size : 11px;
+    --dash-card-value-size : 24px;
+    --dash-card-sub-size   : 12px;
+    --dash-timebtn-h       : 44px;
+
+    /* --- Dashboard chart tokens ---
+       Controls the chart panels rendered below the KPI grid.
+       All chart panels use Card (border + shadow) so they inherit the
+       card surface automatically. Only chart-specific sizing lives here.
+
+       --dash-chart-height  : default canvas height for bar/line/area charts
+       --dash-donut-height  : canvas height for donut charts (slightly smaller)
+    */
+    --dash-chart-height    : 220px;
+    --dash-donut-height    : 200px;
+
     /* --- Textarea ---
        Single source of truth for every <Textarea> across all pages.
        Change here → all textareas update automatically.

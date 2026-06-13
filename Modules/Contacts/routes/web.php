@@ -14,5 +14,11 @@ use Modules\Contacts\Http\Controllers\ContactsController;
 */
 
 Route::middleware(['auth'])->group(function () {
+    // Typeahead search used by the contact_id picker on booking/visa forms.
+    // Must be registered before the resource route so it isn't swallowed by
+    // the {contact} show binding.
+    Route::get('contacts/search', [ContactsController::class, 'search'])
+        ->name('contacts.search');
+
     Route::resource('contacts', ContactsController::class);
 });

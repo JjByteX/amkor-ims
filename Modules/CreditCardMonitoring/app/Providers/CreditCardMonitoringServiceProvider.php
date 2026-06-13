@@ -3,6 +3,7 @@
 namespace Modules\CreditCardMonitoring\Providers;
 
 use Illuminate\Console\Scheduling\Schedule;
+use Modules\CreditCardMonitoring\Console\Commands\CreditCardMonthly;
 use Nwidart\Modules\Support\ModuleServiceProvider;
 
 class CreditCardMonitoringServiceProvider extends ModuleServiceProvider
@@ -18,11 +19,13 @@ class CreditCardMonitoringServiceProvider extends ModuleServiceProvider
     protected string $nameLower = 'creditcardmonitoring';
 
     /**
-     * Command classes to register.
+     * Artisan commands provided by this module.
      *
      * @var string[]
      */
-    // protected array $commands = [];
+    protected array $commands = [
+        CreditCardMonthly::class,
+    ];
 
     /**
      * Provider classes to register.
@@ -35,12 +38,17 @@ class CreditCardMonitoringServiceProvider extends ModuleServiceProvider
     ];
 
     /**
-     * Define module schedules.
+     * Scheduled tasks for the CreditCardMonitoring module.
      *
-     * @param  $schedule
+     * Phases 11 + 13: daily run handles three jobs in one pass —
+     *   1. On the 1st: auto-create payment records for every active card.
+     *   2. 3 days before statement_cut_off: send cut-off reminder.
+     *   3. 5 days before due_day: send payment due reminder.
      */
-    // protected function configureSchedules(Schedule $schedule): void
-    // {
-    //     $schedule->command('inspire')->hourly();
-    // }
+    protected function configureSchedules(Schedule $schedule): void
+    {
+        // Runs at 07:00 daily — early enough that officers see reminders at
+        // the start of their workday, before the cashbond check at 08:00.
+        $schedule->command('finance:cc-monthly')->dailyAt('07:00');
+    }
 }

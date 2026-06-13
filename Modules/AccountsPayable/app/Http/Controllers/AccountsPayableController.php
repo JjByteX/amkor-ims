@@ -10,6 +10,7 @@ use Inertia\Response;
 use Illuminate\Http\JsonResponse;
 use Modules\AccountsPayable\Http\Requests\StorePayableRequest;
 use Modules\AccountsPayable\Models\Payable;
+use Modules\Contacts\Models\Contact;
 
 class AccountsPayableController extends Controller
 {
@@ -106,10 +107,16 @@ class AccountsPayableController extends Controller
     {
         $this->requirePreparer($request);
 
+        $suppliers = Contact::where('type', 'supplier')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'account_number']);
+
         return Inertia::render('AccountsPayable/Create', [
             'currencies' => Payable::CURRENCIES,
             'paymentModes' => Payable::PAYMENT_MODES,
             'statuses' => Payable::STATUSES,
+            'suppliers' => $suppliers,
         ]);
     }
 
@@ -198,11 +205,17 @@ class AccountsPayableController extends Controller
                 ->with('flash', ['type' => 'warning', 'message' => 'Record is approved and locked.']);
         }
 
+        $suppliers = Contact::where('type', 'supplier')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'account_number']);
+
         return Inertia::render('AccountsPayable/Edit', [
             'payable' => $ap,
             'currencies' => Payable::CURRENCIES,
             'paymentModes' => Payable::PAYMENT_MODES,
             'statuses' => Payable::STATUSES,
+            'suppliers' => $suppliers,
         ]);
     }
 

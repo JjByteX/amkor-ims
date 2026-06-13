@@ -9,8 +9,9 @@ import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
 import Textarea from '../../Components/UI/Textarea';
 
-export default function APCreate({ currencies, paymentModes, statuses }) {
+export default function APCreate({ currencies, paymentModes, statuses, suppliers }) {
     const { data, setData, post, processing, errors } = useForm({
+        contact_id        : '',
         supplier_name     : '',
         invoice_no        : '',
         requisition_no    : '',
@@ -30,6 +31,27 @@ export default function APCreate({ currencies, paymentModes, statuses }) {
         check_no          : '',
         remarks           : '',
     });
+
+    const supplierOptions = [
+        { value: '', label: 'Select supplier (optional)…' },
+        ...(suppliers ?? []).map(s => ({ value: String(s.id), label: s.name })),
+    ];
+
+    function handleSupplierSelect(e) {
+        const v = e.target.value;
+        setData('contact_id', v);
+        if (v) {
+            const match = (suppliers ?? []).find(s => String(s.id) === v);
+            if (match) {
+                setData(prev => ({
+                    ...prev,
+                    contact_id    : v,
+                    supplier_name : match.name,
+                    account_no    : match.account_number ?? prev.account_no,
+                }));
+            }
+        }
+    }
 
     function handleSubmit(e) {
         e.preventDefault();
@@ -67,7 +89,21 @@ export default function APCreate({ currencies, paymentModes, statuses }) {
 
                     {/* Card 1 — Supplier & Invoice */}
                     <FormCard title="Supplier & Invoice">
-                        <Input label="Supplier Name *" value={data.supplier_name} onChange={(e) => setData('supplier_name', e.target.value)} error={errors.supplier_name} required />
+                        <Select
+                            label="Supplier (from Directory)"
+                            options={supplierOptions}
+                            value={data.contact_id}
+                            onChange={handleSupplierSelect}
+                            error={errors.contact_id}
+                        />
+                        <Input
+                            label="Supplier Name *"
+                            placeholder="Name is stored on record even if not in directory"
+                            value={data.supplier_name}
+                            onChange={(e) => setData('supplier_name', e.target.value)}
+                            error={errors.supplier_name}
+                            required
+                        />
                         <FormRow>
                             <Input label="Invoice #" value={data.invoice_no} onChange={(e) => setData('invoice_no', e.target.value)} error={errors.invoice_no} />
                             <Input label="Requisition #" value={data.requisition_no} onChange={(e) => setData('requisition_no', e.target.value)} error={errors.requisition_no} />

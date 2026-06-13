@@ -8,13 +8,15 @@ import DetailPanel, {
 import Badge from '../../Components/UI/Badge';
 import Button from '../../Components/UI/Button';
 import Select from '../../Components/UI/Select';
+import ContactLinkPanel from '../../Components/Shared/ContactLinkPanel';
+import RelatedTransactionsPanel from '../../Components/Shared/RelatedTransactionsPanel';
 import { Send } from 'lucide-react';
 
 const STATUS_VARIANT = { inquiry: 'neutral', quoted: 'info', confirmed: 'success', cancelled: 'error' };
 const money   = (v) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(Number(v ?? 0));
 const fmtDate = (v) => v ? new Date(v).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
 
-export function BookingContent({ booking, statuses, serviceTypes, paymentModes, canWrite }) {
+export function BookingContent({ booking, statuses, serviceTypes, paymentModes, canWrite, contactsSearchUrl, relatedTransactions }) {
     const statusForm = useForm({ status: booking.status });
     function changeStatus(e) {
         router.post(route('reservation.status', booking.id), { status: e.target.value }, { preserveScroll: true });
@@ -70,6 +72,17 @@ export function BookingContent({ booking, statuses, serviceTypes, paymentModes, 
                     <PanelField label="Payment Mode" value={paymentModes[booking.mode_of_payment] ?? booking.mode_of_payment} />
                     <PanelField label="Payment Due"  value={fmtDate(booking.payment_due_date)} />
                 </PanelSection>
+                <PanelDivider />
+                <PanelSection title="Contact Link">
+                    <ContactLinkPanel
+                        contact={booking.contact}
+                        contactsSearchUrl={contactsSearchUrl}
+                        linkUrl={route('reservation.link-contact', booking.id)}
+                        unlinkUrl={route('reservation.unlink-contact', booking.id)}
+                        canLink={canWrite}
+                    />
+                </PanelSection>
+                <RelatedTransactionsPanel transactions={relatedTransactions} />
                 {(booking.particulars || booking.remarks || booking.inclusions || booking.exclusions) && (<>
                     <PanelDivider />
                     <PanelSection title="Notes & Coverage">
@@ -96,7 +109,7 @@ export function BookingContent({ booking, statuses, serviceTypes, paymentModes, 
     );
 }
 
-export default function ReservationShow({ booking, statuses, serviceTypes, paymentModes, canWrite }) {
+export default function ReservationShow({ booking, statuses, serviceTypes, paymentModes, canWrite, contactsSearchUrl, relatedTransactions }) {
     const { url } = usePage();
     const isPanel = url?.includes('panel=1');
     if (isPanel) {
@@ -108,9 +121,9 @@ export default function ReservationShow({ booking, statuses, serviceTypes, payme
                     {booking.forwarded_to_accounting && <Badge variant="success">Forwarded to Accounting</Badge>}
                 </>}
             >
-                <BookingContent booking={booking} statuses={statuses} serviceTypes={serviceTypes} paymentModes={paymentModes} canWrite={canWrite} />
+                <BookingContent booking={booking} statuses={statuses} serviceTypes={serviceTypes} paymentModes={paymentModes} canWrite={canWrite} contactsSearchUrl={contactsSearchUrl} relatedTransactions={relatedTransactions} />
             </DetailPanel>
         );
     }
-    return <AppShell><BookingContent booking={booking} statuses={statuses} serviceTypes={serviceTypes} paymentModes={paymentModes} canWrite={canWrite} /></AppShell>;
+    return <AppShell><BookingContent booking={booking} statuses={statuses} serviceTypes={serviceTypes} paymentModes={paymentModes} canWrite={canWrite} contactsSearchUrl={contactsSearchUrl} relatedTransactions={relatedTransactions} /></AppShell>;
 }

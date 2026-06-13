@@ -4,10 +4,13 @@ namespace Modules\BirCompliance\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Maatwebsite\Excel\Facades\Excel;
+use Modules\BirCompliance\Exports\BirMonthlyExport;
 use Modules\BirCompliance\Http\Requests\StoreBirTransactionRequest;
 use Modules\BirCompliance\Models\BirTransaction;
 
@@ -95,19 +98,25 @@ class BirComplianceController extends Controller
         ]);
     }
 
-    public function show(Request $request, BirTransaction $birTransaction): Response
+    public function show(Request $request, BirTransaction $birTransaction): Response|JsonResponse
     {
         $this->requireViewAccess($request);
         $birTransaction->load(['branch', 'createdBy', 'updatedBy']);
 
-        return Inertia::render('BirCompliance/Show', [
-            'transaction' => $birTransaction,
+        $payload = [
+            'transaction'   => $birTransaction,
             'documentTypes' => BirTransaction::DOCUMENT_TYPES,
-            'sourceTypes' => BirTransaction::SOURCE_TYPES,
-            'paymentModes' => BirTransaction::PAYMENT_MODES,
-            'canGenerate' => $this->canGenerate($request),
-            'atpNumber' => BirTransaction::BIR_ATP_NUMBER,
-        ]);
+            'sourceTypes'   => BirTransaction::SOURCE_TYPES,
+            'paymentModes'  => BirTransaction::PAYMENT_MODES,
+            'canGenerate'   => $this->canGenerate($request),
+            'atpNumber'     => BirTransaction::BIR_ATP_NUMBER,
+        ];
+
+        if ($request->wantsJson() || $request->get('json')) {
+            return response()->json($payload);
+        }
+
+        return Inertia::render('BirCompliance/Show', $payload);
     }
 
     public function create(Request $request): Response
@@ -229,18 +238,82 @@ class BirComplianceController extends Controller
             ->with('flash', ['type' => 'success', 'message' => 'Transaction removed.']);
     }
 
-    public function exportMonthly(Request $request): RedirectResponse
+    // ════════════════════════════════════════════════════════════════════════
+    // EXPORT — Phase 10
+    // ════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Download the monthly BIR sales register as a formatted Excel file.
+     *
+     * Covers all AR and SI transactions for the selected month/year.
+     * The file is formatted for BIR submission review — the accounting team
+     * uploads it to eBIR themselves.
+     *
+     * Query parameters:
+     *   year       int   (default: current year)
+     *   month      int   1–12 (default: current month)
+     *   branch_id  int   optional — GMs and auditors only; others are scoped to their own branch
+     */
+    public function exportMonthly(Request $request)
     {
         $this->requireGenerateAccess($request);
-        $year = $request->get('year', now()->year);
-        $month = $request->get('month', now()->month);
 
-        // Full Excel export wired in Phase 12
-        return back()->with('flash', [
-            'type' => 'info',
-            'message' => "Monthly BIR report for {$this->monthNames()[(int) $month - 1]} {$year} — Excel export wired in Phase 12.",
-        ]);
+        $year      = (int) ($request->get('year') ?: now()->year);
+        $rawMonth  = $request->get('month');
+        $month     = ($rawMonth !== null && $rawMonth !== '') ? (int) $rawMonth : now()->month;
+        $month     = max(1, min(12, $month)); // clamp to valid range
+        $branchId  = $request->get('branch_id');
+        $role      = $request->user()?->getRoleNames()->first();
+
+        $monthNames = $this->monthNames();
+
+        $query = BirTransaction::with(['branch'])
+            ->forYear($year)
+            ->forMonth($month)
+            ->whereIn('document_type', ['AR', 'SI'])  // BIR-relevant docs only
+            ->orderBy('transaction_date')
+            ->orderBy('document_number');
+
+        // Branch scoping: general_manager and admin_auditor can pass branch_id;
+        // everyone else is always scoped to their own branch.
+        if (! in_array($role, ['general_manager', 'admin_auditor'], true)) {
+            $query->forBranch($request->user()->branch_id);
+            $branchName = $request->user()->branch?->name ?? 'Branch';
+        } elseif ($branchId) {
+            $query->forBranch((int) $branchId);
+            $branchName = \App\Models\Branch::find($branchId)?->name ?? 'Branch';
+        } else {
+            $branchName = 'All Branches';
+        }
+
+        $transactions = $query->get();
+
+        if ($transactions->isEmpty()) {
+            return redirect()->route('bir.index', array_filter([
+                'year'  => $year,
+                'month' => $month,
+            ]))->with('flash', [
+                'type'    => 'warning',
+                'message' => "No BIR transactions found for {$monthNames[$month - 1]} {$year}.",
+            ]);
+        }
+
+        $filename = sprintf(
+            'BIR-Monthly-%s-%02d-%s.xlsx',
+            $year,
+            $month,
+            now()->format('Ymd-His'),
+        );
+
+        return Excel::download(
+            new BirMonthlyExport($transactions, $year, $month, $branchName),
+            $filename,
+        );
     }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // HELPERS
+    // ════════════════════════════════════════════════════════════════════════
 
     private function monthNames(): array
     {

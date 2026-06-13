@@ -12,6 +12,9 @@ use Modules\Reservation\Events\ReservationBookingConfirmed;
 use Modules\Reservation\Events\ReservationForwardedToAccounting;
 use Modules\Reservation\Http\Requests\StoreReservationBookingRequest;
 use Modules\Reservation\Models\ReservationBooking;
+use Modules\Contacts\Models\Contact;
+use Modules\OrmocBranch\Models\OrmocBooking;
+use Modules\Visa\Models\VisaApplication;
 
 class ReservationController extends Controller
 {
@@ -133,6 +136,9 @@ class ReservationController extends Controller
             'serviceTypes' => ReservationBooking::SERVICE_TYPES,
             'paymentModes' => ReservationBooking::PAYMENT_MODES,
             'agentCodes' => ReservationBooking::AGENT_CODES,
+            // URL for the contact typeahead picker — lets the form search contacts
+            // by name/TIN without loading the full list upfront.
+            'contactsSearchUrl' => route('contacts.search'),
         ]);
     }
 
@@ -168,7 +174,82 @@ class ReservationController extends Controller
         $this->requireViewer($request);
         $this->authorizeBranch($request, $booking);
 
-        $booking->load(['branch', 'createdBy', 'updatedBy', 'confirmedBy', 'accountingForwarder']);
+        $booking->load(['branch', 'createdBy', 'updatedBy', 'confirmedBy', 'accountingForwarder', 'contact']);
+
+        // ── Related transactions (Gap B) ────────────────────────────────────
+        $relatedTransactions = [];
+        if ($booking->contact_id) {
+            $statusVariants = [
+                // Reservation / Ormoc
+                'inquiry'    => 'neutral',
+                'quoted'     => 'info',
+                'confirmed'  => 'success',
+                'cancelled'  => 'error',
+                // Visa
+                'pending'    => 'warning',
+                'on_process' => 'info',
+                'completed'  => 'success',
+                'approved'   => 'success',
+                'denied'     => 'error',
+                'forfeited'  => 'error',
+                'refunded'   => 'neutral',
+            ];
+
+            $reservations = ReservationBooking::where('contact_id', $booking->contact_id)
+                ->where('id', '!=', $booking->id)
+                ->orderByDesc('date')
+                ->limit(10)
+                ->get(['id', 'booking_no', 'status', 'selling_price'])
+                ->map(fn ($r) => [
+                    'id'             => $r->id,
+                    'type'           => 'reservation',
+                    'type_label'     => 'RESA',
+                    'label'          => $r->booking_no,
+                    'status'         => $r->status,
+                    'status_label'   => ReservationBooking::STATUSES[$r->status] ?? $r->status,
+                    'status_variant' => $statusVariants[$r->status] ?? 'neutral',
+                    'selling_price'  => $r->selling_price,
+                    'href'           => route('reservation.show', $r->id),
+                ]);
+
+            $visas = VisaApplication::where('contact_id', $booking->contact_id)
+                ->orderByDesc('date')
+                ->limit(10)
+                ->get(['id', 'customer_name', 'status', 'selling_price'])
+                ->map(fn ($v) => [
+                    'id'             => $v->id,
+                    'type'           => 'visa',
+                    'type_label'     => 'VISA',
+                    'label'          => $v->customer_name,
+                    'status'         => $v->status,
+                    'status_label'   => VisaApplication::STATUSES[$v->status] ?? $v->status,
+                    'status_variant' => $statusVariants[$v->status] ?? 'neutral',
+                    'selling_price'  => $v->selling_price,
+                    'href'           => route('visa.show', $v->id),
+                ]);
+
+            $ormoc = OrmocBooking::where('contact_id', $booking->contact_id)
+                ->orderByDesc('date')
+                ->limit(10)
+                ->get(['id', 'client_name', 'status', 'selling_price'])
+                ->map(fn ($o) => [
+                    'id'             => $o->id,
+                    'type'           => 'ormoc',
+                    'type_label'     => 'ORMOC',
+                    'label'          => $o->client_name,
+                    'status'         => $o->status,
+                    'status_label'   => OrmocBooking::STATUSES[$o->status] ?? $o->status,
+                    'status_variant' => $statusVariants[$o->status] ?? 'neutral',
+                    'selling_price'  => $o->selling_price,
+                    'href'           => route('ormoc.show', $o->id),
+                ]);
+
+            $relatedTransactions = $reservations->concat($visas)->concat($ormoc)
+                ->sortByDesc('id')
+                ->values()
+                ->all();
+        }
+        // ────────────────────────────────────────────────────────────────────
 
         if ($request->wantsJson() || $request->get('json')) {
             return response()->json([
@@ -177,6 +258,8 @@ class ReservationController extends Controller
             'serviceTypes' => ReservationBooking::SERVICE_TYPES,
             'paymentModes' => ReservationBooking::PAYMENT_MODES,
             'canWrite' => $this->canWrite($request),
+            'contactsSearchUrl' => route('contacts.search'),
+            'relatedTransactions' => $relatedTransactions,
         ]);
         }
         return Inertia::render('Reservation/Show', [
@@ -185,6 +268,8 @@ class ReservationController extends Controller
             'serviceTypes' => ReservationBooking::SERVICE_TYPES,
             'paymentModes' => ReservationBooking::PAYMENT_MODES,
             'canWrite' => $this->canWrite($request),
+            'contactsSearchUrl' => route('contacts.search'),
+            'relatedTransactions' => $relatedTransactions,
         ]);
     }
 
@@ -193,12 +278,17 @@ class ReservationController extends Controller
         $this->requireWriter($request);
         $this->authorizeBranch($request, $booking);
 
+        // Eager-load contact so the form can pre-populate the picker with the
+        // currently linked contact's name without an extra round-trip.
+        $booking->load('contact');
+
         return Inertia::render('Reservation/Form', [
             'booking' => $booking,
             'statuses' => ReservationBooking::STATUSES,
             'serviceTypes' => ReservationBooking::SERVICE_TYPES,
             'paymentModes' => ReservationBooking::PAYMENT_MODES,
             'agentCodes' => ReservationBooking::AGENT_CODES,
+            'contactsSearchUrl' => route('contacts.search'),
         ]);
     }
 
@@ -291,6 +381,45 @@ class ReservationController extends Controller
         event(new ReservationForwardedToAccounting($booking->id, $booking->booking_no, $booking->client_name, $booking->branch_id, $request->user()->id));
 
         return back()->with('flash', ['type' => 'success', 'message' => 'Reservation forwarded to accounting.']);
+    }
+
+    // ─── Link / Unlink Contact ─────────────────────────────────────────────────
+    //
+    // Lets Accounting attach a Contacts record to a booking from the Show page.
+    // Once linked, TIN/address/business_style auto-fill on the BIR transaction
+    // generated when the booking is confirmed. Available to any role that can
+    // view this record.
+
+    public function linkContact(Request $request, ReservationBooking $booking): RedirectResponse
+    {
+        $this->requireViewer($request);
+        $this->authorizeBranch($request, $booking);
+
+        $data = $request->validate([
+            'contact_id' => ['required', 'integer', 'exists:contacts,id'],
+        ]);
+
+        $booking->update([
+            'contact_id' => $data['contact_id'],
+            'updated_by' => $request->user()->id,
+        ]);
+
+        $contact = Contact::find($data['contact_id']);
+
+        return back()->with('flash', ['type' => 'success', 'message' => 'Linked to '.($contact?->name ?? 'contact').'.']);
+    }
+
+    public function unlinkContact(Request $request, ReservationBooking $booking): RedirectResponse
+    {
+        $this->requireViewer($request);
+        $this->authorizeBranch($request, $booking);
+
+        $booking->update([
+            'contact_id' => null,
+            'updated_by' => $request->user()->id,
+        ]);
+
+        return back()->with('flash', ['type' => 'success', 'message' => 'Contact unlinked.']);
     }
 
     private function canWrite(Request $request): bool
