@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Http\JsonResponse;
+use Modules\AccountsPayable\Events\PayableReceived;
+use Modules\AccountsPayable\Events\PayableReleased;
 use Modules\AccountsPayable\Http\Requests\StorePayableRequest;
 use Modules\AccountsPayable\Models\Payable;
 use Modules\Contacts\Models\Contact;
@@ -369,7 +371,46 @@ class AccountsPayableController extends Controller
         // Mark as filed after release
         $ap->update(['status' => 'filed']);
 
+        // Phase 7 — let Visa write back the CV number / "date requested"
+        // onto the originating visa application, if linked.
+        PayableReleased::dispatch($ap);
+
         return back()->with('flash', ['type' => 'success', 'message' => 'Payable released and filed.']);
+    }
+
+    // ─── Mark as received (operator/embassy confirmed receipt of CV) ─────────
+
+    public function markReceived(Request $request, Payable $ap): RedirectResponse
+    {
+        $role = $request->user()?->getRoleNames()->first();
+
+        if (! in_array($role, array_merge(self::PREPARER_ROLES, ['general_manager']), true)) {
+            abort(403);
+        }
+
+        if (! $ap->released_at) {
+            return back()->with('flash', ['type' => 'error', 'message' => 'Payable must be released before it can be marked as received.']);
+        }
+
+        if ($ap->isReceived()) {
+            return back()->with('flash', ['type' => 'warning', 'message' => 'Already marked as received.']);
+        }
+
+        $request->validate([
+            'date_received' => ['nullable', 'date'],
+        ]);
+
+        $ap->update([
+            'status' => 'received',
+            'date_received' => $request->date_received ?? now()->toDateString(),
+            'updated_by' => $request->user()->id,
+        ]);
+
+        // Phase 7 — let Visa write back "date received" onto the originating
+        // visa application, if linked.
+        PayableReceived::dispatch($ap);
+
+        return back()->with('flash', ['type' => 'success', 'message' => 'Payable marked as received.']);
     }
 
     // ─── Record payment ───────────────────────────────────────────────────────

@@ -194,6 +194,15 @@ class VisaApplication extends Model
 
     public const AGENT_CODES = ['ALEX', 'RICCI', 'MEL', 'KAE', 'MIMI', 'MMT'];
 
+    /**
+     * Always include computed accessors in array/JSON output (Inertia props).
+     * Without this, `payables_status` was silently dropped from every
+     * response that serializes the model directly.
+     */
+    protected $appends = [
+        'payables_status',
+    ];
+
     // ─── Relationships ────────────────────────────────────────────────────────
 
     public function branch(): BelongsTo

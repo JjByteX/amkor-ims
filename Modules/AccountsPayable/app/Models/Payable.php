@@ -34,6 +34,7 @@ class Payable extends Model
         'due_date',
         // days_outstanding is NOT fillable — computed accessor (dropped column)
         'payment_date',
+        'date_received',
         'status',
         'approval_status',
         'checked_by',
@@ -61,6 +62,7 @@ class Payable extends Model
         'invoice_date'              => 'date',
         'due_date'                  => 'date',
         'payment_date'              => 'date',
+        'date_received'             => 'date',
         'invoice_amount_php'        => 'decimal:2',
         'invoice_amount_usd'        => 'decimal:2',
         'invoice_amount_jpy'        => 'decimal:2',
@@ -77,6 +79,16 @@ class Payable extends Model
         'deposit_slip_attached_at'  => 'datetime',
     ];
 
+    /**
+     * Always include computed accessors in array/JSON output (Inertia props).
+     * Without this, `days_outstanding` and `live_status` were silently
+     * dropped from every response that serializes the model directly.
+     */
+    protected $appends = [
+        'days_outstanding',
+        'live_status',
+    ];
+
     // ─── Constants ─────────────────────────────────────────────────────────
 
     public const CURRENCIES = [
@@ -86,10 +98,11 @@ class Payable extends Model
     ];
 
     public const STATUSES = [
-        'pending' => 'Pending',
-        'overdue' => 'Overdue',
-        'paid'    => 'Paid',
-        'filed'   => 'Filed',
+        'pending'  => 'Pending',
+        'overdue'  => 'Overdue',
+        'paid'     => 'Paid',
+        'received' => 'Received',
+        'filed'    => 'Filed',
     ];
 
     public const APPROVAL_STATUSES = [
@@ -204,14 +217,14 @@ class Payable extends Model
     public function scopeEffectivelyOverdue($query)
     {
         return $query->where('due_date', '<', now()->toDateString())
-            ->whereNotIn('status', ['paid', 'filed']);
+            ->whereNotIn('status', ['paid', 'received', 'filed']);
     }
 
     /** @deprecated Use scopeEffectivelyOverdue; kept for query compatibility. */
     public function scopeOverdue($query)
     {
         return $query->where('due_date', '<', now()->toDateString())
-            ->whereNotIn('status', ['paid', 'filed']);
+            ->whereNotIn('status', ['paid', 'received', 'filed']);
     }
 
     // ─── Computed accessors ────────────────────────────────────────────────
@@ -226,7 +239,7 @@ class Payable extends Model
     {
         if (
             ! $this->due_date
-            || in_array($this->status, ['paid', 'filed'], true)
+            || in_array($this->status, ['paid', 'received', 'filed'], true)
             || ! $this->due_date->isPast()
         ) {
             return 0;
@@ -240,8 +253,8 @@ class Payable extends Model
      */
     public function getLiveStatusAttribute(): string
     {
-        if ($this->status === 'filed') {
-            return 'filed';
+        if (in_array($this->status, ['filed', 'received'], true)) {
+            return $this->status;
         }
 
         $allPaid = $this->balance_php <= 0 && $this->balance_usd <= 0 && $this->balance_jpy <= 0;
@@ -268,8 +281,8 @@ class Payable extends Model
 
         // days_outstanding is no longer stored — it is a computed accessor
 
-        // Auto-status (only if not manually set to filed)
-        if ($this->status !== 'filed') {
+        // Auto-status (only if not manually set to a terminal/operator-confirmed state)
+        if (! in_array($this->status, ['filed', 'received'], true)) {
             $allPaid = $this->balance_php <= 0 && $this->balance_usd <= 0 && $this->balance_jpy <= 0;
             if ($allPaid) {
                 $this->status = 'paid';
@@ -289,5 +302,11 @@ class Payable extends Model
     public function isApproved(): bool
     {
         return in_array($this->approval_status, ['approved', 'released'], true);
+    }
+
+    /** True once the operator/embassy has confirmed receipt of the CV. */
+    public function isReceived(): bool
+    {
+        return $this->status === 'received' || ! is_null($this->date_received);
     }
 }
