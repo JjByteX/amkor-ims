@@ -15,6 +15,9 @@ use Modules\Visa\Http\Controllers\VisaController;
 
 Route::middleware(['auth'])->group(function () {
 
+    // ── Sales Report ────────────────────────────────────────────────────────
+    Route::get('visa/sales-report', [VisaController::class, 'salesReport'])->name('visa.sales-report');
+
     // ── CRUD ───────────────────────────────────────────────────────────────
     Route::get('visa', [VisaController::class, 'index'])->name('visa.index');
     Route::get('visa/create', [VisaController::class, 'create'])->name('visa.create');

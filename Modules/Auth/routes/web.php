@@ -7,15 +7,16 @@ use Modules\Auth\Http\Controllers\AuthController;
 |--------------------------------------------------------------------------
 | Auth Module Routes
 |--------------------------------------------------------------------------
-| Login and logout only. No registration, no password reset.
-| Auth middleware is NOT applied to login routes.
-|--------------------------------------------------------------------------
 */
 
-// Guest-only routes (redirect to dashboard if already logged in)
+// Guest-only routes
 Route::middleware(['guest'])->group(function () {
-    Route::get('/login', [AuthController::class, 'showLogin'])->name('login'); // 'login' required by Laravel's auth middleware
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->name('auth.login.submit');
+
+    // Password reset
+    Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('auth.password.request');
+    Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('auth.password.email');
 });
 
 // Authenticated only

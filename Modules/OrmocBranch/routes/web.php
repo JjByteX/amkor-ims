@@ -30,6 +30,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('ormoc/{ormoc}/status', [OrmocBranchController::class, 'updateStatus'])->name('ormoc.update-status');
     Route::post('ormoc/{ormoc}/notes', [OrmocBranchController::class, 'updateNotes'])->name('ormoc.update-notes');
     Route::post('ormoc/{ormoc}/escalate', [OrmocBranchController::class, 'escalate'])->name('ormoc.escalate');
+    Route::post('ormoc/{ormoc}/escalate/acknowledge', [OrmocBranchController::class, 'acknowledgeEscalation'])->name('ormoc.escalate-acknowledge');
     Route::post('ormoc/{ormoc}/mariposa', [OrmocBranchController::class, 'markPoToMariposa'])->name('ormoc.mariposa');
     Route::post('ormoc/{ormoc}/forward-accounting', [OrmocBranchController::class, 'forwardToAccounting'])->name('ormoc.forward-accounting');
 

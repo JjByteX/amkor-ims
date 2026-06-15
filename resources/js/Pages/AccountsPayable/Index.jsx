@@ -21,8 +21,8 @@ import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
 const STATUS_VARIANT = {
     pending:  'warning',
     overdue:  'error',
-    paid:     'success',
     received: 'info',
+    paid:     'success',
     filed:    'neutral',
 };
 

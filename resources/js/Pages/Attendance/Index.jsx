@@ -4,6 +4,7 @@ import {
     Clock, Users, UserCheck, AlertTriangle, Calendar,
     Search, Download, Plus, Eye, Edit2, ChevronLeft, ChevronRight,
     LogIn, LogOut, CheckCircle, XCircle, MinusCircle, Shield,
+    TrendingUp, Coffee,
 } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
@@ -18,7 +19,10 @@ import DataTable from '../../Components/Shared/DataTable';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
 import Modal from '../../Components/UI/Modal';
-import DetailPanel, { TableWithPanel, useDetailPanel, PanelSection, PanelField, PanelFieldRow, PanelDivider, PanelColumns, PanelCol, PanelColRight } from '../../Components/Shared/DetailPanel';
+import DetailPanel, {
+    TableWithPanel, useDetailPanel, PanelSection, PanelField,
+    PanelFieldRow, PanelDivider, PanelColumns, PanelCol, PanelColRight,
+} from '../../Components/Shared/DetailPanel';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -53,12 +57,19 @@ const fmtDateTime = (dt) =>
     dt ? new Date(dt).toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 
 const STATUS_VARIANT = {
-    present:   'success',
-    absent:    'error',
-    half_day:  'warning',
-    on_leave:  'info',
-    holiday:   'neutral',
-    rest_day:  'neutral',
+    present:                     'success',
+    late:                        'warning',
+    undertime:                   'warning',
+    half_day:                    'warning',
+    absent:                      'error',
+    rest_day:                    'neutral',
+    regular_holiday:             'neutral',
+    special_non_working_holiday: 'neutral',
+    present_regular_holiday:     'success',
+    present_special_holiday:     'success',
+    on_sil:                      'info',
+    birthday_leave:              'info',
+    on_leave:                    'info',
 };
 
 // ── Attendance panel content ──────────────────────────────────────────────────
@@ -90,17 +101,58 @@ function AttendancePanelContent({ data }) {
                         <PanelField label="Time Out" value={fmtTime(record.time_out)} />
                     </PanelFieldRow>
 
-                    {(record.minutes_late > 0 || record.minutes_undertime > 0) && (
+                    {/* Break info */}
+                    {(record.break_start || record.break_end) && (
                         <PanelFieldRow>
-                            {record.minutes_late > 0 && (
-                                <PanelField label="Late" value={`${record.minutes_late}m`} />
-                            )}
-                            {record.minutes_undertime > 0 && (
-                                <PanelField label="Undertime" value={`${record.minutes_undertime}m`} />
-                            )}
+                            <PanelField label="Break Start" value={fmtTime(record.break_start)} />
+                            <PanelField label="Break End"   value={fmtTime(record.break_end)} />
                         </PanelFieldRow>
                     )}
 
+                    {/* Late / Undertime / Overtime / Overbreak */}
+                    {(record.minutes_late > 0 || record.minutes_undertime > 0 ||
+                      record.minutes_overtime > 0 || record.minutes_overbreak > 0) && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                            {record.minutes_late > 0 && (
+                                <span style={{
+                                    padding: '2px 8px', borderRadius: 'var(--radius-sm)',
+                                    background: 'rgba(234,179,8,0.12)', color: 'var(--color-warning)',
+                                    fontSize: 11, fontWeight: 600,
+                                }}>
+                                    {record.minutes_late}m late
+                                </span>
+                            )}
+                            {record.minutes_undertime > 0 && (
+                                <span style={{
+                                    padding: '2px 8px', borderRadius: 'var(--radius-sm)',
+                                    background: 'rgba(234,179,8,0.12)', color: 'var(--color-warning)',
+                                    fontSize: 11, fontWeight: 600,
+                                }}>
+                                    {record.minutes_undertime}m undertime
+                                </span>
+                            )}
+                            {record.minutes_overtime > 0 && (
+                                <span style={{
+                                    padding: '2px 8px', borderRadius: 'var(--radius-sm)',
+                                    background: 'rgba(34,197,94,0.12)', color: 'var(--color-success)',
+                                    fontSize: 11, fontWeight: 600,
+                                }}>
+                                    {record.minutes_overtime}m overtime
+                                </span>
+                            )}
+                            {record.minutes_overbreak > 0 && (
+                                <span style={{
+                                    padding: '2px 8px', borderRadius: 'var(--radius-sm)',
+                                    background: 'rgba(239,68,68,0.12)', color: 'var(--color-error)',
+                                    fontSize: 11, fontWeight: 600,
+                                }}>
+                                    {record.minutes_overbreak}m overbreak
+                                </span>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Hours worked bar */}
                     <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                             <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>
@@ -154,7 +206,7 @@ function AttendancePanelContent({ data }) {
                 <PanelSection title="Audit Trail">
                     <PanelField label="Clocked In At"  value={fmtDateTime(record.time_in_at)} />
                     <PanelField label="Clocked Out At" value={fmtDateTime(record.time_out_at)} />
-                    <PanelField label="Recorded By"    value={record.recorded_by_user?.name} />
+                    <PanelField label="Recorded By"    value={record.recorded_by?.name} />
                     <PanelField label="Created"        value={fmtDateTime(record.created_at)} />
                     <PanelField label="Last Updated"   value={fmtDateTime(record.updated_at)} />
                 </PanelSection>
@@ -210,6 +262,16 @@ function ClockWidget({ todayRecord, currentUser, now, canManage }) {
                                     {fmtTime(todayRecord.time_in)} → {fmtTime(todayRecord.time_out)}
                                     {' · '}{fmtMinutes(todayRecord.minutes_worked)}
                                 </div>
+                                {todayRecord.minutes_overtime > 0 && (
+                                    <div style={{ fontSize: 11, color: 'var(--color-success)', marginTop: 2 }}>
+                                        +{todayRecord.minutes_overtime}m overtime
+                                    </div>
+                                )}
+                                {todayRecord.minutes_overbreak > 0 && (
+                                    <div style={{ fontSize: 11, color: 'var(--color-error)', marginTop: 2 }}>
+                                        {todayRecord.minutes_overbreak}m overbreak
+                                    </div>
+                                )}
                             </div>
                         ) : isClockedIn ? (
                             <div style={{ textAlign: 'right' }}>
@@ -389,6 +451,11 @@ export default function AttendanceIndex({
                             {row.minutes_undertime}m early
                         </span>
                     )}
+                    {row.minutes_overtime > 0 && (
+                        <span style={{ display: 'block', fontSize: 11, color: 'var(--color-success)' }}>
+                            +{row.minutes_overtime}m OT
+                        </span>
+                    )}
                 </div>
             ),
         },
@@ -412,6 +479,11 @@ export default function AttendanceIndex({
                     {row.leave_type && (
                         <span style={{ fontSize: 11, color: 'var(--color-info)' }}>
                             {leaveTypes[row.leave_type] ?? row.leave_type}
+                        </span>
+                    )}
+                    {row.minutes_overbreak > 0 && (
+                        <span style={{ fontSize: 11, color: 'var(--color-error)' }}>
+                            {row.minutes_overbreak}m overbreak
                         </span>
                     )}
                     {row.hr_override && (
@@ -481,90 +553,93 @@ export default function AttendanceIndex({
                     canManage={canManage}
                 />
 
-                <StatGrid min="150px">
-                    <SharedStatCard icon={CheckCircle} label="Present"   value={stats.total_present}   tone="success" />
-                    <SharedStatCard icon={XCircle}     label="Absent"    value={stats.total_absent}    tone="error" />
-                    <SharedStatCard icon={MinusCircle} label="Half Day"  value={stats.total_half_day}  tone="warning" />
-                    <SharedStatCard icon={Users}       label="On Leave"  value={stats.total_on_leave}  tone="info" />
-                    <SharedStatCard icon={Clock}       label="Late"      value={stats.total_late}      tone="warning" />
-                    <SharedStatCard icon={AlertTriangle} label="Undertime" value={stats.total_undertime} tone="warning" />
+                {/* Stats — Excel column order: Present | Absent | OT | Late | OB | Undertime */}
+                <StatGrid min="130px">
+                    <SharedStatCard icon={CheckCircle}  label="Present"    value={stats.total_present}   tone="success" />
+                    <SharedStatCard icon={XCircle}      label="Absent"     value={stats.total_absent}    tone="error" />
+                    <SharedStatCard icon={MinusCircle}  label="Half Day"   value={stats.total_half_day}  tone="warning" />
+                    <SharedStatCard icon={Users}        label="On Leave"   value={stats.total_on_leave}  tone="info" />
+                    <SharedStatCard icon={TrendingUp}   label="Overtime"   value={stats.total_overtime}  tone="success" />
+                    <SharedStatCard icon={AlertTriangle} label="Late"      value={stats.total_late}      tone="warning" />
+                    <SharedStatCard icon={Coffee}       label="Overbreak"  value={stats.total_overbreak} tone="error" />
+                    <SharedStatCard icon={Clock}        label="Undertime"  value={stats.total_undertime} tone="warning" />
                 </StatGrid>
 
-                                <TableWithPanel
+                <TableWithPanel
                     panelOpen={showPanel}
                     panel={
                         <DetailPanel
-                open={showPanel}
-                onClose={() => { setShowPanel(false); panel.close(); }}
-                loading={panel.loading}
-                error={panel.error}
-                title={d?.record ? (d.record.user?.name ?? `Employee #${d.record.employee_id}`) : ''}
-                subtitle={d?.record ? fmtLong(d.record.work_date) : ''}
-                badges={d?.record && (
-                    <Badge variant={STATUS_VARIANT[d.record.status] ?? 'neutral'}>
-                        {d.statuses?.[d.record.status] ?? d.record.status}
-                    </Badge>
-                )}
-            >
-                {d?.record && <AttendancePanelContent data={d} />}
-            </DetailPanel>
+                            open={showPanel}
+                            onClose={() => { setShowPanel(false); panel.close(); }}
+                            loading={panel.loading}
+                            error={panel.error}
+                            title={d?.record ? (d.record.user?.name ?? `Employee #${d.record.employee_id}`) : ''}
+                            subtitle={d?.record ? fmtLong(d.record.work_date) : ''}
+                            badges={d?.record && (
+                                <Badge variant={STATUS_VARIANT[d.record.status] ?? 'neutral'}>
+                                    {d.statuses?.[d.record.status] ?? d.record.status}
+                                </Badge>
+                            )}
+                        >
+                            {d?.record && <AttendancePanelContent data={d} />}
+                        </DetailPanel>
                     }
                 >
                     <DataTable
                         panelOpen={showPanel}
                         selectedKey={panel.id}
-                    columns={columns}
-                    rows={records.data ?? []}
-                    pagination={records}
-                    onPageChange={(page) =>
-                        router.get(route('attendance.index'), { ...filters, search: searchInput, page }, { preserveState: true })
-                    }
-                    toolbar={
-                        <FilterStrip>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)', flex: '0 0 auto' }}>
-                                <Button variant="ghost" size="sm" icon={ChevronLeft} onClick={() => goMonth(-1)} />
-                                <span className="font-body font-semibold" style={{ fontSize: 'var(--font-size-small)', minWidth: 120, textAlign: 'center', color: 'var(--color-text)' }}>
-                                    {MONTHS[month - 1]} {year}
-                                </span>
-                                <Button variant="ghost" size="sm" icon={ChevronRight} onClick={() => goMonth(1)} />
-                            </div>
-                            <FilterField grow>
-                                <Input
-                                    placeholder="Search employee..."
-                                    value={searchInput}
-                                    onChange={(e) => setSearchInput(e.target.value)}
-                                    onKeyDown={handleSearchKey}
-                                    icon={Search}
-                                />
-                            </FilterField>
-                            <FilterField>
-                                <Select
-                                    options={[
-                                        { value: '', label: 'All Statuses' },
-                                        ...Object.entries(statuses).map(([v, l]) => ({ value: v, label: l })),
-                                    ]}
-                                    value={filters.status ?? ''}
-                                    onChange={(e) => applyFilter({ status: e.target.value || undefined, page: 1 })}
-                                />
-                            </FilterField>
-                            {branches?.length > 1 && (
+                        columns={columns}
+                        rows={records.data ?? []}
+                        pagination={records}
+                        onPageChange={(page) =>
+                            router.get(route('attendance.index'), { ...filters, search: searchInput, page }, { preserveState: true })
+                        }
+                        toolbar={
+                            <FilterStrip>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)', flex: '0 0 auto' }}>
+                                    <Button variant="ghost" size="sm" icon={ChevronLeft} onClick={() => goMonth(-1)} />
+                                    <span className="font-body font-semibold" style={{ fontSize: 'var(--font-size-small)', minWidth: 120, textAlign: 'center', color: 'var(--color-text)' }}>
+                                        {MONTHS[month - 1]} {year}
+                                    </span>
+                                    <Button variant="ghost" size="sm" icon={ChevronRight} onClick={() => goMonth(1)} />
+                                </div>
+                                <FilterField grow>
+                                    <Input
+                                        placeholder="Search employee…"
+                                        value={searchInput}
+                                        onChange={(e) => setSearchInput(e.target.value)}
+                                        onKeyDown={handleSearchKey}
+                                        icon={Search}
+                                    />
+                                </FilterField>
                                 <FilterField>
                                     <Select
                                         options={[
-                                            { value: '', label: 'All Branches' },
-                                            ...branches.map((b) => ({ value: b.id, label: b.name })),
+                                            { value: '', label: 'All Statuses' },
+                                            ...Object.entries(statuses).map(([v, l]) => ({ value: v, label: l })),
                                         ]}
-                                        value={filters.branchId ?? ''}
-                                        onChange={(e) => applyFilter({ branch_id: e.target.value || undefined, page: 1 })}
+                                        value={filters.status ?? ''}
+                                        onChange={(e) => applyFilter({ status: e.target.value || undefined, page: 1 })}
                                     />
                                 </FilterField>
-                            )}
-                            {hasActiveFilters && (
-                                <Button variant="ghost" onClick={clearFilters}>Clear</Button>
-                            )}
-                        </FilterStrip>
-                    }
-                />
+                                {branches?.length > 1 && (
+                                    <FilterField>
+                                        <Select
+                                            options={[
+                                                { value: '', label: 'All Branches' },
+                                                ...branches.map((b) => ({ value: b.id, label: b.name })),
+                                            ]}
+                                            value={filters.branchId ?? ''}
+                                            onChange={(e) => applyFilter({ branch_id: e.target.value || undefined, page: 1 })}
+                                        />
+                                    </FilterField>
+                                )}
+                                {hasActiveFilters && (
+                                    <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                                )}
+                            </FilterStrip>
+                        }
+                    />
                 </TableWithPanel>
             </PageStack>
         </AppShell>

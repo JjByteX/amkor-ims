@@ -81,6 +81,8 @@ class Employee extends Model
         'data_privacy_consent_date',
         'user_id',
         'remarks',
+        'salary_increase_amount',       // Gap #12 — new salary after increase
+        'salary_increase_date',         // Gap #12 — effective date of increase
         'created_by',
         'updated_by',
 
@@ -101,6 +103,8 @@ class Employee extends Model
         'uniform_records'           => 'array',
         'vl_fund'                   => 'decimal:2',
         'is_agent'                  => 'boolean',
+        'salary_increase_amount'    => 'decimal:2',
+        'salary_increase_date'      => 'date',
     ];
 
     // ── Constants ─────────────────────────────────────────────────────────────

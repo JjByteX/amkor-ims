@@ -44,6 +44,7 @@ class BirTransaction extends Model
         'pdf_path',
         'bir_atp_number',
         'particulars',
+        'line_items',       // Gap #6 — JSON array of { date, description, amount }
         'remarks',
         'branch_id',
         'created_by',
@@ -51,26 +52,50 @@ class BirTransaction extends Model
     ];
 
     protected $casts = [
-        'transaction_date' => 'date',
-        'due_date' => 'date',
-        'gross_amount' => 'decimal:2',
-        'vatable_sales' => 'decimal:2',
-        'vat_exempt_sales' => 'decimal:2',
-        'vat_zero_rated_sales' => 'decimal:2',
-        'vat_amount' => 'decimal:2',
-        'total_sales_vat_inclusive' => 'decimal:2',
-        'sc_pwd_discount' => 'decimal:2',
-        'withholding_tax' => 'decimal:2',
-        'net_amount_due' => 'decimal:2',
-        'pdf_generated' => 'boolean',
-        'pdf_generated_at' => 'datetime',
+        'transaction_date'         => 'date',
+        'due_date'                 => 'date',
+        'gross_amount'             => 'decimal:2',
+        'vatable_sales'            => 'decimal:2',
+        'vat_exempt_sales'         => 'decimal:2',
+        'vat_zero_rated_sales'     => 'decimal:2',
+        'vat_amount'               => 'decimal:2',
+        'total_sales_vat_inclusive'=> 'decimal:2',
+        'sc_pwd_discount'          => 'decimal:2',
+        'withholding_tax'          => 'decimal:2',
+        'net_amount_due'           => 'decimal:2',
+        'pdf_generated'            => 'boolean',
+        'pdf_generated_at'         => 'datetime',
+        'line_items'               => 'array',  // Gap #6 — auto-cast JSON ↔ PHP array
     ];
+
+    // ─── Boot ────────────────────────────────────────────────────────────────
+
+    /**
+     * Gap #6 — Keep gross_amount in sync with line_items total on every save.
+     *
+     * For AR and SI records line_items will be null, so gross_amount is set
+     * directly as before and this hook is a no-op.
+     *
+     * For SOA records, gross_amount is always recomputed from line_items so
+     * the two can never drift apart.
+     */
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::saving(function (self $tx): void {
+            if ($tx->document_type === 'SOA' && ! empty($tx->line_items)) {
+                $total = collect($tx->line_items)->sum(fn ($row) => (float) ($row['amount'] ?? 0));
+                $tx->gross_amount = round($total, 2);
+            }
+        });
+    }
 
     // ─── Constants ──────────────────────────────────────────────────────────
 
     public const DOCUMENT_TYPES = [
-        'AR' => 'Acknowledgement Receipt',
-        'SI' => 'Service Invoice',
+        'AR'  => 'Acknowledgement Receipt',
+        'SI'  => 'Service Invoice',
         'SOA' => 'Statement of Account',
     ];
 
@@ -84,20 +109,20 @@ class BirTransaction extends Model
     public const WHT_RATE = 0.02;
 
     public const SOURCE_TYPES = [
-        'booking' => 'Reservation / Booking',
-        'visa' => 'Visa & Documentation',
-        'ormoc' => 'Ormoc Branch',
-        'collectible' => 'Accounts Receivable',
-        'manual' => 'Manual Entry',
+        'booking'    => 'Reservation / Booking',
+        'visa'       => 'Visa & Documentation',
+        'ormoc'      => 'Ormoc Branch',
+        'collectible'=> 'Accounts Receivable',
+        'manual'     => 'Manual Entry',
     ];
 
     public const PAYMENT_MODES = [
-        'cash' => 'Cash',
-        'bdo' => 'BDO',
-        'bpi' => 'BPI',
+        'cash'      => 'Cash',
+        'bdo'       => 'BDO',
+        'bpi'       => 'BPI',
         'metrobank' => 'Metrobank',
-        'card' => 'Credit/Debit Card',
-        'check' => 'Check',
+        'card'      => 'Credit/Debit Card',
+        'check'     => 'Check',
     ];
 
     // ─── Relationships ───────────────────────────────────────────────────────
@@ -121,38 +146,22 @@ class BirTransaction extends Model
 
     public function scopeForYear($query, ?int $year)
     {
-        if (! $year) {
-            return $query;
-        }
-
-        return $query->where('year', $year);
+        return $year ? $query->where('year', $year) : $query;
     }
 
     public function scopeForMonth($query, ?int $month)
     {
-        if (! $month) {
-            return $query;
-        }
-
-        return $query->where('month', $month);
+        return $month ? $query->where('month', $month) : $query;
     }
 
     public function scopeForDocumentType($query, ?string $type)
     {
-        if (! $type) {
-            return $query;
-        }
-
-        return $query->where('document_type', $type);
+        return $type ? $query->where('document_type', $type) : $query;
     }
 
     public function scopeForBranch($query, ?int $branchId)
     {
-        if (! $branchId) {
-            return $query;
-        }
-
-        return $query->where('branch_id', $branchId);
+        return $branchId ? $query->where('branch_id', $branchId) : $query;
     }
 
     public function scopeSearch($query, ?string $term)
@@ -177,6 +186,27 @@ class BirTransaction extends Model
     // ─── Helpers / Computed ──────────────────────────────────────────────────
 
     /**
+     * Gap #6 — Return line_items padded to $count rows.
+     *
+     * The SOA blade iterates exactly 15 rows. This ensures we always get
+     * exactly that many, with empty rows at the bottom to fill the table.
+     *
+     * @return array<int, array{date: string, description: string, amount: float}>
+     */
+    public function paddedLineItems(int $count = 15): array
+    {
+        $items = $this->line_items ?? [];
+
+        $empty = ['date' => '', 'description' => '', 'amount' => null];
+
+        while (count($items) < $count) {
+            $items[] = $empty;
+        }
+
+        return array_slice($items, 0, $count);
+    }
+
+    /**
      * Compute VAT breakdown from a gross (VAT-inclusive) amount.
      * Returns array ready to fill model fields.
      */
@@ -188,43 +218,42 @@ class BirTransaction extends Model
         float $withholdingTax = 0
     ): array {
         if ($vatExempt) {
-            $vatableSales = 0;
-            $vatExemptSales = $grossAmount;
+            $vatableSales      = 0;
+            $vatExemptSales    = $grossAmount;
             $vatZeroRatedSales = 0;
-            $vatAmount = 0;
+            $vatAmount         = 0;
             $totalVatInclusive = $grossAmount;
         } elseif ($vatZeroRated) {
-            $vatableSales = 0;
-            $vatExemptSales = 0;
+            $vatableSales      = 0;
+            $vatExemptSales    = 0;
             $vatZeroRatedSales = $grossAmount;
-            $vatAmount = 0;
+            $vatAmount         = 0;
             $totalVatInclusive = $grossAmount;
         } else {
-            // Standard: gross is VAT-inclusive. Divide out the 12% VAT.
-            $vatableSales = round($grossAmount / (1 + self::VAT_RATE), 2);
-            $vatExemptSales = 0;
+            $vatableSales      = round($grossAmount / (1 + self::VAT_RATE), 2);
+            $vatExemptSales    = 0;
             $vatZeroRatedSales = 0;
-            $vatAmount = round($grossAmount - $vatableSales, 2);
+            $vatAmount         = round($grossAmount - $vatableSales, 2);
             $totalVatInclusive = $grossAmount;
         }
 
         $totalAfterDiscount = $totalVatInclusive - $scPwdDiscount;
-        $netAmountDue = $totalAfterDiscount - $withholdingTax;
+        $netAmountDue       = $totalAfterDiscount - $withholdingTax;
 
         return [
-            'vatable_sales' => $vatableSales,
-            'vat_exempt_sales' => $vatExemptSales,
-            'vat_zero_rated_sales' => $vatZeroRatedSales,
-            'vat_amount' => $vatAmount,
-            'total_sales_vat_inclusive' => $totalVatInclusive,
-            'sc_pwd_discount' => $scPwdDiscount,
-            'withholding_tax' => $withholdingTax,
-            'net_amount_due' => max(0, $netAmountDue),
+            'vatable_sales'              => $vatableSales,
+            'vat_exempt_sales'           => $vatExemptSales,
+            'vat_zero_rated_sales'       => $vatZeroRatedSales,
+            'vat_amount'                 => $vatAmount,
+            'total_sales_vat_inclusive'  => $totalVatInclusive,
+            'sc_pwd_discount'            => $scPwdDiscount,
+            'withholding_tax'            => $withholdingTax,
+            'net_amount_due'             => max(0, $netAmountDue),
         ];
     }
 
     /**
-     * Generate next document number in the format: AR-2026-00001, SI-2026-00001, SOA-2026-00001
+     * Generate next document number in the format: AR-2026-00001
      */
     public static function nextDocumentNumber(string $type): string
     {
@@ -274,10 +303,10 @@ class BirTransaction extends Model
             $pesos %= 1_000;
         }
         $words .= $convertGroup($pesos);
-        $words = trim($words).' Pesos';
+        $words  = trim($words).' Pesos';
 
         $centavos = (int) $centavos;
-        $words .= $centavos > 0
+        $words   .= $centavos > 0
             ? ' and '.$convertGroup($centavos).' Centavos'
             : ' Only';
 

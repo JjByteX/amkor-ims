@@ -5,7 +5,7 @@ import {
     AlertCircle, CheckCircle2, Clock, Hash, Trash2,
 } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
-import DetailPanel, {PanelActions, PanelCol, PanelColRight, PanelColumns, PanelDivider, PanelField, PanelFieldRow, PanelMeta, PanelMetaItem, PanelSection} from '../../Components/Shared/DetailPanel';
+import DetailPanel, {PanelActions, PanelCol, PanelColRight, PanelColumns, PanelDivider, PanelField, PanelFieldRow, PanelFullRow, PanelMeta, PanelMetaItem, PanelSection} from '../../Components/Shared/DetailPanel';
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
 import Input from '../../Components/UI/Input';
@@ -97,8 +97,14 @@ export function VisaContent({ application, statuses, paymentModes, canWrite, can
                             <PanelField label="Date"       value={fmtDate(application.date)} />
                             <PanelField label="Agent Code" value={application.agent_code} highlight />
                         </PanelFieldRow>
-                        <PanelField label="Agency"              value={application.agency} />
-                        <PanelField label="Visa / Service Type" value={application.visa_type} />
+                        <PanelFieldRow>
+                            <PanelField label="Agency"              value={application.agency} />
+                            <PanelField label="Visa / Service Type" value={application.visa_type} />
+                        </PanelFieldRow>
+                        <PanelFieldRow>
+                            <PanelField label="Date of Birth"          value={fmtDate(application.date_of_birth)} />
+                            <PanelField label="Embassy / Operator"     value={application.embassy_name} />
+                        </PanelFieldRow>
                     </PanelSection>
 
                     <PanelDivider />
@@ -230,6 +236,56 @@ export function VisaContent({ application, statuses, paymentModes, canWrite, can
                     </PanelSection>
                 </PanelColRight>
             </PanelColumns>
+
+            {/* Payment Breakdown — collected from client (SP), per bank */}
+            <PanelFullRow title="Payment Breakdown (Collected from Client)">
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-2)' }}>
+                    <PanelField label="Cash"      value={<CurrencyDisplay amount={application.payment_cash}      currency="PHP" />} />
+                    <PanelField label="BDO"       value={<CurrencyDisplay amount={application.payment_bdo}       currency="PHP" />} />
+                    <PanelField label="BPI"       value={<CurrencyDisplay amount={application.payment_bpi}       currency="PHP" />} />
+                    <PanelField label="Metrobank" value={<CurrencyDisplay amount={application.payment_metrobank} currency="PHP" />} />
+                    <PanelField label="Card"      value={<CurrencyDisplay amount={application.payment_card}      currency="PHP" />} />
+                    <PanelField label="Check"     value={<CurrencyDisplay amount={application.payment_check}     currency="PHP" />} />
+                </div>
+                <div style={{ marginTop: 'var(--space-1)' }}>
+                    <PanelField
+                        label="Total Collected"
+                        highlight
+                        value={<CurrencyDisplay
+                            amount={
+                                (parseFloat(application.payment_cash) || 0)
+                                + (parseFloat(application.payment_bdo) || 0)
+                                + (parseFloat(application.payment_bpi) || 0)
+                                + (parseFloat(application.payment_metrobank) || 0)
+                                + (parseFloat(application.payment_card) || 0)
+                                + (parseFloat(application.payment_check) || 0)
+                            }
+                            currency="PHP"
+                        />}
+                    />
+                </div>
+            </PanelFullRow>
+
+            {/* Payable Breakdown — paid out to embassy/operator (NP) */}
+            <PanelFullRow title="Payable to Embassy / Operator (NP)">
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-2)' }}>
+                    <PanelField label="Cash (PHP)"   value={<CurrencyDisplay amount={application.payable_cash}         currency="PHP" />} />
+                    <PanelField label="Cash (USD)"   value={<CurrencyDisplay amount={application.payable_cash_usd}     currency="USD" />} />
+                    <PanelField label="Bank Deposit" value={<CurrencyDisplay amount={application.payable_bank_deposit} currency="PHP" />} />
+                    <PanelField label="Credit Card"  value={<CurrencyDisplay amount={application.payable_credit_card}  currency="PHP" />} />
+                </div>
+            </PanelFullRow>
+
+            {/* Disbursement & OR logistics tracking */}
+            <PanelFullRow title="Disbursement & OR Tracking">
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-2)' }}>
+                    <PanelField label="CV #"               value={application.cv_number} mono />
+                    <PanelField label="Date Requested"     value={fmtDate(application.date_requested)} />
+                    <PanelField label="Courier"            value={application.courier_name} />
+                    <PanelField label="Date Received (OR)" value={fmtDate(application.date_received)} />
+                    <PanelField label="Date Filed (Embassy)" value={fmtDate(application.date_filed)} />
+                </div>
+            </PanelFullRow>
 
             {/* Modals */}
             <Modal open={statusModal} onClose={() => setStatusModal(false)} title="Update Status">

@@ -327,6 +327,7 @@ class MarketingController extends Controller
             'categories' => MarketingExpense::CATEGORIES,
             'statuses' => MarketingExpense::STATUSES,
             'currencies' => MarketingExpense::CURRENCIES,
+            'platforms' => MarketingExpense::PLATFORMS,
             'canCreate' => $this->canCreate($request),
             'canApprove' => $this->canReview($request),
             'currentYear' => now()->year,
@@ -340,16 +341,21 @@ class MarketingController extends Controller
         $this->requireMarketer($request);
 
         $data = $request->validate([
-            'campaign_name' => ['required', 'string', 'max:255'],
-            'category' => ['required', 'in:'.implode(',', array_keys(MarketingExpense::CATEGORIES))],
-            'amount' => ['required', 'numeric', 'min:0.01'],
-            'currency' => ['nullable', 'in:'.implode(',', MarketingExpense::CURRENCIES)],
-            'expense_date' => ['required', 'date'],
-            'period_month' => ['nullable', 'integer', 'min:1', 'max:12'],
-            'period_year' => ['nullable', 'integer', 'min:2020', 'max:2099'],
-            'vendor' => ['nullable', 'string', 'max:255'],
-            'remarks' => ['nullable', 'string'],
-            'material_id' => ['nullable', 'exists:marketing_materials,id'],
+            'campaign_name'  => ['required', 'string', 'max:255'],
+            'category'       => ['required', 'in:'.implode(',', array_keys(MarketingExpense::CATEGORIES))],
+            'platform'       => ['nullable', 'in:'.implode(',', array_keys(MarketingExpense::PLATFORMS))],
+            'amount'         => ['required', 'numeric', 'min:0.01'],
+            'budget'         => ['nullable', 'numeric', 'min:0'],
+            'currency'       => ['nullable', 'in:'.implode(',', MarketingExpense::CURRENCIES)],
+            'expense_date'   => ['required', 'date'],
+            'period_month'   => ['nullable', 'integer', 'min:1', 'max:12'],
+            'period_year'    => ['nullable', 'integer', 'min:2020', 'max:2099'],
+            'vendor'         => ['nullable', 'string', 'max:255'],
+            'payee'          => ['nullable', 'string', 'max:255'],
+            'invoice_number' => ['nullable', 'string', 'max:100'],
+            'voucher_number' => ['nullable', 'string', 'max:100'],
+            'remarks'        => ['nullable', 'string'],
+            'material_id'    => ['nullable', 'exists:marketing_materials,id'],
         ]);
 
         $expenseDate = \Illuminate\Support\Carbon::parse($data['expense_date']);
@@ -370,6 +376,42 @@ class MarketingController extends Controller
         return redirect()
             ->route('marketing.expenses')
             ->with('flash', ['type' => 'success', 'message' => "Expense \"{$expense->campaign_name}\" recorded."]);
+    }
+
+    // ── Expenses — Update ─────────────────────────────────────────────────────
+
+    public function updateExpense(Request $request, MarketingExpense $expense): RedirectResponse
+    {
+        $this->requireMarketer($request);
+
+        $data = $request->validate([
+            'campaign_name'  => ['required', 'string', 'max:255'],
+            'category'       => ['required', 'in:'.implode(',', array_keys(MarketingExpense::CATEGORIES))],
+            'platform'       => ['nullable', 'in:'.implode(',', array_keys(MarketingExpense::PLATFORMS))],
+            'amount'         => ['required', 'numeric', 'min:0.01'],
+            'budget'         => ['nullable', 'numeric', 'min:0'],
+            'currency'       => ['nullable', 'in:'.implode(',', MarketingExpense::CURRENCIES)],
+            'expense_date'   => ['required', 'date'],
+            'period_month'   => ['nullable', 'integer', 'min:1', 'max:12'],
+            'period_year'    => ['nullable', 'integer', 'min:2020', 'max:2099'],
+            'vendor'         => ['nullable', 'string', 'max:255'],
+            'payee'          => ['nullable', 'string', 'max:255'],
+            'invoice_number' => ['nullable', 'string', 'max:100'],
+            'voucher_number' => ['nullable', 'string', 'max:100'],
+            'remarks'        => ['nullable', 'string'],
+            'material_id'    => ['nullable', 'exists:marketing_materials,id'],
+        ]);
+
+        $expenseDate = \Illuminate\Support\Carbon::parse($data['expense_date']);
+        $data['period_month'] = $data['period_month'] ?? $expenseDate->month;
+        $data['period_year']  = $data['period_year']  ?? $expenseDate->year;
+        $data['updated_by']   = $request->user()->id;
+
+        $expense->update($data);
+
+        return redirect()
+            ->route('marketing.expenses')
+            ->with('flash', ['type' => 'success', 'message' => "Expense \"{$expense->campaign_name}\" updated."]);
     }
 
     // ── Expenses — Approve ───────────────────────────────────────────────────

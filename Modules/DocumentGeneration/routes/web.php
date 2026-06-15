@@ -12,8 +12,15 @@ use Modules\DocumentGeneration\Http\Controllers\DocumentGenerationController;
 |
 | BIR documents (AR, SI, SOA) reference BirTransaction records.
 | Voucher documents (CV, Check Voucher) reference Disbursement Voucher records.
+| Quotation references a ReservationBooking record directly.
 |
 | Route naming convention: documents.{type}
+|
+| Render methods:
+|   AR, SI, CV, Check Voucher — pdftk AcroForm template fill
+|   SOA                       — Blade → wkhtmltopdf (dynamic line items, Gap #6)
+|   Quotation                 — Blade → wkhtmltopdf (Gap #5)
+|
 */
 
 Route::middleware(['auth'])->group(function () {
@@ -39,4 +46,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('documents/check-voucher/{voucher}',
         [DocumentGenerationController::class, 'generateCheckVoucher'])
         ->name('documents.check-voucher');
+
+    // ── Quotation (Gap #5) ────────────────────────────────────────────────
+    // Generated from a ReservationBooking at any status (inquiry → confirmed).
+    // URL: /documents/quotation/{bookingId}
+    Route::get('documents/quotation/{booking}',
+        [DocumentGenerationController::class, 'generateQuotation'])
+        ->name('documents.quotation');
 });

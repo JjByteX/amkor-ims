@@ -94,8 +94,23 @@ export default function EmployeeForm({ employee, statuses, departments, genders,
         data_privacy_consent          : employee?.data_privacy_consent ?? false,
         data_privacy_consent_date     : employee?.data_privacy_consent_date?.substring(0, 10) ?? '',
         remarks                       : employee?.remarks ?? '',
+        salary_increase_amount        : employee?.salary_increase_amount ?? '',
+        salary_increase_date          : employee?.salary_increase_date?.substring(0, 10) ?? '',
         is_agent                      : employee?.is_agent ?? false,
         agent_code                    : employee?.agent_code ?? '',
+        // Gap #5 — fields from 2026_06_14_000006 migration
+        id_number                     : employee?.id_number ?? '',
+        nickname                      : employee?.nickname ?? '',
+        bank_account_number           : employee?.bank_account_number ?? '',
+        bank_name                     : employee?.bank_name ?? '',
+        maturity_date                 : employee?.maturity_date?.substring(0, 10) ?? '',
+        last_evaluation_date          : employee?.last_evaluation_date?.substring(0, 10) ?? '',
+        vl_fund                       : employee?.vl_fund ?? '',
+        vl_fund_date                  : employee?.vl_fund_date?.substring(0, 10) ?? '',
+        philcare_number               : employee?.philcare_number ?? '',
+        medicard_number               : employee?.medicard_number ?? '',
+        company_viber_number          : employee?.company_viber_number ?? '',
+        company_email_outlook         : employee?.company_email_outlook ?? '',
     });
 
     const [submitting, setSubmitting] = useState(false);
@@ -146,6 +161,7 @@ export default function EmployeeForm({ employee, statuses, departments, genders,
                             <Input label="Middle Name" value={form.middle_name} onChange={set('middle_name')} />
                             <Input label="Suffix" value={form.suffix} onChange={set('suffix')} placeholder="Jr., Sr., III…" />
                         </FormRow>
+                        <Input label="Nickname" value={form.nickname} onChange={set('nickname')} placeholder="Call name / display name" />
                         <FormRow>
                             <Input label="Date of Birth" type="date" value={form.date_of_birth} onChange={set('date_of_birth')} />
                             <Select label="Gender" value={form.gender} onChange={set('gender')} options={[{ value: '', label: 'Select…' }, ...genders.map((g) => ({ value: g, label: g }))]} />
@@ -155,6 +171,10 @@ export default function EmployeeForm({ employee, statuses, departments, genders,
                         <FormRow>
                             <Input label="Work Email" type="email" value={form.work_email} onChange={set('work_email')} error={errors?.work_email} />
                             <Input label="Personal Email" type="email" value={form.personal_email} onChange={set('personal_email')} />
+                        </FormRow>
+                        <FormRow>
+                            <Input label="Company Viber" value={form.company_viber_number} onChange={set('company_viber_number')} placeholder="e.g. +63…" />
+                            <Input label="Outlook / 365 Email" type="email" value={form.company_email_outlook} onChange={set('company_email_outlook')} error={errors?.company_email_outlook} />
                         </FormRow>
                         <Input label="Mobile Number" value={form.mobile_number} onChange={set('mobile_number')} />
                         <FormRow>
@@ -168,8 +188,9 @@ export default function EmployeeForm({ employee, statuses, departments, genders,
                     <FormCard title="Employment & Government IDs">
                         <FormRow>
                             <Input label="Employee Code" value={form.employee_code} onChange={set('employee_code')} placeholder="Auto-generated if blank" error={errors?.employee_code} />
-                            <Input label="Position *" value={form.position} onChange={set('position')} error={errors?.position} />
+                            <Input label="ID Number" value={form.id_number} onChange={set('id_number')} placeholder="e.g. AMK-2024-001" error={errors?.id_number} />
                         </FormRow>
+                        <Input label="Position *" value={form.position} onChange={set('position')} error={errors?.position} />
                         <FormRow>
                             <Select label="Department" value={form.department} onChange={set('department')} options={[{ value: '', label: 'Select…' }, ...Object.entries(departments).map(([v, l]) => ({ value: v, label: l }))]} />
                             <Select label="Branch" value={form.branch_id} onChange={set('branch_id')} options={[{ value: '', label: 'Select…' }, ...branches.map((b) => ({ value: b.id, label: b.name }))]} />
@@ -180,6 +201,10 @@ export default function EmployeeForm({ employee, statuses, departments, genders,
                             <Input label="Regularization Date" type="date" value={form.regularization_date} onChange={set('regularization_date')} />
                         </FormRow>
                         <FormRow>
+                            <Input label="Maturity Date" type="date" value={form.maturity_date} onChange={set('maturity_date')} />
+                            <Input label="Last Evaluation Date" type="date" value={form.last_evaluation_date} onChange={set('last_evaluation_date')} />
+                        </FormRow>
+                        <FormRow>
                             <Input label="SSS Number" value={form.sss_number} onChange={set('sss_number')} />
                             <Input label="PhilHealth No." value={form.philhealth_number} onChange={set('philhealth_number')} />
                         </FormRow>
@@ -188,8 +213,20 @@ export default function EmployeeForm({ employee, statuses, departments, genders,
                             <Input label="TIN" value={form.tin_number} onChange={set('tin_number')} />
                         </FormRow>
                         <FormRow>
+                            <Input label="PhilCare No." value={form.philcare_number} onChange={set('philcare_number')} />
+                            <Input label="Medicard No." value={form.medicard_number} onChange={set('medicard_number')} />
+                        </FormRow>
+                        <FormRow>
+                            <Input label="Bank Name" value={form.bank_name} onChange={set('bank_name')} placeholder="e.g. BDO, BPI" />
+                            <Input label="Bank Account No." value={form.bank_account_number} onChange={set('bank_account_number')} />
+                        </FormRow>
+                        <FormRow>
                             <Input label="SIL Total (days)" type="number" min={0} value={form.sil_total} onChange={set('sil_total')} />
                             <Input label="SIL Used (days)" type="number" min={0} value={form.sil_used} onChange={set('sil_used')} />
+                        </FormRow>
+                        <FormRow>
+                            <Input label="VL Fund (₱)" type="number" min={0} step="0.01" value={form.vl_fund} onChange={set('vl_fund')} />
+                            <Input label="VL Fund Date" type="date" value={form.vl_fund_date} onChange={set('vl_fund_date')} />
                         </FormRow>
 
                         {/* ── Agent ──────────────────────────────────────── */}
@@ -305,6 +342,40 @@ export default function EmployeeForm({ employee, statuses, departments, genders,
                             )}
                         </div>
                         <Textarea label="Remarks / Notes" value={form.remarks} onChange={set('remarks')} rows={3} />
+
+                        {/* ── Salary Increase — Gap #12 ──────────────────── */}
+                        <div style={{
+                            borderTop  : '1px solid var(--color-border-soft)',
+                            paddingTop : 'var(--space-2)',
+                            marginTop  : 'var(--space-1)',
+                        }}>
+                            <div style={{
+                                fontSize     : 'var(--font-size-small)',
+                                fontWeight   : 700,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.04em',
+                                color        : 'var(--color-text-muted)',
+                                marginBottom : 'var(--space-2)',
+                            }}>
+                                Salary Increase
+                            </div>
+                            <FormRow>
+                                <Input
+                                    label="New Salary Amount (₱)"
+                                    type="number"
+                                    min={0}
+                                    step="0.01"
+                                    value={form.salary_increase_amount}
+                                    onChange={set('salary_increase_amount')}
+                                />
+                                <Input
+                                    label="Effective Date"
+                                    type="date"
+                                    value={form.salary_increase_date}
+                                    onChange={set('salary_increase_date')}
+                                />
+                            </FormRow>
+                        </div>
                     </FormCard>
 
                     <FormActions>
