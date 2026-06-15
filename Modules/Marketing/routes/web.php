@@ -23,6 +23,7 @@ Route::middleware(['auth', 'verified'])->prefix('marketing')->name('marketing.')
     // ── Expenses ──────────────────────────────────────────────────────────────
     Route::get('/expenses/list', [MarketingController::class, 'expenses'])->name('expenses');
     Route::post('/expenses', [MarketingController::class, 'storeExpense'])->name('expenses.store');
+    Route::put('/expenses/{expense}', [MarketingController::class, 'updateExpense'])->name('expenses.update');
     Route::post('/expenses/{expense}/approve', [MarketingController::class, 'approveExpense'])->name('expenses.approve');
 
     // ── Analytics ─────────────────────────────────────────────────────────────

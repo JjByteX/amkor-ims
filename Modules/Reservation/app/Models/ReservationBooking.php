@@ -20,26 +20,28 @@ class ReservationBooking extends Model
         'date',
         'agent_code',
         'client_name',
-        'date_of_birth',            // Gap #17 — passenger DOB
+        'date_of_birth',
         'contact_number',
         'email',
         'corporate_account',
         'contact_id',
         'destination',
-        'airline',                  // Gap #13 — carrier name
+        'airline',
         'travel_date',
         'return_date',
         'pax_count',
         'service_type',
-        'transaction_type',         // Gap #16 — FIT / Corporate / Group / Blocking
+        'transaction_type',
+        'source',
         'particulars',
         'inclusions',
         'exclusions',
         'selling_price',
         'net_payable',
         'income',
-        'excess',                   // Gap #14 — overpayment / rounding column
-        'insurance_nett',           // Gap #15 — net insurance cost
+        'excess',
+        'insurance_nett',
+        'acr',
         'mode_of_payment',
         'payment_due_date',
         'soa_number',
@@ -55,7 +57,6 @@ class ReservationBooking extends Model
         'confirmed_by',
         'remarks',
         'audit_remarks',
-        'source',                   // Gap #17 (cont.) — referral source
         'branch_id',
         'created_by',
         'updated_by',
@@ -95,7 +96,6 @@ class ReservationBooking extends Model
         'other'     => 'Other',
     ];
 
-    // Transaction types as labelled in Excel (For Collection / Sales Ledger columns)
     public const TRANSACTION_TYPES = [
         'fit'       => 'FIT',
         'corporate' => 'Corporate',
@@ -104,15 +104,13 @@ class ReservationBooking extends Model
     ];
 
     public const PAYMENT_MODES = [
-        'cash'         => 'Cash',
+        'cash'          => 'Cash',
         'bank_transfer' => 'Bank Transfer / Deposit',
-        'credit_card'  => 'Credit Card',
-        'check'        => 'Check',
-        'on_account'   => 'On Account',
+        'credit_card'   => 'Credit Card',
+        'check'         => 'Check',
+        'on_account'    => 'On Account',
     ];
 
-    // Fixed: was hardcoded to ['RT','JHONA','JRT','MMT','RESA'] — now matches seeder
-    // Source of truth remains the agent_codes table; this constant is for validation fallback only.
     public const AGENT_CODES = ['RT', 'RP', 'EJ', 'KG', 'CM', 'JR', 'EB', 'JF', 'MMT', 'AL', 'KL', 'JMMT'];
 
     // ─── Relationships ────────────────────────────────────────────────────────
@@ -201,10 +199,6 @@ class ReservationBooking extends Model
         $this->income = max(0, (float) $this->selling_price - (float) $this->net_payable);
     }
 
-    /**
-     * Recalculate excess (SP - NP - Income).
-     * Excess is the residual after income is already fixed by a rate agreement.
-     */
     public function recalculateExcess(): void
     {
         $this->excess = (float) $this->selling_price

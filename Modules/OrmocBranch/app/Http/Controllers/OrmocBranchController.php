@@ -30,6 +30,7 @@ class OrmocBranchController extends Controller
     private const VIEW_ROLES = [
         'general_manager',
         'ormoc_branch_officer',
+        'resa_officer',
         'accounting_officer',
         'disbursement_officer',
         'admin_auditor',
@@ -153,7 +154,7 @@ class OrmocBranchController extends Controller
             abort(403);
         }
 
-        $ormoc->load(['branch', 'createdBy', 'updatedBy', 'escalatedBy', 'contact']);
+        $ormoc->load(['branch', 'createdBy', 'updatedBy', 'escalatedBy', 'contact', 'escalationAcknowledgedBy', 'linkedResaBooking']);
 
         // ── Related transactions (Gap B) ────────────────────────────────────
         $relatedTransactions = [];
@@ -235,6 +236,7 @@ class OrmocBranchController extends Controller
             'bookingTypes' => OrmocBooking::BOOKING_TYPES,
             'paymentModes' => OrmocBooking::PAYMENT_MODES,
             'canWrite' => $this->canWrite($request),
+            'canAcknowledge' => $this->canAcknowledge($request),
             'contactsSearchUrl' => route('contacts.search'),
             'relatedTransactions' => $relatedTransactions,
         ]);
@@ -245,6 +247,7 @@ class OrmocBranchController extends Controller
             'bookingTypes' => OrmocBooking::BOOKING_TYPES,
             'paymentModes' => OrmocBooking::PAYMENT_MODES,
             'canWrite' => $this->canWrite($request),
+            'canAcknowledge' => $this->canAcknowledge($request),
             'contactsSearchUrl' => route('contacts.search'),
             'relatedTransactions' => $relatedTransactions,
         ]);
@@ -451,6 +454,48 @@ class OrmocBranchController extends Controller
         return back()->with('flash', ['type' => 'success', 'message' => 'Forwarded to Accounting. Booking is now locked.']);
     }
 
+    // ─── Acknowledge Escalation (RESA Officer / GM) ───────────────────────────
+    //
+    // Called by the QC RESA officer to confirm they have received and accepted
+    // the escalation. Optionally links the RESA booking they created so Ormoc
+    // can track the outcome without relying on email or chat.
+
+    public function acknowledgeEscalation(Request $request, OrmocBooking $ormoc): RedirectResponse
+    {
+        $role = $request->user()?->getRoleNames()->first();
+
+        if (! in_array($role, ['resa_officer', 'general_manager'], true)) {
+            abort(403);
+        }
+
+        if (! $ormoc->escalated_to_head_office) {
+            return back()->with('flash', ['type' => 'error', 'message' => 'This booking has not been escalated.']);
+        }
+
+        $data = $request->validate([
+            'linked_resa_booking_id' => ['nullable', 'integer', 'exists:reservation_bookings,id'],
+        ]);
+
+        $updates = [
+            'escalation_acknowledged_at' => $ormoc->escalation_acknowledged_at ?? now(),
+            'escalation_acknowledged_by' => $ormoc->escalation_acknowledged_by ?? $request->user()->id,
+            'updated_by' => $request->user()->id,
+        ];
+
+        // Allow updating the linked RESA booking even after initial acknowledgment
+        if (array_key_exists('linked_resa_booking_id', $data)) {
+            $updates['linked_resa_booking_id'] = $data['linked_resa_booking_id'];
+        }
+
+        $ormoc->update($updates);
+
+        $message = $data['linked_resa_booking_id']
+            ? 'Escalation acknowledged and linked to RESA booking.'
+            : 'Escalation acknowledged.';
+
+        return back()->with('flash', ['type' => 'success', 'message' => $message]);
+    }
+
     // ─── Link / Unlink Contact ─────────────────────────────────────────────────
     //
     // Lets Accounting attach a Contacts record to a booking from the Show page.
@@ -498,6 +543,15 @@ class OrmocBranchController extends Controller
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
+
+    private function canAcknowledge(Request $request): bool
+    {
+        return in_array(
+            $request->user()?->getRoleNames()->first() ?? '',
+            ['resa_officer', 'general_manager'],
+            true
+        );
+    }
 
     private function canWrite(Request $request): bool
     {

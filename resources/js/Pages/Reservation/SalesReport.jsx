@@ -17,7 +17,7 @@ const money = (v) => new Intl.NumberFormat('en-PH', { style: 'currency', currenc
 const date = (v) => v ? new Date(v).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '-';
 const badge = { inquiry: 'neutral', quoted: 'info', confirmed: 'success', cancelled: 'error' };
 
-export default function SalesReport({ bookings, summary, filters, statuses, serviceTypes, paymentModes, agentCodes }) {
+export default function SalesReport({ bookings, summary, filters, statuses, serviceTypes, transactionTypes, paymentModes, agentCodes }) {
     const [search, setSearch] = useState(filters.search ?? '');
 
     function apply(overrides = {}) {
@@ -58,11 +58,20 @@ export default function SalesReport({ bookings, summary, filters, statuses, serv
             label: 'Type',
             render: (row) => <Badge variant="info">{serviceTypes[row.service_type] ?? row.service_type ?? '-'}</Badge>,
         },
+        {
+            key: 'transaction_type',
+            label: 'Transaction Type',
+            render: (row) => transactionTypes?.[row.transaction_type] ?? row.transaction_type ?? '-',
+        },
+        { key: 'source', label: 'Source', render: (row) => row.source ?? '-' },
         { key: 'pax_count', label: 'Pax', render: (row) => row.pax_count ?? '-' },
         { key: 'travel_date', label: 'Travel', render: (row) => date(row.travel_date) },
         { key: 'selling_price', label: 'Selling Price', render: (row) => money(row.selling_price) },
         { key: 'net_payable', label: 'Net Payable', render: (row) => money(row.net_payable) },
         { key: 'income', label: 'Income', render: (row) => money(row.income) },
+        { key: 'excess', label: 'Excess', render: (row) => row.excess != null ? money(row.excess) : '-' },
+        { key: 'insurance_nett', label: 'Insurance (Nett)', render: (row) => row.insurance_nett != null ? money(row.insurance_nett) : '-' },
+        { key: 'acr', label: 'ACR', render: (row) => row.acr ?? '-' },
         {
             key: 'status',
             label: 'Status',
@@ -72,6 +81,13 @@ export default function SalesReport({ bookings, summary, filters, statuses, serv
             key: 'mode_of_payment',
             label: 'Payment',
             render: (row) => paymentModes[row.mode_of_payment] ?? row.mode_of_payment ?? '-',
+        },
+        {
+            key: 'audit_remarks',
+            label: 'Audit Remarks',
+            render: (row) => row.audit_remarks
+                ? <span style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>{row.audit_remarks}</span>
+                : '-',
         },
     ];
 

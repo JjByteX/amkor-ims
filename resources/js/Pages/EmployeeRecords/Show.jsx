@@ -99,6 +99,7 @@ export function EmployeeContent({ employee, statuses, departments, canManage }) 
                 <PanelCol>
                     <PanelSection title="Personal Information">
                         <PanelField label="Full Name"     value={employee.full_name} highlight />
+                        {employee.nickname && <PanelField label="Nickname" value={employee.nickname} />}
                         <PanelFieldRow>
                             <PanelField label="Date of Birth" value={fmt(employee.date_of_birth)} />
                             <PanelField label="Gender"        value={employee.gender} />
@@ -114,6 +115,12 @@ export function EmployeeContent({ employee, statuses, departments, canManage }) 
                             <PanelField label="Work Email"     value={employee.work_email} />
                             <PanelField label="Personal Email" value={employee.personal_email} />
                         </PanelFieldRow>
+                        {(employee.company_viber_number || employee.company_email_outlook) && (
+                            <PanelFieldRow>
+                                <PanelField label="Company Viber"   value={employee.company_viber_number} />
+                                <PanelField label="Outlook / 365"   value={employee.company_email_outlook} />
+                            </PanelFieldRow>
+                        )}
                         <PanelField label="Mobile" value={employee.mobile_number} />
                         <PanelDivider />
                         <PanelField label="Name"         value={employee.emergency_contact_name} />
@@ -134,6 +141,12 @@ export function EmployeeContent({ employee, statuses, departments, canManage }) 
                             <PanelField label="Pag-IBIG"    value={employee.pagibig_number} />
                             <PanelField label="TIN"         value={employee.tin_number} />
                         </PanelFieldRow>
+                        {(employee.philcare_number || employee.medicard_number) && (
+                            <PanelFieldRow>
+                                <PanelField label="PhilCare No." value={employee.philcare_number} />
+                                <PanelField label="Medicard No." value={employee.medicard_number} />
+                            </PanelFieldRow>
+                        )}
                     </PanelSection>
 
                     <PanelMeta>
@@ -146,8 +159,9 @@ export function EmployeeContent({ employee, statuses, departments, canManage }) 
                     <PanelSection title="Employment Details">
                         <PanelFieldRow>
                             <PanelField label="Employee Code" value={employee.employee_code} highlight />
-                            <PanelField label="Position"      value={employee.position} />
+                            <PanelField label="ID Number"     value={employee.id_number} />
                         </PanelFieldRow>
+                        <PanelField label="Position" value={employee.position} />
                         <PanelFieldRow>
                             <PanelField label="Department" value={departments[employee.department] ?? employee.department} />
                             <PanelField label="Branch"     value={employee.branch?.name} />
@@ -156,7 +170,33 @@ export function EmployeeContent({ employee, statuses, departments, canManage }) 
                             <PanelField label="Date Hired"          value={fmt(employee.date_hired)} />
                             <PanelField label="Regularization Date" value={fmt(employee.regularization_date)} />
                         </PanelFieldRow>
+                        {(employee.maturity_date || employee.last_evaluation_date) && (
+                            <PanelFieldRow>
+                                <PanelField label="Maturity Date"       value={fmt(employee.maturity_date)} />
+                                <PanelField label="Last Evaluation"     value={fmt(employee.last_evaluation_date)} />
+                            </PanelFieldRow>
+                        )}
                         <PanelField label="Tenure" value={employee.tenure} />
+                        {(employee.bank_name || employee.bank_account_number) && (
+                            <PanelFieldRow>
+                                <PanelField label="Bank"           value={employee.bank_name} />
+                                <PanelField label="Account No."    value={employee.bank_account_number} />
+                            </PanelFieldRow>
+                        )}
+                        {(employee.salary_increase_amount || employee.salary_increase_date) && (
+                            <PanelFieldRow>
+                                <PanelField
+                                    label="Salary (after increase)"
+                                    value={employee.salary_increase_amount
+                                        ? '₱ ' + Number(employee.salary_increase_amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })
+                                        : null}
+                                />
+                                <PanelField
+                                    label="Effective Date"
+                                    value={fmt(employee.salary_increase_date)}
+                                />
+                            </PanelFieldRow>
+                        )}
                     </PanelSection>
 
                     <PanelDivider />
@@ -184,6 +224,23 @@ export function EmployeeContent({ employee, statuses, departments, canManage }) 
                             </Button>
                         )}
                     </PanelSection>
+
+                    {(employee.vl_fund != null || employee.vl_fund_date) && (
+                        <>
+                            <PanelDivider />
+                            <PanelSection>
+                                <PanelFieldRow>
+                                    <PanelField
+                                        label="VL Fund"
+                                        value={employee.vl_fund != null
+                                            ? '₱ ' + Number(employee.vl_fund).toLocaleString('en-PH', { minimumFractionDigits: 2 })
+                                            : null}
+                                    />
+                                    <PanelField label="VL Fund Date" value={fmt(employee.vl_fund_date)} />
+                                </PanelFieldRow>
+                            </PanelSection>
+                        </>
+                    )}
 
                     <PanelDivider />
 

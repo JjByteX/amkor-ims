@@ -1,7 +1,7 @@
 import { router } from '@inertiajs/react';
 import {
     ChevronLeft, ChevronRight, Download, ArrowLeft,
-    Users, CheckCircle, XCircle, Clock, AlertTriangle,
+    Users, CheckCircle, XCircle, Clock, AlertTriangle, TrendingUp, Coffee,
 } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
@@ -33,6 +33,42 @@ function sumCol(summary, col) {
     return summary.reduce((acc, row) => acc + (parseInt(row[col], 10) || 0), 0);
 }
 
+// ── Cell renderers ────────────────────────────────────────────────────────────
+
+function NumCell({ value, color, zero = '0' }) {
+    const n = parseInt(value, 10) || 0;
+    return (
+        <span
+            className="font-body"
+            style={{
+                fontSize: 'var(--font-size-small)',
+                color: n > 0 ? color : 'var(--color-text)',
+                fontWeight: n > 0 ? 600 : 400,
+                opacity: n === 0 ? 0.45 : 1,
+            }}
+        >
+            {n > 0 ? value : zero}
+        </span>
+    );
+}
+
+function MinCell({ value, color }) {
+    const n = parseInt(value, 10) || 0;
+    return (
+        <span
+            className="font-body"
+            style={{
+                fontSize: 'var(--font-size-small)',
+                color: n > 0 ? color : 'var(--color-text)',
+                fontWeight: n > 0 ? 600 : 400,
+                opacity: n === 0 ? 0.35 : 1,
+            }}
+        >
+            {fmtMinutes(n)}
+        </span>
+    );
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function AttendanceReport({ summary, filters, branches, canExport }) {
@@ -52,7 +88,7 @@ export default function AttendanceReport({ summary, filters, branches, canExport
         router.get(route('attendance.report'), { ...filters, ...overrides }, { preserveState: true });
     }
 
-    // Grand totals
+    // Grand totals — matches Excel column order: Present | Absent | Overtime | Lates | Overbreak | Undertime
     const totals = {
         present:   sumCol(summary, 'days_present'),
         absent:    sumCol(summary, 'days_absent'),
@@ -62,8 +98,11 @@ export default function AttendanceReport({ summary, filters, branches, canExport
         worked:    sumCol(summary, 'total_minutes_worked'),
         late:      sumCol(summary, 'total_minutes_late'),
         undertime: sumCol(summary, 'total_minutes_undertime'),
+        overtime:  sumCol(summary, 'total_minutes_overtime'),
+        overbreak: sumCol(summary, 'total_minutes_overbreak'),
     };
 
+    // Column order mirrors Excel sheet: Employee | Present | Absent | OT | Late | OB | Undertime | Hours | (actions)
     const columns = [
         {
             key: 'employee',
@@ -82,38 +121,42 @@ export default function AttendanceReport({ summary, filters, branches, canExport
         {
             key: 'days_present',
             label: 'Present',
-            render: (row) => (
-                <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-success)', fontWeight: 600 }}>
-                    {row.days_present ?? 0}
-                </span>
-            ),
+            render: (row) => <NumCell value={row.days_present ?? 0} color="var(--color-success)" />,
         },
         {
             key: 'days_absent',
             label: 'Absent',
-            render: (row) => (
-                <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: row.days_absent > 0 ? 'var(--color-error)' : 'var(--color-text)', fontWeight: row.days_absent > 0 ? 600 : 400 }}>
-                    {row.days_absent ?? 0}
-                </span>
-            ),
+            render: (row) => <NumCell value={row.days_absent ?? 0} color="var(--color-error)" />,
         },
         {
             key: 'days_half',
             label: 'Half Day',
-            render: (row) => (
-                <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)' }}>
-                    {row.days_half ?? 0}
-                </span>
-            ),
+            render: (row) => <NumCell value={row.days_half ?? 0} color="var(--color-warning)" />,
         },
         {
             key: 'days_leave',
             label: 'On Leave',
-            render: (row) => (
-                <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-info)' }}>
-                    {row.days_leave ?? 0}
-                </span>
-            ),
+            render: (row) => <NumCell value={row.days_leave ?? 0} color="var(--color-info)" />,
+        },
+        {
+            key: 'total_minutes_overtime',
+            label: 'Overtime',
+            render: (row) => <MinCell value={row.total_minutes_overtime ?? 0} color="var(--color-success)" />,
+        },
+        {
+            key: 'total_minutes_late',
+            label: 'Lates',
+            render: (row) => <MinCell value={row.total_minutes_late ?? 0} color="var(--color-warning)" />,
+        },
+        {
+            key: 'total_minutes_overbreak',
+            label: 'Overbreak',
+            render: (row) => <MinCell value={row.total_minutes_overbreak ?? 0} color="var(--color-error)" />,
+        },
+        {
+            key: 'total_minutes_undertime',
+            label: 'Undertime',
+            render: (row) => <MinCell value={row.total_minutes_undertime ?? 0} color="var(--color-warning)" />,
         },
         {
             key: 'total_minutes_worked',
@@ -121,24 +164,6 @@ export default function AttendanceReport({ summary, filters, branches, canExport
             render: (row) => (
                 <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)' }}>
                     {fmtMinutes(row.total_minutes_worked)}
-                </span>
-            ),
-        },
-        {
-            key: 'total_minutes_late',
-            label: 'Total Late',
-            render: (row) => (
-                <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: row.total_minutes_late > 0 ? 'var(--color-warning)' : 'var(--color-text)' }}>
-                    {fmtMinutes(row.total_minutes_late)}
-                </span>
-            ),
-        },
-        {
-            key: 'total_minutes_undertime',
-            label: 'Undertime',
-            render: (row) => (
-                <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: row.total_minutes_undertime > 0 ? 'var(--color-warning)' : 'var(--color-text)' }}>
-                    {fmtMinutes(row.total_minutes_undertime)}
                 </span>
             ),
         },
@@ -182,15 +207,19 @@ export default function AttendanceReport({ summary, filters, branches, canExport
                     }
                 />
 
-                <StatGrid min="150px">
-                    <StatCard icon={CheckCircle} label="Present" value={totals.present} tone="success" />
-                    <StatCard icon={XCircle} label="Absent" value={totals.absent} tone="error" />
-                    <StatCard icon={Users} label="On Leave" value={totals.leave} tone="info" />
-                    <StatCard icon={AlertTriangle} label="Total Late" value={fmtMinutes(totals.late)} tone="warning" />
-                    <StatCard icon={Clock} label="Hrs Worked" value={fmtMinutes(totals.worked)} tone="primary" />
+                {/* ── KPI cards — Excel column order ─────────────────────── */}
+                <StatGrid min="130px">
+                    <StatCard icon={CheckCircle}   label="Present"    value={totals.present}          tone="success" />
+                    <StatCard icon={XCircle}        label="Absent"     value={totals.absent}           tone="error" />
+                    <StatCard icon={TrendingUp}     label="Overtime"   value={fmtMinutes(totals.overtime) || '—'}  tone="success" />
+                    <StatCard icon={AlertTriangle}  label="Total Late" value={fmtMinutes(totals.late) || '—'}      tone="warning" />
+                    <StatCard icon={Coffee}         label="Overbreak"  value={fmtMinutes(totals.overbreak) || '—'} tone="error" />
+                    <StatCard icon={Clock}          label="Undertime"  value={fmtMinutes(totals.undertime) || '—'} tone="warning" />
+                    <StatCard icon={Users}          label="On Leave"   value={totals.leave}            tone="info" />
+                    <StatCard icon={Clock}          label="Hrs Worked" value={fmtMinutes(totals.worked) || '—'}    tone="primary" />
                 </StatGrid>
 
-                {/* Summary table */}
+                {/* ── Summary table ─────────────────────────────────────── */}
                 <DataTable
                     columns={columns}
                     rows={summary}
@@ -220,10 +249,12 @@ export default function AttendanceReport({ summary, filters, branches, canExport
                     }
                 />
 
-                {/* Footnote */}
+                {/* ── Legend footnote ───────────────────────────────────── */}
                 <div className="font-body" style={{ fontSize: 11, color: 'var(--color-text)', opacity: 0.4, textAlign: 'right' }}>
-                    Standard hours: 8:00 AM – 5:00 PM · Late threshold: past 8:00 AM · Undertime: before 5:00 PM
+                    Standard hours: 8:00 AM – 5:00 PM · Standard break: 12:00 PM – 1:00 PM (60 min)
+                    {' · '}Late threshold: past 8:00 AM · Undertime: before 5:00 PM · Overtime: after 5:00 PM
                 </div>
+
             </PageStack>
         </AppShell>
     );

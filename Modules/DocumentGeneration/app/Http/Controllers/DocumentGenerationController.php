@@ -8,6 +8,7 @@ use Illuminate\Http\Response as HttpResponse;
 use mikehaertl\pdftk\Pdf;
 use Modules\BirCompliance\Models\BirTransaction;
 use Modules\Disbursement\Models\Voucher;
+use Modules\Reservation\Models\ReservationBooking;
 
 class DocumentGenerationController extends Controller
 {
@@ -16,34 +17,35 @@ class DocumentGenerationController extends Controller
     | Document Generation Controller
     |--------------------------------------------------------------------------
     |
-    | Generates all 5 document types as print-ready PDFs by filling AcroForm
-    | fields on pre-designed PDF templates using pdftk (mikehaertl/php-pdftk).
+    | Generates all document types as print-ready PDFs.
     |
-    | Templates live in storage/app/templates/:
-    |   - acknowledgement-receipt-template.pdf
-    |   - service-invoice-template.pdf
-    |   - statement-of-account-template.pdf
-    |   - cash-voucher-template.pdf
-    |   - check-voucher-template.pdf
+    | AR, SI, CV, Check Voucher — fill AcroForm fields on pre-designed PDF
+    | templates using pdftk (mikehaertl/php-pdftk).
+    | Templates live in storage/app/templates/.
     |
-    | Documents: AR, SI, SOA, Cash Voucher, Check Voucher
+    | SOA (Gap #6 fix) — Blade → PDF via wkhtmltopdf / Browsershot.
+    | Switched from pdftk because SOA now has dynamic line items (up to 15
+    | rows) that cannot be expressed as fixed AcroForm fields.
+    |
+    | Quotation (Gap #5) — Blade → PDF via the same Blade renderer.
+    | Quotations are generated directly from a ReservationBooking record
+    | at any time while status = 'inquiry' or 'confirmed'.
+    |
+    | Documents: AR, SI, SOA, Cash Voucher, Check Voucher, Quotation
     |
     | BIR-critical: AR (TIN required), SI (ATP 089AU2025, VAT breakdown)
-    | Not BIR-critical: SOA, CV, Check Voucher
+    | Not BIR-critical: SOA, CV, Check Voucher, Quotation
     |
-    | Access: All roles that can view the source module may generate PDFs.
-    | Admin Auditor and General Manager can generate any document.
     */
 
     private const COMPANY = [
-        'name' => 'Amkor Travel & Tours Inc.',
-        'tin_main' => '223-586-994-00000',
-        'tin_ormoc' => '223-586-994-001',
-        'address_main' => 'Suite 108 West City Plaza Bldg. #66, West Avenue, Quezon City',
+        'name'          => 'Amkor Travel & Tours Inc.',
+        'tin_main'      => '223-586-994-00000',
+        'tin_ormoc'     => '223-586-994-001',
+        'address_main'  => 'Suite 108 West City Plaza Bldg. #66, West Avenue, Quezon City',
         'address_ormoc' => 'Unit 315 Robinsons Place Ormoc, Cogon, Ormoc City, Leyte',
-        'phone' => '',
-        'iata' => 'Yes',
-        'ptaa' => 'Yes',
+        'iata'          => 'Yes',
+        'ptaa'          => 'Yes',
     ];
 
     private const BANK_DETAILS = [
@@ -52,6 +54,40 @@ class DocumentGenerationController extends Controller
         ['bank' => 'BPI',         'currency' => 'PHP', 'account_name' => 'Amkor Travel and Tours Inc', 'account_number' => '0433-203-194'],
         ['bank' => 'BPI',         'currency' => 'USD', 'account_name' => 'Amkor Travel and Tours Inc', 'account_number' => '0434-028-396'],
     ];
+
+    // ─── Blade → PDF helper ──────────────────────────────────────────────────
+
+    /**
+     * Render a Blade view to an HTML string then convert to PDF via
+     * wkhtmltopdf (via the barryvdh/laravel-snappy package, or swap for
+     * spatie/browsershot — the view contract is identical either way).
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function bladeToDownload(string $view, array $data, string $downloadFilename): HttpResponse
+    {
+        $html = view($view, $data)->render();
+
+        // barryvdh/laravel-snappy (wkhtmltopdf)
+        $pdf = app('snappy.pdf.wrapper');
+        $pdf->loadHTML($html);
+        $pdf->setOption('page-size', 'A4');
+        $pdf->setOption('margin-top', '0');
+        $pdf->setOption('margin-bottom', '0');
+        $pdf->setOption('margin-left', '0');
+        $pdf->setOption('margin-right', '0');
+        $pdf->setOption('encoding', 'UTF-8');
+        $pdf->setOption('enable-local-file-access', true);
+
+        $output = $pdf->output();
+
+        return response($output, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$downloadFilename.'"',
+        ]);
+    }
+
+    // ─── pdftk AcroForm helper ───────────────────────────────────────────────
 
     /**
      * Path to the directory containing the fillable PDF templates.
@@ -87,7 +123,7 @@ class DocumentGenerationController extends Controller
         }
 
         return response($output, 200, [
-            'Content-Type' => 'application/pdf',
+            'Content-Type'        => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="'.$downloadFilename.'"',
         ]);
     }
@@ -106,22 +142,21 @@ class DocumentGenerationController extends Controller
         }
 
         $fields = [
-            'document_number' => (string) $birTransaction->document_number,
+            'document_number'  => (string) $birTransaction->document_number,
             'transaction_date' => $birTransaction->transaction_date->format('F d, Y'),
-            'client_name' => (string) $birTransaction->client_name,
-            'tin' => (string) ($birTransaction->tin ?? ''),
-            'address' => (string) ($birTransaction->address ?? ''),
-            'business_style' => (string) ($birTransaction->business_style ?? ''),
-            'amount_in_words' => BirTransaction::amountInWords((float) $birTransaction->gross_amount),
-            'gross_amount' => number_format((float) $birTransaction->gross_amount, 2),
-            'particulars' => (string) ($birTransaction->particulars ?? ''),
-            'check_number' => (string) ($birTransaction->check_number ?? ''),
-            'total_amount' => number_format((float) $birTransaction->gross_amount, 2),
+            'client_name'      => (string) $birTransaction->client_name,
+            'tin'              => (string) ($birTransaction->tin ?? ''),
+            'address'          => (string) ($birTransaction->address ?? ''),
+            'business_style'   => (string) ($birTransaction->business_style ?? ''),
+            'amount_in_words'  => BirTransaction::amountInWords((float) $birTransaction->gross_amount),
+            'gross_amount'     => number_format((float) $birTransaction->gross_amount, 2),
+            'particulars'      => (string) ($birTransaction->particulars ?? ''),
+            'check_number'     => (string) ($birTransaction->check_number ?? ''),
+            'total_amount'     => number_format((float) $birTransaction->gross_amount, 2),
         ];
 
-        // Mark as generated
         $birTransaction->update([
-            'pdf_generated' => true,
+            'pdf_generated'    => true,
             'pdf_generated_at' => now(),
         ]);
 
@@ -144,32 +179,32 @@ class DocumentGenerationController extends Controller
         }
 
         $fields = [
-            'document_number' => (string) $birTransaction->document_number,
-            'transaction_date' => $birTransaction->transaction_date->format('F d, Y'),
-            'client_name' => (string) $birTransaction->client_name,
-            'tin' => (string) ($birTransaction->tin ?? ''),
-            'address' => (string) ($birTransaction->address ?? ''),
-            'business_style' => (string) ($birTransaction->business_style ?? ''),
-            'amount_in_words' => BirTransaction::amountInWords((float) $birTransaction->gross_amount),
-            'gross_amount' => number_format((float) $birTransaction->gross_amount, 2),
-            'particulars' => (string) ($birTransaction->particulars ?? ''),
+            'document_number'        => (string) $birTransaction->document_number,
+            'transaction_date'       => $birTransaction->transaction_date->format('F d, Y'),
+            'client_name'            => (string) $birTransaction->client_name,
+            'tin'                    => (string) ($birTransaction->tin ?? ''),
+            'address'                => (string) ($birTransaction->address ?? ''),
+            'business_style'         => (string) ($birTransaction->business_style ?? ''),
+            'amount_in_words'        => BirTransaction::amountInWords((float) $birTransaction->gross_amount),
+            'gross_amount'           => number_format((float) $birTransaction->gross_amount, 2),
+            'particulars'            => (string) ($birTransaction->particulars ?? ''),
             'total_sales_vat_inclusive' => number_format((float) $birTransaction->total_sales_vat_inclusive, 2),
-            'vat_amount' => number_format((float) $birTransaction->vat_amount, 2),
-            'vatable_sales' => number_format((float) $birTransaction->vatable_sales, 2),
-            'sc_pwd_discount' => number_format((float) $birTransaction->sc_pwd_discount, 2),
-            'net_amount_due' => number_format((float) $birTransaction->net_amount_due, 2),
-            'withholding_tax' => number_format((float) $birTransaction->withholding_tax, 2),
-            'vatable_sales_summary' => number_format((float) $birTransaction->vatable_sales, 2),
-            'vat_exempt_sales' => number_format((float) $birTransaction->vat_exempt_sales, 2),
-            'vat_zero_rated_sales' => number_format((float) $birTransaction->vat_zero_rated_sales, 2),
-            'vat_amount_summary' => number_format((float) $birTransaction->vat_amount, 2),
-            'total_sales_summary' => number_format((float) $birTransaction->gross_amount, 2),
-            'check_number' => (string) ($birTransaction->check_number ?? ''),
-            'total_amount' => number_format((float) $birTransaction->gross_amount, 2),
+            'vat_amount'             => number_format((float) $birTransaction->vat_amount, 2),
+            'vatable_sales'          => number_format((float) $birTransaction->vatable_sales, 2),
+            'sc_pwd_discount'        => number_format((float) $birTransaction->sc_pwd_discount, 2),
+            'net_amount_due'         => number_format((float) $birTransaction->net_amount_due, 2),
+            'withholding_tax'        => number_format((float) $birTransaction->withholding_tax, 2),
+            'vatable_sales_summary'  => number_format((float) $birTransaction->vatable_sales, 2),
+            'vat_exempt_sales'       => number_format((float) $birTransaction->vat_exempt_sales, 2),
+            'vat_zero_rated_sales'   => number_format((float) $birTransaction->vat_zero_rated_sales, 2),
+            'vat_amount_summary'     => number_format((float) $birTransaction->vat_amount, 2),
+            'total_sales_summary'    => number_format((float) $birTransaction->gross_amount, 2),
+            'check_number'           => (string) ($birTransaction->check_number ?? ''),
+            'total_amount'           => number_format((float) $birTransaction->gross_amount, 2),
         ];
 
         $birTransaction->update([
-            'pdf_generated' => true,
+            'pdf_generated'    => true,
             'pdf_generated_at' => now(),
         ]);
 
@@ -179,8 +214,14 @@ class DocumentGenerationController extends Controller
     }
 
     // ────────────────────────────────────────────────────────────────────────
-    // STATEMENT OF ACCOUNT (SOA)
-    // Not BIR-critical
+    // STATEMENT OF ACCOUNT (SOA)  — Gap #6 fix
+    //
+    // Now uses Blade → PDF (wkhtmltopdf) instead of pdftk, because the SOA
+    // has up to 15 dynamic line items that cannot be expressed as fixed
+    // AcroForm fields on a pre-designed template.
+    //
+    // The $lineItems array is padded to exactly 15 rows by paddedLineItems()
+    // on the model, so the blade can iterate a predictable count.
     // ────────────────────────────────────────────────────────────────────────
 
     public function generateSoa(Request $request, BirTransaction $birTransaction): HttpResponse
@@ -191,33 +232,49 @@ class DocumentGenerationController extends Controller
             abort(422, 'This transaction is not a Statement of Account.');
         }
 
-        $fields = [
-            'document_number' => (string) $birTransaction->document_number,
-            'client_name' => (string) $birTransaction->client_name,
-            'address' => (string) ($birTransaction->address ?? ''),
-            'tel_no' => '', // BirTransaction has no tel_no column yet — left blank
-            'transaction_date' => $birTransaction->transaction_date->format('F d, Y'),
-            'due_date' => $birTransaction->due_date?->format('F d, Y') ?? '',
-            'row_date' => $birTransaction->transaction_date->format('m/d/Y'),
-            'row_particulars' => (string) ($birTransaction->particulars ?? ''),
-            'row_amount' => number_format((float) $birTransaction->gross_amount, 2),
-            'row_total_amount' => number_format((float) $birTransaction->gross_amount, 2),
-            'amount_in_words' => BirTransaction::amountInWords((float) $birTransaction->gross_amount),
-            'acr' => (string) $birTransaction->document_number, // cross-ref to AR — TODO: confirm intent
-            'checked_by' => '', // not yet tracked on BirTransaction — left blank
-            'received_by' => '', // filled manually
-            'approved_by' => '', // not yet tracked on BirTransaction — left blank
-            'date_received' => '', // filled manually
-        ];
+        // Pad line items to 15 rows (empty rows render as blank cells)
+        $lineItems     = $birTransaction->paddedLineItems(15);
+        $amountInWords = BirTransaction::amountInWords((float) $birTransaction->gross_amount);
 
         $birTransaction->update([
-            'pdf_generated' => true,
+            'pdf_generated'    => true,
             'pdf_generated_at' => now(),
         ]);
 
         $filename = "SOA-{$birTransaction->document_number}-".now()->format('Ymd').'.pdf';
 
-        return $this->fillAndDownload('statement-of-account-template.pdf', $fields, $filename);
+        return $this->bladeToDownload(
+            'documentgeneration::pdf.statement-of-account',
+            compact('birTransaction', 'lineItems', 'amountInWords'),
+            $filename
+        );
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+    // QUOTATION — Gap #5
+    //
+    // Generated from a ReservationBooking record. Available at any stage
+    // (inquiry through confirmed). A sequential quotation number is derived
+    // from the booking_no so it is traceable back to the source record.
+    // ────────────────────────────────────────────────────────────────────────
+
+    public function generateQuotation(Request $request, ReservationBooking $booking): HttpResponse
+    {
+        $this->requireQuotationAccess($request);
+
+        $booking->load(['branch', 'createdBy']);
+
+        // Quotation number: QUO-{booking_no} — unique per booking, traceable
+        $quotationNumber = 'QUO-'.$booking->booking_no;
+        $preparedBy      = $request->user()?->name ?? '';
+
+        $filename = "Quotation-{$booking->booking_no}-".now()->format('Ymd').'.pdf';
+
+        return $this->bladeToDownload(
+            'documentgeneration::pdf.quotation',
+            compact('booking', 'quotationNumber', 'preparedBy'),
+            $filename
+        );
     }
 
     // ────────────────────────────────────────────────────────────────────────
@@ -236,23 +293,23 @@ class DocumentGenerationController extends Controller
         $voucher->load(['branch', 'createdBy', 'checker', 'approver', 'releaser']);
 
         $fields = [
-            'voucher_no' => (string) $voucher->voucher_no,
-            'date_month' => \Carbon\Carbon::parse($voucher->date)->format('F'),
-            'date_year' => \Carbon\Carbon::parse($voucher->date)->format('y'),
-            'payee' => (string) $voucher->payee,
-            'payee_address' => (string) ($voucher->payee_address ?? ''),
-            'details' => (string) $voucher->details,
-            'amount' => number_format((float) $voucher->amount, 2),
+            'voucher_no'          => (string) $voucher->voucher_no,
+            'date_month'          => \Carbon\Carbon::parse($voucher->date)->format('F'),
+            'date_year'           => \Carbon\Carbon::parse($voucher->date)->format('y'),
+            'payee'               => (string) $voucher->payee,
+            'payee_address'       => (string) ($voucher->payee_address ?? ''),
+            'details'             => (string) $voucher->details,
+            'amount'              => number_format((float) $voucher->amount, 2),
             'account_description' => (string) ($voucher->account_description ?? ''),
-            'account_code' => (string) ($voucher->account_code ?? ''),
-            'prepared_by' => (string) ($voucher->createdBy?->name ?? ''),
-            'checked_by' => (string) ($voucher->checker?->name ?? ''),
-            'approved_by' => (string) ($voucher->approver?->name ?? ''),
-            'amount_in_words' => BirTransaction::amountInWords((float) $voucher->amount),
+            'account_code'        => (string) ($voucher->account_code ?? ''),
+            'prepared_by'         => (string) ($voucher->createdBy?->name ?? ''),
+            'checked_by'          => (string) ($voucher->checker?->name ?? ''),
+            'approved_by'         => (string) ($voucher->approver?->name ?? ''),
+            'amount_in_words'     => BirTransaction::amountInWords((float) $voucher->amount),
         ];
 
         $voucher->update([
-            'pdf_generated' => true,
+            'pdf_generated'    => true,
             'pdf_generated_at' => now(),
         ]);
 
@@ -263,7 +320,6 @@ class DocumentGenerationController extends Controller
 
     // ────────────────────────────────────────────────────────────────────────
     // CHECK VOUCHER
-    // Same as CV + check number column
     // ────────────────────────────────────────────────────────────────────────
 
     public function generateCheckVoucher(Request $request, Voucher $voucher): HttpResponse
@@ -277,24 +333,24 @@ class DocumentGenerationController extends Controller
         $voucher->load(['branch', 'createdBy', 'checker', 'approver', 'releaser']);
 
         $fields = [
-            'voucher_no' => (string) $voucher->voucher_no,
-            'date_month' => \Carbon\Carbon::parse($voucher->date)->format('F'),
-            'date_year' => \Carbon\Carbon::parse($voucher->date)->format('y'),
-            'payee' => (string) $voucher->payee,
-            'payee_address' => (string) ($voucher->payee_address ?? ''),
-            'details' => (string) $voucher->details,
-            'check_no' => (string) ($voucher->check_no ?? ''),
-            'amount' => number_format((float) $voucher->amount, 2),
+            'voucher_no'          => (string) $voucher->voucher_no,
+            'date_month'          => \Carbon\Carbon::parse($voucher->date)->format('F'),
+            'date_year'           => \Carbon\Carbon::parse($voucher->date)->format('y'),
+            'payee'               => (string) $voucher->payee,
+            'payee_address'       => (string) ($voucher->payee_address ?? ''),
+            'details'             => (string) $voucher->details,
+            'check_no'            => (string) ($voucher->check_no ?? ''),
+            'amount'              => number_format((float) $voucher->amount, 2),
             'account_description' => (string) ($voucher->account_description ?? ''),
-            'account_code' => (string) ($voucher->account_code ?? ''),
-            'prepared_by' => (string) ($voucher->createdBy?->name ?? ''),
-            'checked_by' => (string) ($voucher->checker?->name ?? ''),
-            'approved_by' => (string) ($voucher->approver?->name ?? ''),
-            'amount_in_words' => BirTransaction::amountInWords((float) $voucher->amount),
+            'account_code'        => (string) ($voucher->account_code ?? ''),
+            'prepared_by'         => (string) ($voucher->createdBy?->name ?? ''),
+            'checked_by'          => (string) ($voucher->checker?->name ?? ''),
+            'approved_by'         => (string) ($voucher->approver?->name ?? ''),
+            'amount_in_words'     => BirTransaction::amountInWords((float) $voucher->amount),
         ];
 
         $voucher->update([
-            'pdf_generated' => true,
+            'pdf_generated'    => true,
             'pdf_generated_at' => now(),
         ]);
 
@@ -307,7 +363,7 @@ class DocumentGenerationController extends Controller
 
     private function requireAccess(Request $request): void
     {
-        $role = $request->user()?->getRoleNames()->first();
+        $role    = $request->user()?->getRoleNames()->first();
         $allowed = [
             'disbursement_officer',
             'accounting_officer',
@@ -324,7 +380,7 @@ class DocumentGenerationController extends Controller
 
     private function requireVoucherAccess(Request $request): void
     {
-        $role = $request->user()?->getRoleNames()->first();
+        $role    = $request->user()?->getRoleNames()->first();
         $allowed = [
             'disbursement_officer',
             'accounting_officer',
@@ -333,6 +389,23 @@ class DocumentGenerationController extends Controller
         ];
         if (! in_array($role, $allowed, true)) {
             abort(403, 'You do not have permission to generate voucher PDFs.');
+        }
+    }
+
+    private function requireQuotationAccess(Request $request): void
+    {
+        // Same roles that can create/view reservations may generate quotations
+        $role    = $request->user()?->getRoleNames()->first();
+        $allowed = [
+            'resa_officer',
+            'ormoc_branch_officer',
+            'visa_documentation_officer',
+            'accounting_officer',
+            'admin_auditor',
+            'general_manager',
+        ];
+        if (! in_array($role, $allowed, true)) {
+            abort(403, 'You do not have permission to generate quotation PDFs.');
         }
     }
 }

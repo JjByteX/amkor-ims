@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { router, usePage, useForm } from '@inertiajs/react';
 import {
     Plus, Search, ArrowLeft, ChevronLeft, ChevronRight,
-    CheckCircle, DollarSign, Download,
+    CheckCircle, DollarSign, Download, Pencil,
 } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
@@ -38,47 +38,61 @@ const STATUS_VARIANT = {
     approved:  'success',
 };
 
-// ── New Expense Form (inline modal) ───────────────────────────────────────────
+// ── New/Edit Expense Form (inline modal) ──────────────────────────────────────
 
-function ExpenseModal({ open, onClose, categories, currencies }) {
+function ExpenseModal({ open, onClose, categories, currencies, platforms, expense = null }) {
+    const isEdit = !!expense;
     const today = new Date();
-    const { data, setData, post, processing, errors, reset } = useForm({
-        campaign_name: '',
-        category:      '',
-        amount:        '',
-        currency:      'PHP',
-        expense_date:  today.toISOString().slice(0, 10),
-        period_month:  String(today.getMonth() + 1),
-        period_year:   String(today.getFullYear()),
-        vendor:        '',
-        remarks:       '',
+    const { data, setData, post, put, processing, errors, reset } = useForm({
+        campaign_name:  expense?.campaign_name  ?? '',
+        category:       expense?.category       ?? '',
+        platform:       expense?.platform       ?? '',
+        amount:         expense?.amount         ?? '',
+        budget:         expense?.budget         ?? '',
+        currency:       expense?.currency       ?? 'PHP',
+        expense_date:   expense?.expense_date?.substring(0, 10) ?? today.toISOString().slice(0, 10),
+        vendor:         expense?.vendor         ?? '',
+        payee:          expense?.payee          ?? '',
+        invoice_number: expense?.invoice_number ?? '',
+        voucher_number: expense?.voucher_number ?? '',
+        remarks:        expense?.remarks        ?? '',
     });
 
     function handleSubmit() {
-        post(route('marketing.expenses.store'), {
-            onSuccess: () => { reset(); onClose(); },
-        });
+        if (isEdit) {
+            put(route('marketing.expenses.update', expense.id), {
+                onSuccess: () => { onClose(); },
+            });
+        } else {
+            post(route('marketing.expenses.store'), {
+                onSuccess: () => { reset(); onClose(); },
+            });
+        }
     }
 
-    const monthOptions = MONTHS.map((m, i) => ({ value: String(i + 1), label: m }));
-    const currentYear  = today.getFullYear();
-    const yearOptions  = [currentYear - 1, currentYear, currentYear + 1].map((y) => ({ value: String(y), label: String(y) }));
-    const catOptions   = [
+    const catOptions = [
         { value: '', label: 'Select category…' },
         ...Object.entries(categories).map(([v, l]) => ({ value: v, label: l })),
     ];
+
+    const platformOptions = [
+        { value: '', label: 'N/A' },
+        ...Object.entries(platforms).map(([v, l]) => ({ value: v, label: l })),
+    ];
+
+    const showPlatform = data.category === 'paid_ads';
 
     return (
         <Modal
             open={open}
             onClose={onClose}
-            title="Record Expense"
+            title={isEdit ? 'Edit Expense' : 'Record Expense'}
             size="wide"
             footer={
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-1)' }}>
                     <Button variant="ghost" onClick={onClose}>Cancel</Button>
                     <Button icon={CheckCircle} loading={processing} onClick={handleSubmit}>
-                        Save Expense
+                        {isEdit ? 'Save Changes' : 'Save Expense'}
                     </Button>
                 </div>
             }
@@ -100,12 +114,36 @@ function ExpenseModal({ open, onClose, categories, currencies }) {
                     onChange={(e) => setData('category', e.target.value)}
                     error={errors.category}
                 />
+                {showPlatform ? (
+                    <Select
+                        label="Platform"
+                        options={platformOptions}
+                        value={data.platform}
+                        onChange={(e) => setData('platform', e.target.value)}
+                        error={errors.platform}
+                    />
+                ) : (
+                    <Input
+                        label="Vendor"
+                        value={data.vendor}
+                        onChange={(e) => setData('vendor', e.target.value)}
+                        error={errors.vendor}
+                        placeholder="Optional"
+                    />
+                )}
                 <Input
-                    label="Vendor"
-                    value={data.vendor}
-                    onChange={(e) => setData('vendor', e.target.value)}
-                    error={errors.vendor}
-                    placeholder="Optional"
+                    label="Payee"
+                    value={data.payee}
+                    onChange={(e) => setData('payee', e.target.value)}
+                    error={errors.payee}
+                    placeholder="Who received the payment"
+                />
+                <Input
+                    label="Expense Date"
+                    type="date"
+                    value={data.expense_date}
+                    onChange={(e) => setData('expense_date', e.target.value)}
+                    error={errors.expense_date}
                 />
                 <Input
                     label="Amount"
@@ -115,6 +153,14 @@ function ExpenseModal({ open, onClose, categories, currencies }) {
                     error={errors.amount}
                     placeholder="0.00"
                 />
+                <Input
+                    label="Budget"
+                    type="number"
+                    value={data.budget}
+                    onChange={(e) => setData('budget', e.target.value)}
+                    error={errors.budget}
+                    placeholder="0.00 (optional)"
+                />
                 <Select
                     label="Currency"
                     options={currencies.map((c) => ({ value: c, label: c }))}
@@ -122,25 +168,18 @@ function ExpenseModal({ open, onClose, categories, currencies }) {
                     onChange={(e) => setData('currency', e.target.value)}
                 />
                 <Input
-                    label="Expense Date"
-                    type="date"
-                    value={data.expense_date}
-                    onChange={(e) => setData('expense_date', e.target.value)}
-                    error={errors.expense_date}
+                    label="Invoice #"
+                    value={data.invoice_number}
+                    onChange={(e) => setData('invoice_number', e.target.value)}
+                    error={errors.invoice_number}
+                    placeholder="Optional"
                 />
-                <Select
-                    label="Period Month"
-                    options={monthOptions}
-                    value={data.period_month}
-                    onChange={(e) => setData('period_month', e.target.value)}
-                    error={errors.period_month}
-                />
-                <Select
-                    label="Period Year"
-                    options={yearOptions}
-                    value={data.period_year}
-                    onChange={(e) => setData('period_year', e.target.value)}
-                    error={errors.period_year}
+                <Input
+                    label="Voucher #"
+                    value={data.voucher_number}
+                    onChange={(e) => setData('voucher_number', e.target.value)}
+                    error={errors.voucher_number}
+                    placeholder="Optional"
                 />
                 <div style={{ gridColumn: '1 / -1' }}>
                     <Textarea
@@ -167,6 +206,7 @@ export default function MarketingExpenses({
     categories,
     statuses,
     currencies,
+    platforms,
     canCreate,
     canApprove,
     currentYear,
@@ -174,6 +214,10 @@ export default function MarketingExpenses({
     const { flash } = usePage().props;
     const [searchInput, setSearchInput] = useState(filters.search ?? '');
     const [expenseOpen, setExpenseOpen] = useState(false);
+    const [editExpense, setEditExpense] = useState(null);
+
+    function openEdit(expense) { setEditExpense(expense); setExpenseOpen(true); }
+    function closeModal()      { setExpenseOpen(false); setEditExpense(null); }
     const year = filters.year ?? currentYear;
 
     function applyFilter(overrides = {}) {
@@ -272,6 +316,11 @@ export default function MarketingExpenses({
             label: '',
             render: (row) => (
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-1)' }}>
+                    {canCreate && (
+                        <Button variant="ghost" size="sm" icon={Pencil} onClick={() => { setEditExpense(row); setExpenseOpen(true); }}>
+                            Edit
+                        </Button>
+                    )}
                     {canApprove && row.status === 'draft' && (
                         <Button variant="ghost" size="sm" icon={CheckCircle} onClick={() => handleApprove(row)}>
                             Approve
@@ -420,9 +469,11 @@ export default function MarketingExpenses({
 
             <ExpenseModal
                 open={expenseOpen}
-                onClose={() => setExpenseOpen(false)}
+                onClose={() => { setExpenseOpen(false); setEditExpense(null); }}
                 categories={categories}
                 currencies={currencies}
+                platforms={platforms}
+                expense={editExpense}
             />
         </AppShell>
     );

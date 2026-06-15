@@ -192,7 +192,22 @@ export const ROLE_CONFIG = {
             { section: 'finance', label: 'Credit cards',     icon: 'CreditCard',        href: '/credit-cards' },
             { section: 'finance', label: 'Cashbond portals', icon: 'WalletCards',       href: '/cashbond' },
         ],
-        charts: [],
+        charts: [
+            {
+                type   : 'donut',
+                section: 'visa',
+                dataKey: 'status_breakdown',
+                title  : 'Visa application status',
+                span   : 'half',
+            },
+            {
+                type   : 'bar',
+                section: 'visa',
+                dataKey: 'individual_income',
+                title  : 'Visa income by agent YTD',
+                span   : 'half',
+            },
+        ],
     },
 
     /* ── Admin Auditor — 8 widgets (4 cols × 2 rows) ─────────────────────── */

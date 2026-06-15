@@ -3,7 +3,7 @@ import { router, usePage } from '@inertiajs/react';
 import DetailPanel, { TableWithPanel, useDetailPanel } from '../../Components/Shared/DetailPanel';
 import { VisaContent } from './Show';
 
-import { Plus, Search, Eye, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Search, Eye, Pencil, Trash2, BarChart2 } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
 import DataTable from '../../Components/Shared/DataTable';
@@ -208,11 +208,20 @@ export default function VisaIndex({ applications, filters, statuses, agentCodes,
                 <PageHeader
                     title="Visa & Documentation"
                     subtitle={`${applications.total} application${applications.total !== 1 ? 's' : ''}`}
-                    actions={canWrite && (
-                        <Button variant="primary" icon={Plus} onClick={() => router.visit(route('visa.create'))}>
-                            New Application
-                        </Button>
-                    )}
+                    actions={
+                        <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
+                            <Button variant="ghost" icon={BarChart2}
+                                onClick={() => router.visit(route('visa.sales-report'))}>
+                                Sales Report
+                            </Button>
+                            {canWrite && (
+                                <Button variant="primary" icon={Plus}
+                                    onClick={() => router.visit(route('visa.create'))}>
+                                    New Application
+                                </Button>
+                            )}
+                        </div>
+                    }
                 />
 
                                 <TableWithPanel

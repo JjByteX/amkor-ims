@@ -121,6 +121,7 @@ class ReservationController extends Controller
             'filters' => compact('search', 'status', 'agent', 'serviceType', 'month'),
             'statuses' => ReservationBooking::STATUSES,
             'serviceTypes' => ReservationBooking::SERVICE_TYPES,
+            'transactionTypes' => ReservationBooking::TRANSACTION_TYPES,
             'paymentModes' => ReservationBooking::PAYMENT_MODES,
             'agentCodes' => ReservationBooking::AGENT_CODES,
         ]);
@@ -135,6 +136,7 @@ class ReservationController extends Controller
             'statuses' => ReservationBooking::STATUSES,
             'serviceTypes' => ReservationBooking::SERVICE_TYPES,
             'paymentModes' => ReservationBooking::PAYMENT_MODES,
+            'transactionTypes' => ReservationBooking::TRANSACTION_TYPES,
             'agentCodes' => ReservationBooking::AGENT_CODES,
             // URL for the contact typeahead picker — lets the form search contacts
             // by name/TIN without loading the full list upfront.
@@ -256,6 +258,7 @@ class ReservationController extends Controller
             'booking' => $booking,
             'statuses' => ReservationBooking::STATUSES,
             'serviceTypes' => ReservationBooking::SERVICE_TYPES,
+            'transactionTypes' => ReservationBooking::TRANSACTION_TYPES,
             'paymentModes' => ReservationBooking::PAYMENT_MODES,
             'canWrite' => $this->canWrite($request),
             'contactsSearchUrl' => route('contacts.search'),
@@ -266,6 +269,7 @@ class ReservationController extends Controller
             'booking' => $booking,
             'statuses' => ReservationBooking::STATUSES,
             'serviceTypes' => ReservationBooking::SERVICE_TYPES,
+            'transactionTypes' => ReservationBooking::TRANSACTION_TYPES,
             'paymentModes' => ReservationBooking::PAYMENT_MODES,
             'canWrite' => $this->canWrite($request),
             'contactsSearchUrl' => route('contacts.search'),
@@ -287,6 +291,7 @@ class ReservationController extends Controller
             'statuses' => ReservationBooking::STATUSES,
             'serviceTypes' => ReservationBooking::SERVICE_TYPES,
             'paymentModes' => ReservationBooking::PAYMENT_MODES,
+            'transactionTypes' => ReservationBooking::TRANSACTION_TYPES,
             'agentCodes' => ReservationBooking::AGENT_CODES,
             'contactsSearchUrl' => route('contacts.search'),
         ]);

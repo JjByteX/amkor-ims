@@ -25,41 +25,12 @@
     font-weight: bold;
     letter-spacing: 0.5px;
   }
-  .header-bar .company-name .airplane {
-    font-size: 16pt;
-  }
-  .header-bar .logos {
-    float: right;
-    font-size: 7pt;
-    text-align: right;
-    margin-top: 2px;
-    opacity: 0.9;
-  }
 
   /* ── Branch info strip ──────────────────────────────────────────── */
   .branch-strip {
     border-top: 3px solid #7DC24B;
     border-bottom: 3px solid #7DC24B;
-    display: table;
-    width: 100%;
     margin-bottom: 14px;
-  }
-  .branch-col {
-    display: table-cell;
-    width: 33.33%;
-    padding: 6px 10px;
-    border-right: 1px solid #ccc;
-    vertical-align: top;
-    font-size: 7.5pt;
-    text-align: center;
-  }
-  .branch-col:last-child { border-right: none; }
-  .branch-col .branch-name {
-    font-weight: bold;
-    color: #2D6A00;
-    font-size: 8pt;
-    text-decoration: underline;
-    margin-bottom: 2px;
   }
 
   /* ── Doc title ──────────────────────────────────────────────────── */
@@ -72,27 +43,13 @@
   }
 
   /* ── To block ───────────────────────────────────────────────────── */
-  .to-grid {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 10px;
-  }
+  .to-grid { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
   .to-grid td { padding: 2px 4px; font-size: 9pt; vertical-align: bottom; }
-  .to-grid .field-label { width: 80px; font-weight: normal; }
-  .to-grid .field-line {
-    border-bottom: 1px solid #000;
-    width: 220px;
-    min-width: 180px;
-  }
-  .to-grid .right-label { text-align: right; padding-right: 8px; }
-  .to-grid .no-value { font-weight: bold; }
+  .to-grid .field-label { width: 80px; }
+  .to-grid .field-line  { border-bottom: 1px solid #000; width: 220px; min-width: 180px; }
 
   /* ── Items table ────────────────────────────────────────────────── */
-  .items-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 0;
-  }
+  .items-table { width: 100%; border-collapse: collapse; margin-bottom: 0; }
   .items-table th {
     border: 1px solid #000;
     padding: 5px 8px;
@@ -103,23 +60,21 @@
   }
   .items-table td {
     border: 1px solid #000;
-    padding: 5px 8px;
+    padding: 4px 8px;
     font-size: 9pt;
     vertical-align: top;
+    height: 18px;
   }
   .items-table .amount-col { width: 110px; text-align: right; }
   .items-table .total-col  { width: 110px; text-align: right; }
   .items-table .date-col   { width: 80px; }
-  .items-table .empty-row td { height: 20px; }
 
   /* ── Footer row ─────────────────────────────────────────────────── */
-  .footer-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
+  .footer-table { width: 100%; border-collapse: collapse; }
   .footer-table td { border: 1px solid #000; padding: 4px 8px; font-size: 9pt; }
   .footer-table .words-cell { font-style: italic; }
-  .footer-table .acr-cell   { text-align: right; font-weight: bold; }
+  .footer-table .total-label { font-weight: bold; text-align: right; padding-right: 6px; border-left: none; }
+  .footer-table .total-value { font-weight: bold; text-align: right; width: 110px; }
 
   /* ── Interest clause ────────────────────────────────────────────── */
   .interest-clause {
@@ -139,24 +94,13 @@
   }
 
   /* ── Bank details ───────────────────────────────────────────────── */
-  .bank-section {
-    margin-top: 8px;
-    font-size: 7.5pt;
-  }
-  .bank-section .bank-title {
-    font-weight: bold;
-    font-size: 8pt;
-    margin-bottom: 4px;
-  }
+  .bank-section { margin-top: 8px; font-size: 7.5pt; }
+  .bank-section .bank-title { font-weight: bold; font-size: 8pt; margin-bottom: 4px; }
   .bank-cols { display: table; width: 100%; }
   .bank-col  { display: table-cell; width: 50%; vertical-align: top; padding-right: 16px; }
 
   /* ── Signature block ─────────────────────────────────────────────── */
-  .sig-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 16px;
-  }
+  .sig-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
   .sig-table td { padding: 2px 10px; font-size: 9pt; }
   .sig-line { border-bottom: 1px solid #000; display: block; margin-bottom: 3px; min-height: 22px; }
 </style>
@@ -165,12 +109,12 @@
 
 {{-- ── HEADER BAR ─────────────────────────────────────────────────────── --}}
 <div class="header-bar">
-  <span class="logos" style="float:right; font-size:7pt; opacity:0.85;">IATA &nbsp;·&nbsp; PTAA</span>
+  <span style="float:right; font-size:7pt; opacity:0.85;">IATA &nbsp;·&nbsp; PTAA</span>
   <div class="company-name">&#9992; AMKOR TRAVEL &amp; TOURS INC.</div>
 </div>
 
 {{-- ── BRANCH STRIP ────────────────────────────────────────────────────── --}}
-<div style="border-top: 3px solid #7DC24B; border-bottom: 3px solid #7DC24B; margin-bottom: 14px;">
+<div class="branch-strip">
   <table style="width:100%; border-collapse:collapse;">
     <tr>
       <td style="width:33%; padding:5px 10px; border-right:1px solid #ccc; text-align:center; font-size:7.5pt; vertical-align:top;">
@@ -213,9 +157,7 @@
   <tr>
     <td class="field-label">ADDRESS:</td>
     <td class="field-line">{{ $transaction->address ?? '' }}</td>
-    <td></td>
-    <td></td>
-    <td></td>
+    <td></td><td></td><td></td>
   </tr>
   <tr>
     <td class="field-label">TEL NO.:</td>
@@ -227,13 +169,16 @@
   <tr>
     <td class="field-label">DATE:</td>
     <td class="field-line">{{ $transaction->transaction_date->format('F d, Y') }}</td>
-    <td></td>
-    <td></td>
-    <td></td>
+    <td></td><td></td><td></td>
   </tr>
 </table>
 
-{{-- ── ITEMS TABLE ─────────────────────────────────────────────────────── --}}
+{{-- ── ITEMS TABLE — 15 rows ───────────────────────────────────────────── --}}
+{{--
+    Gap #6 fix: rows now come from $lineItems (padded to 15 by the controller).
+    Running total column accumulates as each row is rendered.
+    Empty rows render as blank cells to preserve the printed grid.
+--}}
 <table class="items-table">
   <thead>
     <tr>
@@ -244,28 +189,43 @@
     </tr>
   </thead>
   <tbody>
-    <tr>
-      <td>{{ $transaction->transaction_date->format('m/d/Y') }}</td>
-      <td>{{ $transaction->particulars ?? 'Travel Services Rendered' }}</td>
-      <td class="amount-col">&#8369; {{ number_format($transaction->gross_amount, 2) }}</td>
-      <td class="total-col">&#8369; {{ number_format($transaction->gross_amount, 2) }}</td>
-    </tr>
-    {{-- Empty rows for manual additions on printed copy --}}
-    @for ($i = 0; $i < 10; $i++)
-    <tr class="empty-row"><td></td><td></td><td></td><td></td></tr>
-    @endfor
+    @php $runningTotal = 0; @endphp
+    @foreach ($lineItems as $row)
+      @php
+        $hasAmount  = isset($row['amount']) && $row['amount'] !== null && $row['amount'] !== '';
+        $amt        = $hasAmount ? (float) $row['amount'] : null;
+        if ($hasAmount) { $runningTotal += $amt; }
+      @endphp
+      <tr>
+        <td class="date-col">
+          {{ $row['date'] ? \Carbon\Carbon::parse($row['date'])->format('m/d/Y') : '' }}
+        </td>
+        <td>{{ $row['description'] ?? '' }}</td>
+        <td class="amount-col">
+          @if ($hasAmount)&#8369; {{ number_format($amt, 2) }}@endif
+        </td>
+        <td class="total-col">
+          @if ($hasAmount)&#8369; {{ number_format($runningTotal, 2) }}@endif
+        </td>
+      </tr>
+    @endforeach
   </tbody>
 </table>
 
-{{-- ── FOOTER ROW: Amount in words + ACR ─────────────────────────────── --}}
+{{-- ── FOOTER: Amount in words + Grand Total ───────────────────────────── --}}
 <table class="footer-table">
   <tr>
-    <td class="words-cell" style="width:75%;">
+    <td class="words-cell" style="width:55%;">
       <em>Amount in words: {{ $amountInWords }}</em>
     </td>
-    <td class="acr-cell">
-      ACR: {{ $transaction->tin ?? '' }}
+    <td class="total-label" style="width:20%; border-left:1px solid #000;">GRAND TOTAL:</td>
+    <td class="total-value">&#8369; {{ number_format($transaction->gross_amount, 2) }}</td>
+  </tr>
+  <tr>
+    <td colspan="2" style="border-top:none; font-size:8pt; color:#555;">
+      ACR Ref: {{ $transaction->document_number }}
     </td>
+    <td></td>
   </tr>
 </table>
 

@@ -23,7 +23,7 @@ import Tooltip from './Tooltip';
 const NAV_SECTIONS = [
     {
         key  : 'main',
-        label: 'Main',
+        label: null,
         items: [
             {
                 key  : 'dashboard',
@@ -370,7 +370,7 @@ export default function Sidebar({ dark = false, onToggleDark }) {
         ),
     })).filter((section) => section.items.length > 0);
 
-    /* ── Shared border style ─────────────────────────────────────────────────── */
+    /* ── Border color for ProfileMenu's internal divider ────────────────────── */
     const borderColor = 'var(--color-border)';
 
     return (
@@ -395,34 +395,39 @@ export default function Sidebar({ dark = false, onToggleDark }) {
                 className="flex items-center shrink-0"
                 style={{
                     height       : 'var(--height-header)',
-                    borderBottom : `1px solid ${borderColor}`,
+                    paddingLeft  : '12px',
+                    paddingRight : collapsed ? 0 : 'var(--space-1)',
                 }}
             >
                 {collapsed ? (
                     /* ── COLLAPSED HEADER ──────────────────────────────────────────
-                       Full-width centering. On hover: logo hides, expand icon appears. */
-                    <div className="flex items-center justify-center w-full h-full">
-                        <button
-                            onClick={() => setCollapsed(false)}
-                            data-tooltip="Expand sidebar"
-                            className="sidebar-logo-toggle flex items-center justify-center text-gray-400 hover:text-[var(--color-text)] transition-colors duration-0"
-                            style={{ borderRadius: 'var(--radius-md)', width: 40, height: 40 }}
-                        >
-                            {/* Brand mark — always visible, hidden on hover via CSS */}
-                            <span className="sidebar-logo-brand flex items-center justify-center" style={{ width: 40, height: 40, color: 'var(--color-primary)' }}>
-                                <AmkorLogo size={40} />
-                            </span>
-                            {/* Expand icon — hidden by default, shown on hover via CSS */}
-                            <span className="sidebar-logo-expand items-center justify-center">
-                                <PanelLeftOpen size={20} />
-                            </span>
-                        </button>
-                    </div>
+                       Left-anchored — the 40px logo box's center lines up with the
+                       nav icons' and avatar's center (all at 32px from the sidebar
+                       edge), and
+                       this position is fixed regardless of sidebar width, so it
+                       never recenters during the collapse/expand transition.
+                       On hover: logo hides, expand icon appears. */
+                    <button
+                        onClick={() => setCollapsed(false)}
+                        data-tooltip="Expand sidebar"
+                        className="sidebar-logo-toggle flex items-center justify-center text-gray-400 hover:text-[var(--color-text)] transition-colors duration-0 shrink-0"
+                        style={{ borderRadius: 'var(--radius-md)', width: 40, height: 40 }}
+                    >
+                        {/* Brand mark — always visible, hidden on hover via CSS */}
+                        <span className="sidebar-logo-brand flex items-center justify-center" style={{ width: 40, height: 40, color: 'var(--color-primary)' }}>
+                            <AmkorLogo size={40} />
+                        </span>
+                        {/* Expand icon — hidden by default, shown on hover via CSS */}
+                        <span className="sidebar-logo-expand items-center justify-center">
+                            <PanelLeftOpen size={20} />
+                        </span>
+                    </button>
                 ) : (
                     /* ── EXPANDED HEADER ───────────────────────────────────────────
-                       Brand left, collapse button right. Icon is locked; only the
-                       text block next to it is animated.                             */
-                    <div className="flex items-center w-full" style={{ paddingLeft: 'var(--sidebar-logo-pl)', paddingRight: 'var(--space-1)' }}>
+                       Brand left, collapse button right. Icon is locked at the same
+                       position as the collapsed state; only the text block next to
+                       it is animated.                             */
+                    <div className="flex items-center w-full">
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                             {/* Logo icon — never animated, never moves */}
                             <div className="flex items-center justify-center shrink-0" style={{ width: 40, height: 40, color: 'var(--color-primary)' }}>
@@ -457,13 +462,13 @@ export default function Sidebar({ dark = false, onToggleDark }) {
             {/* ── Nav ─────────────────────────────────────────────────────────── */}
             <nav
                 className="flex-1 overflow-y-auto overflow-x-hidden"
-                style={{ padding: 'var(--space-1) var(--space-sidebar-x)' }}
+                style={{ padding: '0 var(--space-sidebar-x) var(--space-1)' }}
             >
-                <ul className={`flex flex-col ${collapsed ? 'items-center' : ''}`} style={{ gap: 'var(--nav-item-gap)' }}>
+                <ul className="flex flex-col" style={{ gap: 'var(--nav-item-gap)' }}>
                     {navSections.map((section) => (
                         <li key={section.key} className="w-full">
                             <AnimatePresence>
-                                {!collapsed && (
+                                {!collapsed && section.label && (
                                     <SidebarLabel
                                         className="pt-3 font-body font-semibold uppercase"
                                         style={{
@@ -479,10 +484,10 @@ export default function Sidebar({ dark = false, onToggleDark }) {
                                 )}
                             </AnimatePresence>
                             <motion.ul
-                                className={`flex flex-col ${collapsed ? 'items-center' : ''}`}
+                                className="flex flex-col"
                                 initial={false}
                                 animate={{
-                                    marginTop   : collapsed ? 0 : 6,
+                                    marginTop   : collapsed ? 0 : (section.label ? 6 : 0),
                                     marginBottom: collapsed ? 0 : 10,
                                 }}
                                 transition={{ duration: SIDEBAR_DURATION, ease: SIDEBAR_EASE }}
@@ -500,7 +505,6 @@ export default function Sidebar({ dark = false, onToggleDark }) {
                                     />
                                 ))}
                             </motion.ul>
-
                         </li>
                     ))}
                 </ul>
@@ -511,18 +515,22 @@ export default function Sidebar({ dark = false, onToggleDark }) {
                 className="shrink-0"
                 style={{
                     padding   : 'var(--space-1) var(--space-sidebar-x)',
-                    borderTop : 'var(--border-container)',
+                    borderTop : collapsed ? 'none' : 'var(--border-container)',
                 }}
             >
                 {collapsed ? (
-                    /* ── COLLAPSED ACCOUNT ROW ───────────────────────────────────── */
-                    <div className="flex flex-col items-center gap-1">
+                    /* ── COLLAPSED ACCOUNT ROW ─────────────────────────────────────
+                       Avatar (32px) centered in the 64px collapsed rail: 8px
+                       container padding + 8px extra inset = 16px left edge,
+                       leaving 16px on each side (64 - 32 = 32, halved). Fixed
+                       value, same in expanded, so there's no jump between states. */
+                    <div className="flex flex-col gap-1 justify-center" style={{ paddingLeft: '8px', minHeight: '44px' }}>
                         <button
                             ref={triggerRef}
                             onClick={() => setMenuOpen((v) => !v)}
                             onMouseEnter={() => setAvatarTip(true)}
                             onMouseLeave={() => setAvatarTip(false)}
-                            className="w-8 h-8 rounded-full bg-[var(--color-primary)] flex items-center justify-center hover:opacity-85 transition-opacity duration-0"
+                            className="w-8 h-8 rounded-full bg-[var(--color-primary)] flex items-center justify-center hover:opacity-85 transition-opacity duration-0 shrink-0"
                         >
                             <span className="text-white text-xs font-bold font-heading">
                                 {user?.name?.charAt(0)?.toUpperCase() ?? '?'}
@@ -545,7 +553,7 @@ export default function Sidebar({ dark = false, onToggleDark }) {
                         ].join(' ')}
                         style={{
                             gap          : 'var(--space-1)',
-                            padding      : '6px var(--space-1)',
+                            padding      : '6px var(--space-1) 6px 8px',
                             borderRadius : 'var(--radius-md)',
                             minHeight    : '44px',
                             border       : '1px solid transparent',

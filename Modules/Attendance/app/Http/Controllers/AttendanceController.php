@@ -15,13 +15,13 @@ use Modules\Attendance\Models\AttendanceRecord;
 
 class AttendanceController extends Controller
 {
-    // ── Role constants (from Roles.md) ────────────────────────────────────────
+    // ── Role constants ────────────────────────────────────────────────────────
     private const HR_ROLES = ['hr_admin_officer', 'general_manager'];
 
     private const VIEW_ALL = ['hr_admin_officer', 'general_manager', 'admin_auditor'];
 
     // ════════════════════════════════════════════════════════════════════════
-    // INDEX — HR/Auditor/JRT: full table with filters + stats
+    // INDEX — HR/Auditor: full table with filters + stats
     // ════════════════════════════════════════════════════════════════════════
 
     public function index(Request $request): Response
@@ -35,12 +35,12 @@ class AttendanceController extends Controller
             return $this->selfView($request);
         }
 
-        $month = (int) $request->get('month', now()->month);
-        $year = (int) $request->get('year', now()->year);
-        $empId = $request->get('employee_id');
+        $month    = (int) $request->get('month', now()->month);
+        $year     = (int) $request->get('year', now()->year);
+        $empId    = $request->get('employee_id');
         $branchId = $request->get('branch_id');
-        $status = $request->get('status');
-        $search = $request->get('search');
+        $status   = $request->get('status');
+        $search   = $request->get('search');
 
         $query = AttendanceRecord::with(['user', 'branch', 'recordedBy'])
             ->forMonth($year, $month)
@@ -54,31 +54,33 @@ class AttendanceController extends Controller
         }
 
         if ($search) {
-            // Search by user name via join — cross-module safe (uses users table only)
-            $query->whereHas('user', fn ($q) => $q->where(DB::raw('LOWER(name)'), 'like', '%'.strtolower($search).'%')
-            );
+            $query->whereHas('user', fn ($q) => $q->where(DB::raw('LOWER(name)'), 'like', '%'.strtolower($search).'%'));
         }
 
-        // Branch-scope: HR Admin and Auditor see all; others see their branch
+        // Branch-scope: General Manager sees all branches; others see their branch
         if ($role !== 'general_manager') {
             $query->forBranch($user->branch_id);
         }
 
         $records = $query->paginate(30)->withQueryString();
 
-        // Summary stats for the selected month
+        // Summary stats for the selected month — now includes overtime + overbreak
         $statsBase = AttendanceRecord::forMonth($year, $month);
         if ($role !== 'general_manager' && $branchId) {
             $statsBase->forBranch((int) $branchId);
         }
 
         $stats = (clone $statsBase)->selectRaw("
-            COUNT(CASE WHEN status = 'present' THEN 1 END) as total_present,
-            COUNT(CASE WHEN status = 'absent' THEN 1 END) as total_absent,
-            COUNT(CASE WHEN status = 'half_day' THEN 1 END) as total_half_day,
-            COUNT(CASE WHEN status = 'on_leave' THEN 1 END) as total_on_leave,
-            COUNT(CASE WHEN minutes_late > 0 THEN 1 END) as total_late,
-            COUNT(CASE WHEN minutes_undertime > 0 THEN 1 END) as total_undertime
+            COUNT(CASE WHEN status = 'present' THEN 1 END)          as total_present,
+            COUNT(CASE WHEN status = 'absent' THEN 1 END)           as total_absent,
+            COUNT(CASE WHEN status = 'half_day' THEN 1 END)         as total_half_day,
+            COUNT(CASE WHEN status = 'on_leave' THEN 1 END)         as total_on_leave,
+            COUNT(CASE WHEN minutes_late > 0 THEN 1 END)            as total_late,
+            COUNT(CASE WHEN minutes_undertime > 0 THEN 1 END)       as total_undertime,
+            COUNT(CASE WHEN minutes_overtime > 0 THEN 1 END)        as total_overtime,
+            COUNT(CASE WHEN minutes_overbreak > 0 THEN 1 END)       as total_overbreak,
+            COALESCE(SUM(minutes_overtime), 0)                       as sum_overtime,
+            COALESCE(SUM(minutes_overbreak), 0)                      as sum_overbreak
         ")->first();
 
         // Today's clock-in status for the current user (shown in the top banner)
@@ -86,21 +88,21 @@ class AttendanceController extends Controller
             ->forDate(today()->toDateString())
             ->first();
 
-        $branches = Branch::orderBy('name')->get(['id', 'name', 'code']);
+        $branches  = Branch::orderBy('name')->get(['id', 'name', 'code']);
         $employees = User::orderBy('name')->get(['id', 'name']);
 
         return Inertia::render('Attendance/Index', [
-            'records' => $records,
-            'stats' => $stats,
-            'filters' => compact('month', 'year', 'empId', 'branchId', 'status', 'search'),
+            'records'     => $records,
+            'stats'       => $stats,
+            'filters'     => compact('month', 'year', 'empId', 'branchId', 'status', 'search'),
             'todayRecord' => $todayRecord,
-            'statuses' => AttendanceRecord::STATUSES,
-            'leaveTypes' => AttendanceRecord::LEAVE_TYPES,
-            'branches' => $branches,
-            'employees' => $employees,
-            'canManage' => $this->canManage($request),
+            'statuses'    => AttendanceRecord::STATUSES,
+            'leaveTypes'  => AttendanceRecord::LEAVE_TYPES,
+            'branches'    => $branches,
+            'employees'   => $employees,
+            'canManage'   => $this->canManage($request),
             'currentUser' => ['id' => $user->id, 'name' => $user->name],
-            'now' => now()->toIso8601String(),
+            'now'         => now()->toIso8601String(),
         ]);
     }
 
@@ -110,9 +112,9 @@ class AttendanceController extends Controller
 
     private function selfView(Request $request): Response
     {
-        $user = $request->user();
+        $user  = $request->user();
         $month = (int) $request->get('month', now()->month);
-        $year = (int) $request->get('year', now()->year);
+        $year  = (int) $request->get('year', now()->year);
 
         $records = AttendanceRecord::forEmployee($user->id)
             ->forMonth($year, $month)
@@ -123,27 +125,30 @@ class AttendanceController extends Controller
             ->forDate(today()->toDateString())
             ->first();
 
-        // Personal stats for the month
         $stats = [
-            'total_present' => $records->where('status', 'present')->count(),
-            'total_absent' => $records->where('status', 'absent')->count(),
-            'total_half_day' => $records->where('status', 'half_day')->count(),
-            'total_on_leave' => $records->where('status', 'on_leave')->count(),
-            'total_late' => $records->where('minutes_late', '>', 0)->count(),
-            'total_undertime' => $records->where('minutes_undertime', '>', 0)->count(),
-            'minutes_late' => $records->sum('minutes_late'),
-            'minutes_undertime' => $records->sum('minutes_undertime'),
+            'total_present'       => $records->where('status', 'present')->count(),
+            'total_absent'        => $records->where('status', 'absent')->count(),
+            'total_half_day'      => $records->where('status', 'half_day')->count(),
+            'total_on_leave'      => $records->where('status', 'on_leave')->count(),
+            'total_late'          => $records->where('minutes_late', '>', 0)->count(),
+            'total_undertime'     => $records->where('minutes_undertime', '>', 0)->count(),
+            'total_overtime'      => $records->where('minutes_overtime', '>', 0)->count(),
+            'total_overbreak'     => $records->where('minutes_overbreak', '>', 0)->count(),
+            'minutes_late'        => $records->sum('minutes_late'),
+            'minutes_undertime'   => $records->sum('minutes_undertime'),
+            'minutes_overtime'    => $records->sum('minutes_overtime'),
+            'minutes_overbreak'   => $records->sum('minutes_overbreak'),
         ];
 
         return Inertia::render('Attendance/Self', [
-            'records' => $records,
-            'stats' => $stats,
+            'records'     => $records,
+            'stats'       => $stats,
             'todayRecord' => $todayRecord,
-            'filters' => compact('month', 'year'),
-            'statuses' => AttendanceRecord::STATUSES,
-            'leaveTypes' => AttendanceRecord::LEAVE_TYPES,
+            'filters'     => compact('month', 'year'),
+            'statuses'    => AttendanceRecord::STATUSES,
+            'leaveTypes'  => AttendanceRecord::LEAVE_TYPES,
             'currentUser' => ['id' => $user->id, 'name' => $user->name],
-            'now' => now()->toIso8601String(),
+            'now'         => now()->toIso8601String(),
         ]);
     }
 
@@ -156,7 +161,6 @@ class AttendanceController extends Controller
         $user = $request->user();
         $role = $user?->getRoleNames()->first();
 
-        // Employees can only view their own records
         if (! in_array($role, self::VIEW_ALL, true) && $attendance->user_id !== $user->id) {
             abort(403, 'You can only view your own attendance records.');
         }
@@ -164,11 +168,11 @@ class AttendanceController extends Controller
         $attendance->load(['user', 'branch', 'recordedBy']);
 
         return Inertia::render('Attendance/Show', [
-            'record' => array_merge($attendance->toArray(), [
-                'hours_worked' => $attendance->hours_worked,
+            'record'    => array_merge($attendance->toArray(), [
+                'hours_worked'  => $attendance->hours_worked,
                 'is_clocked_in' => $attendance->is_clocked_in,
             ]),
-            'statuses' => AttendanceRecord::STATUSES,
+            'statuses'  => AttendanceRecord::STATUSES,
             'leaveTypes' => AttendanceRecord::LEAVE_TYPES,
             'canManage' => $this->canManage($request),
         ]);
@@ -180,7 +184,7 @@ class AttendanceController extends Controller
 
     public function clockIn(Request $request): RedirectResponse
     {
-        $user = $request->user();
+        $user  = $request->user();
         $today = today()->toDateString();
 
         $existing = AttendanceRecord::where('employee_id', $user->id)
@@ -191,21 +195,21 @@ class AttendanceController extends Controller
             return back()->with('flash', ['type' => 'error', 'message' => 'You have already clocked in today.']);
         }
 
-        $now = now();
+        $now    = now();
         $timeIn = $now->format('H:i:s');
         $lateMin = AttendanceRecord::computeLateMinutes($timeIn);
 
         AttendanceRecord::create([
             'employee_id' => $user->id,
-            'user_id' => $user->id,
-            'work_date' => $today,
-            'time_in' => $timeIn,
-            'time_in_at' => $now,
+            'user_id'     => $user->id,
+            'work_date'   => $today,
+            'time_in'     => $timeIn,
+            'time_in_at'  => $now,
             'minutes_late' => $lateMin,
-            'status' => 'present',
-            'ip_address' => $request->ip(),
+            'status'      => 'present',
+            'ip_address'  => $request->ip(),
             'device_info' => substr($request->userAgent() ?? '', 0, 255),
-            'branch_id' => $user->branch_id ?? null,
+            'branch_id'   => $user->branch_id ?? null,
             'recorded_by' => $user->id,
         ]);
 
@@ -217,12 +221,12 @@ class AttendanceController extends Controller
     }
 
     // ════════════════════════════════════════════════════════════════════════
-    // CLOCK OUT — employee self-service
+    // CLOCK OUT — employee self-service (now computes overtime too)
     // ════════════════════════════════════════════════════════════════════════
 
     public function clockOut(Request $request): RedirectResponse
     {
-        $user = $request->user();
+        $user  = $request->user();
         $today = today()->toDateString();
 
         $record = AttendanceRecord::where('employee_id', $user->id)
@@ -235,28 +239,42 @@ class AttendanceController extends Controller
             return back()->with('flash', ['type' => 'error', 'message' => 'No active clock-in found for today.']);
         }
 
-        $now = now();
+        $now     = now();
         $timeOut = $now->format('H:i:s');
-        $underMin = AttendanceRecord::computeUndertimeMinutes($timeOut);
-        $worked = AttendanceRecord::computeMinutesWorked($record->time_in, $timeOut);
 
-        $record->update([
-            'time_out' => $timeOut,
-            'time_out_at' => $now,
-            'minutes_worked' => $worked,
-            'minutes_undertime' => $underMin,
-            'updated_by' => $user->id,
-        ]);
+        $record->update(array_merge(
+            AttendanceRecord::computeCounters(
+                $record->time_in,
+                $timeOut,
+                $record->break_start,
+                $record->break_end
+            ),
+            [
+                'time_out'    => $timeOut,
+                'time_out_at' => $now,
+                'updated_by'  => $user->id,
+            ]
+        ));
 
-        $h = intdiv($worked, 60);
-        $m = $worked % 60;
+        $worked   = $record->fresh()->minutes_worked;
+        $overtime = $record->fresh()->minutes_overtime;
+        $h        = intdiv($worked, 60);
+        $m        = $worked % 60;
         $workedStr = $m > 0 ? "{$h}h {$m}m" : "{$h}h";
 
-        return back()->with('flash', ['type' => 'success', 'message' => "Clocked out at {$now->format('h:i A')}. Total: {$workedStr}."]);
+        $msg = "Clocked out at {$now->format('h:i A')}. Total: {$workedStr}.";
+        if ($overtime > 0) {
+            $oh = intdiv($overtime, 60);
+            $om = $overtime % 60;
+            $otStr = $om > 0 ? "{$oh}h {$om}m" : "{$oh}h";
+            $msg .= " Overtime: {$otStr}.";
+        }
+
+        return back()->with('flash', ['type' => 'success', 'message' => $msg]);
     }
 
     // ════════════════════════════════════════════════════════════════════════
-    // HR OVERRIDE — HR or JRT can create/edit any record
+    // HR OVERRIDE — HR or GM can create/edit any record
     // ════════════════════════════════════════════════════════════════════════
 
     public function create(Request $request): Response
@@ -264,13 +282,13 @@ class AttendanceController extends Controller
         $this->requireHr($request);
 
         $employees = User::orderBy('name')->get(['id', 'name']);
-        $branches = Branch::orderBy('name')->get(['id', 'name', 'code']);
+        $branches  = Branch::orderBy('name')->get(['id', 'name', 'code']);
 
         return Inertia::render('Attendance/Form', [
-            'record' => null,
-            'employees' => $employees,
-            'branches' => $branches,
-            'statuses' => AttendanceRecord::STATUSES,
+            'record'     => null,
+            'employees'  => $employees,
+            'branches'   => $branches,
+            'statuses'   => AttendanceRecord::STATUSES,
             'leaveTypes' => AttendanceRecord::LEAVE_TYPES,
         ]);
     }
@@ -280,17 +298,21 @@ class AttendanceController extends Controller
         $this->requireHr($request);
 
         $data = $request->validated();
-        $data['recorded_by'] = $request->user()->id;
-        $data['updated_by'] = $request->user()->id;
-        $data['hr_override'] = true;
+        $data['recorded_by']    = $request->user()->id;
+        $data['updated_by']     = $request->user()->id;
+        $data['hr_override']    = true;
         $data['override_reason'] = $data['override_reason'] ?? 'HR manual entry';
 
-        // Compute derived fields if time_in and time_out provided
+        // Compute all counters when both time_in and time_out are provided
         if (! empty($data['time_in']) && ! empty($data['time_out'])) {
-            $data['minutes_worked'] = AttendanceRecord::computeMinutesWorked($data['time_in'], $data['time_out']);
-            $data['minutes_undertime'] = AttendanceRecord::computeUndertimeMinutes($data['time_out']);
-        }
-        if (! empty($data['time_in'])) {
+            $counters = AttendanceRecord::computeCounters(
+                $data['time_in'],
+                $data['time_out'],
+                $data['break_start'] ?? null,
+                $data['break_end']   ?? null
+            );
+            $data = array_merge($data, $counters);
+        } elseif (! empty($data['time_in'])) {
             $data['minutes_late'] = AttendanceRecord::computeLateMinutes($data['time_in']);
         }
 
@@ -307,16 +329,16 @@ class AttendanceController extends Controller
 
         $attendance->load(['user', 'branch']);
         $employees = User::orderBy('name')->get(['id', 'name']);
-        $branches = Branch::orderBy('name')->get(['id', 'name', 'code']);
+        $branches  = Branch::orderBy('name')->get(['id', 'name', 'code']);
 
         return Inertia::render('Attendance/Form', [
-            'record' => array_merge($attendance->toArray(), [
-                'hours_worked' => $attendance->hours_worked,
+            'record'     => array_merge($attendance->toArray(), [
+                'hours_worked'  => $attendance->hours_worked,
                 'is_clocked_in' => $attendance->is_clocked_in,
             ]),
-            'employees' => $employees,
-            'branches' => $branches,
-            'statuses' => AttendanceRecord::STATUSES,
+            'employees'  => $employees,
+            'branches'   => $branches,
+            'statuses'   => AttendanceRecord::STATUSES,
             'leaveTypes' => AttendanceRecord::LEAVE_TYPES,
         ]);
     }
@@ -326,18 +348,22 @@ class AttendanceController extends Controller
         $this->requireHr($request);
 
         $data = $request->validated();
-        $data['updated_by'] = $request->user()->id;
+        $data['updated_by']  = $request->user()->id;
         $data['hr_override'] = true;
         if (empty($data['override_reason'])) {
             $data['override_reason'] = 'HR correction';
         }
 
-        // Re-compute derived fields
+        // Re-compute all counters
         if (! empty($data['time_in']) && ! empty($data['time_out'])) {
-            $data['minutes_worked'] = AttendanceRecord::computeMinutesWorked($data['time_in'], $data['time_out']);
-            $data['minutes_undertime'] = AttendanceRecord::computeUndertimeMinutes($data['time_out']);
-        }
-        if (! empty($data['time_in'])) {
+            $counters = AttendanceRecord::computeCounters(
+                $data['time_in'],
+                $data['time_out'],
+                $data['break_start'] ?? null,
+                $data['break_end']   ?? null
+            );
+            $data = array_merge($data, $counters);
+        } elseif (! empty($data['time_in'])) {
             $data['minutes_late'] = AttendanceRecord::computeLateMinutes($data['time_in']);
         }
 
@@ -349,7 +375,7 @@ class AttendanceController extends Controller
     }
 
     // ════════════════════════════════════════════════════════════════════════
-    // DESTROY (soft delete — JRT only)
+    // DESTROY (soft delete — GM only)
     // ════════════════════════════════════════════════════════════════════════
 
     public function destroy(Request $request, AttendanceRecord $attendance): RedirectResponse
@@ -366,7 +392,7 @@ class AttendanceController extends Controller
     }
 
     // ════════════════════════════════════════════════════════════════════════
-    // REPORT — monthly summary per employee (HR + JRT + Auditor)
+    // REPORT — monthly summary per employee (HR + GM + Auditor)
     // ════════════════════════════════════════════════════════════════════════
 
     public function report(Request $request): Response
@@ -376,24 +402,25 @@ class AttendanceController extends Controller
             abort(403, 'Access denied.');
         }
 
-        $month = (int) $request->get('month', now()->month);
-        $year = (int) $request->get('year', now()->year);
+        $month    = (int) $request->get('month', now()->month);
+        $year     = (int) $request->get('year', now()->year);
         $branchId = $request->get('branch_id');
 
-        // Build per-employee summary for the month
         $query = AttendanceRecord::select([
             'employee_id',
             'user_id',
             'branch_id',
             DB::raw('COUNT(*) as total_days'),
-            DB::raw("SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as days_present"),
-            DB::raw("SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as days_absent"),
-            DB::raw("SUM(CASE WHEN status = 'half_day' THEN 1 ELSE 0 END) as days_half"),
-            DB::raw("SUM(CASE WHEN status = 'on_leave' THEN 1 ELSE 0 END) as days_leave"),
-            DB::raw("SUM(CASE WHEN status = 'holiday' THEN 1 ELSE 0 END) as days_holiday"),
-            DB::raw('SUM(minutes_worked) as total_minutes_worked'),
-            DB::raw('SUM(minutes_late) as total_minutes_late'),
-            DB::raw('SUM(minutes_undertime) as total_minutes_undertime'),
+            DB::raw("SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END)                  as days_present"),
+            DB::raw("SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END)                   as days_absent"),
+            DB::raw("SUM(CASE WHEN status = 'half_day' THEN 1 ELSE 0 END)                 as days_half"),
+            DB::raw("SUM(CASE WHEN status = 'on_leave' THEN 1 ELSE 0 END)                 as days_leave"),
+            DB::raw("SUM(CASE WHEN status = 'holiday' THEN 1 ELSE 0 END)                  as days_holiday"),
+            DB::raw('COALESCE(SUM(minutes_worked), 0)                                      as total_minutes_worked'),
+            DB::raw('COALESCE(SUM(minutes_late), 0)                                        as total_minutes_late'),
+            DB::raw('COALESCE(SUM(minutes_undertime), 0)                                   as total_minutes_undertime'),
+            DB::raw('COALESCE(SUM(minutes_overtime), 0)                                    as total_minutes_overtime'),
+            DB::raw('COALESCE(SUM(minutes_overbreak), 0)                                   as total_minutes_overbreak'),
         ])
             ->forMonth($year, $month)
             ->groupBy('employee_id', 'user_id', 'branch_id')
@@ -405,13 +432,13 @@ class AttendanceController extends Controller
             $query->forBranch($request->user()->branch_id);
         }
 
-        $summary = $query->get();
+        $summary  = $query->get();
         $branches = Branch::orderBy('name')->get(['id', 'name', 'code']);
 
         return Inertia::render('Attendance/Report', [
-            'summary' => $summary,
-            'filters' => compact('month', 'year', 'branchId'),
-            'branches' => $branches,
+            'summary'   => $summary,
+            'filters'   => compact('month', 'year', 'branchId'),
+            'branches'  => $branches,
             'canExport' => in_array($role, self::VIEW_ALL, true),
         ]);
     }

@@ -17,6 +17,12 @@ import Select from '../../Components/UI/Select';
 const money = (v) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(Number(v ?? 0));
 const date = (v) => v ? new Date(v).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '-';
 
+const COLLECTION_STATUS_VARIANT = {
+    paid      : 'success',
+    collection: 'warning',
+    overdue   : 'error',
+};
+
 export default function SalesSummaryIndex({ rows, totals, departments, targets, filters, departmentOptions, branches, canSetTargets, canExport }) {
     const [agent, setAgent] = useState(filters.agent_code ?? '');
     const target = useForm({
@@ -49,6 +55,15 @@ export default function SalesSummaryIndex({ rows, totals, departments, targets, 
         { key: 'gross_sales', label: 'Gross', render: (row) => money(row.gross_sales) },
         { key: 'net_payable', label: 'Net', render: (row) => money(row.net_payable) },
         { key: 'income', label: 'Income', render: (row) => money(row.income) },
+        {
+            key: 'collection_status',
+            label: 'Status',
+            render: (row) => row.collection_status
+                ? <Badge variant={COLLECTION_STATUS_VARIANT[row.collection_status] ?? 'neutral'}>
+                    {row.collection_status.charAt(0).toUpperCase() + row.collection_status.slice(1)}
+                  </Badge>
+                : '-',
+        },
     ];
 
     return (

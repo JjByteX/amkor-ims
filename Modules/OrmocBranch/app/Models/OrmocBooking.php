@@ -55,6 +55,9 @@ class OrmocBooking extends Model
         'escalated_to_head_office',
         'escalated_at',
         'escalated_by',
+        'escalation_acknowledged_at',
+        'escalation_acknowledged_by',
+        'linked_resa_booking_id',
         'po_sent_to_mariposa',
         'po_sent_to_mariposa_at',
         'forwarded_to_accounting',
@@ -71,6 +74,7 @@ class OrmocBooking extends Model
         'date_of_payment' => 'date',
         'passport_expiry' => 'date',
         'escalated_at' => 'datetime',
+        'escalation_acknowledged_at' => 'datetime',
         'po_sent_to_mariposa_at' => 'datetime',
         'forwarded_to_accounting_at' => 'datetime',
         'cc_surcharge_applied' => 'boolean',
@@ -140,6 +144,16 @@ class OrmocBooking extends Model
     public function escalatedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'escalated_by');
+    }
+
+    public function escalationAcknowledgedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'escalation_acknowledged_by');
+    }
+
+    public function linkedResaBooking(): BelongsTo
+    {
+        return $this->belongsTo(\Modules\Reservation\Models\ReservationBooking::class, 'linked_resa_booking_id');
     }
 
     // ─── Scopes ───────────────────────────────────────────────────────────────

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { router, usePage, useForm } from '@inertiajs/react';
 import {
     Clock, CheckCircle, XCircle, MinusCircle, AlertTriangle,
-    LogIn, LogOut, ChevronLeft, ChevronRight, Calendar,
+    LogIn, LogOut, ChevronLeft, ChevronRight, Calendar, TrendingUp, Coffee,
 } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
@@ -37,21 +37,35 @@ const fmtMinutes = (min) => {
 };
 
 const STATUS_VARIANT = {
-    present:   'success',
-    absent:    'error',
-    half_day:  'warning',
-    on_leave:  'info',
-    holiday:   'neutral',
-    rest_day:  'neutral',
+    present:                     'success',
+    late:                        'warning',
+    undertime:                   'warning',
+    half_day:                    'warning',
+    absent:                      'error',
+    rest_day:                    'neutral',
+    regular_holiday:             'neutral',
+    special_non_working_holiday: 'neutral',
+    present_regular_holiday:     'success',
+    present_special_holiday:     'success',
+    on_sil:                      'info',
+    birthday_leave:              'info',
+    on_leave:                    'info',
 };
 
 const STATUS_DOT = {
-    present:   'var(--color-success)',
-    absent:    'var(--color-error)',
-    half_day:  'var(--color-warning)',
-    on_leave:  'var(--color-info)',
-    holiday:   'var(--color-text)',
-    rest_day:  'var(--color-text)',
+    present:                     'var(--color-success)',
+    late:                        'var(--color-warning)',
+    undertime:                   'var(--color-warning)',
+    half_day:                    'var(--color-warning)',
+    absent:                      'var(--color-error)',
+    rest_day:                    'var(--color-text)',
+    regular_holiday:             'var(--color-text)',
+    special_non_working_holiday: 'var(--color-text)',
+    present_regular_holiday:     'var(--color-success)',
+    present_special_holiday:     'var(--color-success)',
+    on_sil:                      'var(--color-info)',
+    birthday_leave:              'var(--color-info)',
+    on_leave:                    'var(--color-info)',
 };
 
 // ── Calendar grid ─────────────────────────────────────────────────────────────
@@ -63,7 +77,7 @@ function AttendanceCalendar({ records, month, year, statuses }) {
         recordMap[d] = r;
     });
 
-    const firstDay = new Date(year, month - 1, 1).getDay();
+    const firstDay    = new Date(year, month - 1, 1).getDay();
     const daysInMonth = new Date(year, month, 0).getDate();
 
     const cells = [];
@@ -96,15 +110,21 @@ function AttendanceCalendar({ records, month, year, statuses }) {
                     if (!day) return <div key={`empty-${idx}`} />;
 
                     const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-                    const rec = recordMap[dateStr];
+                    const rec     = recordMap[dateStr];
                     const isToday = today.getFullYear() === year && today.getMonth() + 1 === month && today.getDate() === day;
                     const isFuture = new Date(dateStr) > today;
 
                     return (
                         <div
                             key={day}
+                            title={rec ? [
+                                statuses[rec.status] ?? rec.status,
+                                rec.minutes_overtime  > 0 ? `+${rec.minutes_overtime}m OT`       : null,
+                                rec.minutes_overbreak > 0 ? `${rec.minutes_overbreak}m overbreak` : null,
+                                rec.minutes_late      > 0 ? `${rec.minutes_late}m late`            : null,
+                            ].filter(Boolean).join(' · ') : undefined}
                             style={{
-                                minHeight: 48,
+                                minHeight: 52,
                                 borderRadius: 'var(--radius-md)',
                                 border: isToday ? '2px solid var(--color-primary)' : '1px solid rgba(0,0,0,0.07)',
                                 background: 'var(--color-card)',
@@ -122,6 +142,7 @@ function AttendanceCalendar({ records, month, year, statuses }) {
                             </div>
                             {rec && (
                                 <>
+                                    {/* Status dot */}
                                     <div style={{
                                         width: 8, height: 8,
                                         borderRadius: '50%',
@@ -129,10 +150,21 @@ function AttendanceCalendar({ records, month, year, statuses }) {
                                         position: 'absolute',
                                         top: 6, right: 6,
                                     }} />
+                                    {/* Time in */}
                                     {rec.time_in && (
                                         <div className="font-body" style={{ fontSize: 10, color: 'var(--color-text)', opacity: 0.55, marginTop: 2 }}>
                                             {fmtTime(rec.time_in)}
                                         </div>
+                                    )}
+                                    {/* Overtime indicator dot */}
+                                    {rec.minutes_overtime > 0 && (
+                                        <div style={{
+                                            width: 5, height: 5,
+                                            borderRadius: '50%',
+                                            background: 'var(--color-success)',
+                                            position: 'absolute',
+                                            bottom: 5, right: 6,
+                                        }} />
                                     )}
                                 </>
                             )}
@@ -143,14 +175,25 @@ function AttendanceCalendar({ records, month, year, statuses }) {
 
             {/* Legend */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginTop: 'var(--space-2)' }}>
-                {Object.entries(STATUS_DOT).map(([k, color]) => (
-                    <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                {[
+                    { key: 'present',  label: statuses.present  ?? 'Present',  color: 'var(--color-success)' },
+                    { key: 'absent',   label: statuses.absent   ?? 'Absent',   color: 'var(--color-error)' },
+                    { key: 'half_day', label: statuses.half_day ?? 'Half Day', color: 'var(--color-warning)' },
+                    { key: 'on_leave', label: statuses.on_leave ?? 'On Leave', color: 'var(--color-info)' },
+                ].map(({ key, label, color }) => (
+                    <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
                         <span className="font-body" style={{ fontSize: 11, color: 'var(--color-text)', opacity: 0.6 }}>
-                            {statuses[k] ?? k}
+                            {label}
                         </span>
                     </div>
                 ))}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--color-success)', flexShrink: 0 }} />
+                    <span className="font-body" style={{ fontSize: 11, color: 'var(--color-text)', opacity: 0.6 }}>
+                        Overtime
+                    </span>
+                </div>
             </div>
         </div>
     );
@@ -190,11 +233,24 @@ export default function AttendanceSelf({
         });
     }
 
-    const nowDate  = new Date(now);
-    const timeStr  = nowDate.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
-    const dateStr  = nowDate.toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    const nowDate     = new Date(now);
+    const timeStr     = nowDate.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
+    const dateStr     = nowDate.toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
     const isClockedIn  = todayRecord?.time_in && !todayRecord?.time_out;
     const isClockedOut = todayRecord?.time_in && todayRecord?.time_out;
+
+    // Monthly stat tiles — Excel column order: Present | Absent | OT | Lates | OB | Undertime
+    const statTiles = [
+        { label: 'Present',       value: stats.total_present,                   color: 'var(--color-success)' },
+        { label: 'Absent',        value: stats.total_absent,                    color: 'var(--color-error)' },
+        { label: 'Half Day',      value: stats.total_half_day,                  color: 'var(--color-warning)' },
+        { label: 'On Leave',      value: stats.total_on_leave,                  color: 'var(--color-info)' },
+        { label: 'Overtime',      value: fmtMinutes(stats.minutes_overtime),    color: 'var(--color-success)' },
+        { label: 'Late Days',     value: stats.total_late,                      color: 'var(--color-warning)' },
+        { label: 'Total Late',    value: fmtMinutes(stats.minutes_late),        color: 'var(--color-warning)' },
+        { label: 'Overbreak',     value: fmtMinutes(stats.minutes_overbreak),   color: 'var(--color-error)' },
+        { label: 'Undertime',     value: fmtMinutes(stats.minutes_undertime),   color: 'var(--color-warning)' },
+    ];
 
     return (
         <AppShell>
@@ -238,9 +294,19 @@ export default function AttendanceSelf({
                                         {fmtTime(todayRecord.time_in)} → {fmtTime(todayRecord.time_out)}
                                         {' · '}{fmtMinutes(todayRecord.minutes_worked)} worked
                                     </div>
+                                    {todayRecord.minutes_overtime > 0 && (
+                                        <span style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-success)' }}>
+                                            +{fmtMinutes(todayRecord.minutes_overtime)} overtime
+                                        </span>
+                                    )}
                                     {todayRecord.minutes_late > 0 && (
                                         <span style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-warning)' }}>
                                             {todayRecord.minutes_late}m late today
+                                        </span>
+                                    )}
+                                    {todayRecord.minutes_overbreak > 0 && (
+                                        <span style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-error)' }}>
+                                            {fmtMinutes(todayRecord.minutes_overbreak)} overbreak
                                         </span>
                                     )}
                                 </>
@@ -284,20 +350,13 @@ export default function AttendanceSelf({
 
                 {/* Monthly stats */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 'var(--space-2)' }}>
-                    {[
-                        { label: 'Present',    value: stats.total_present,   color: 'var(--color-success)' },
-                        { label: 'Absent',     value: stats.total_absent,    color: 'var(--color-error)' },
-                        { label: 'Half Day',   value: stats.total_half_day,  color: 'var(--color-warning)' },
-                        { label: 'On Leave',   value: stats.total_on_leave,  color: 'var(--color-info)' },
-                        { label: 'Late Days',  value: stats.total_late,      color: 'var(--color-warning)' },
-                        { label: 'Late Total', value: fmtMinutes(stats.minutes_late), color: 'var(--color-warning)' },
-                    ].map(({ label, value, color }) => (
+                    {statTiles.map(({ label, value, color }) => (
                         <Card key={label}>
                             <div className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)', opacity: 0.5 }}>
                                 {label}
                             </div>
                             <div className="font-heading font-semibold" style={{ fontSize: 20, color, marginTop: 2 }}>
-                                {value}
+                                {value ?? 0}
                             </div>
                         </Card>
                     ))}
@@ -324,7 +383,7 @@ export default function AttendanceSelf({
                     />
                 </Card>
 
-                {/* Recent records list */}
+                {/* Records list */}
                 <div className="font-heading font-semibold" style={{ fontSize: 'var(--font-size-heading)', color: 'var(--color-text)' }}>
                     Records
                 </div>
@@ -351,10 +410,20 @@ export default function AttendanceSelf({
                                             )}
                                         </div>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                                         {row.minutes_late > 0 && (
                                             <span style={{ fontSize: 11, color: 'var(--color-warning)' }}>
                                                 {row.minutes_late}m late
+                                            </span>
+                                        )}
+                                        {row.minutes_overtime > 0 && (
+                                            <span style={{ fontSize: 11, color: 'var(--color-success)' }}>
+                                                +{fmtMinutes(row.minutes_overtime)} OT
+                                            </span>
+                                        )}
+                                        {row.minutes_overbreak > 0 && (
+                                            <span style={{ fontSize: 11, color: 'var(--color-error)' }}>
+                                                {fmtMinutes(row.minutes_overbreak)} OB
                                             </span>
                                         )}
                                         <Badge variant={STATUS_VARIANT[row.status] ?? 'neutral'}>

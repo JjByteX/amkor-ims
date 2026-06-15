@@ -15,7 +15,9 @@ use Modules\Visa\Events\VisaPaymentRequested;
 use Modules\Visa\Http\Requests\StoreVisaApplicationRequest;
 use Modules\Visa\Mail\VisaPaymentRequestMail;
 use Modules\Visa\Models\VisaApplication;
+use Illuminate\Support\Facades\DB;
 use Modules\Contacts\Models\Contact;
+use Modules\Visa\Models\VisaTarget;
 use Modules\Reservation\Models\ReservationBooking;
 use Modules\OrmocBranch\Models\OrmocBooking;
 
@@ -412,6 +414,103 @@ class VisaController extends Controller
         ]);
 
         return back()->with('flash', ['type' => 'success', 'message' => 'OR endorsed to Accounting Disbursement.']);
+    }
+
+    // ─── Sales Report ─────────────────────────────────────────────────────────
+    // Gap #8: filterable monthly income view per agent and visa type.
+
+    public function salesReport(Request $request): Response
+    {
+        $role = $request->user()?->getRoleNames()->first();
+
+        if (! in_array($role, self::VIEW_ROLES, true)) {
+            abort(403);
+        }
+
+        $year  = (int) $request->get('year',  now()->year);
+        $month = (int) $request->get('month', now()->month);
+        $agent = $request->get('agent');
+
+        $baseQuery = fn () => VisaApplication::query()
+            ->whereYear('date', $year)
+            ->whereMonth('date', $month)
+            ->whereIn('status', ['approved', 'completed'])
+            ->when($role === 'visa_documentation_officer',
+                fn ($q) => $q->where('branch_id', $request->user()->branch_id))
+            ->when($agent, fn ($q) => $q->where('agent_code', $agent));
+
+        // Rows: one per agent × visa_type
+        $rows = ($baseQuery)()
+            ->select(
+                'agent_code', 'visa_type',
+                DB::raw('COUNT(*) as count'),
+                DB::raw('SUM(selling_price) as total_sp'),
+                DB::raw('SUM(net_payable)   as total_np'),
+                DB::raw('SUM(income)        as total_income'),
+            )
+            ->groupBy('agent_code', 'visa_type')
+            ->orderBy('agent_code')
+            ->orderByDesc('total_income')
+            ->get();
+
+        // Per-agent totals
+        $agentTotals = $rows->groupBy('agent_code')->map(fn ($g) => [
+            'agent_code'   => $g->first()->agent_code,
+            'count'        => $g->sum('count'),
+            'total_sp'     => round((float) $g->sum('total_sp'),     2),
+            'total_np'     => round((float) $g->sum('total_np'),     2),
+            'total_income' => round((float) $g->sum('total_income'), 2),
+        ])->values();
+
+        // Grand totals
+        $grandTotals = [
+            'count'        => $rows->sum('count'),
+            'total_sp'     => round((float) $rows->sum('total_sp'),     2),
+            'total_np'     => round((float) $rows->sum('total_np'),     2),
+            'total_income' => round((float) $rows->sum('total_income'), 2),
+        ];
+
+        // Income by visa type (for bar chart)
+        $byType = $rows->groupBy('visa_type')->map(fn ($g) => [
+            'visa_type'    => $g->first()->visa_type,
+            'count'        => $g->sum('count'),
+            'total_income' => round((float) $g->sum('total_income'), 2),
+        ])->sortByDesc('total_income')->values();
+
+        // 12-month income trend for selected year
+        $monthlyTrend = collect(range(1, 12))->map(function ($m) use ($year, $role, $request, $agent) {
+            $q = VisaApplication::query()
+                ->whereYear('date', $year)
+                ->whereMonth('date', $m)
+                ->whereIn('status', ['approved', 'completed'])
+                ->when($role === 'visa_documentation_officer',
+                    fn ($q2) => $q2->where('branch_id', $request->user()->branch_id))
+                ->when($agent, fn ($q2) => $q2->where('agent_code', $agent));
+
+            return [
+                'month'  => \Carbon\Carbon::create($year, $m)->format('M'),
+                'income' => round((float) $q->sum('income'), 2),
+                'count'  => $q->count(),
+            ];
+        })->values();
+
+        // Monthly target (from visa_targets)
+        $target = (float) VisaTarget::query()
+            ->where('year', $year)
+            ->where('month', $month)
+            ->when($agent, fn ($q) => $q->where('agent_code', $agent))
+            ->sum('target_amount');
+
+        return Inertia::render('Visa/SalesReport', [
+            'rows'         => $rows->values(),
+            'agentTotals'  => $agentTotals,
+            'grandTotals'  => $grandTotals,
+            'byType'       => $byType,
+            'monthlyTrend' => $monthlyTrend,
+            'filters'      => compact('year', 'month', 'agent'),
+            'agentCodes'   => VisaApplication::AGENT_CODES,
+            'target'       => $target,
+        ]);
     }
 
     // ─── Link / Unlink Contact ─────────────────────────────────────────────────
