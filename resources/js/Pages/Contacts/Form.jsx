@@ -67,7 +67,7 @@ function ContactForm({ contact, types, currencies, defaultType }) {
                                 type="button"
                                 variant="ghost"
                                 icon={X}
-                                onClick={() => router.get(isEditing ? route('contacts.show', contact.id) : route('contacts.index', { type: data.type }))}
+                                onClick={() => router.get(route('contacts.index', { type: data.type }))}
                             >
                                 Cancel
                             </Button>
@@ -94,7 +94,7 @@ function ContactForm({ contact, types, currencies, defaultType }) {
                 </FormCard>
 
                 <FormActions>
-                    <Button type="button" variant="ghost" icon={X} onClick={() => router.get(isEditing ? route('contacts.show', contact.id) : route('contacts.index', { type: data.type }))}>Cancel</Button>
+                    <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('contacts.index', { type: data.type }))}>Cancel</Button>
                     <Button type="submit" variant="primary" icon={Save} loading={processing}>
                         {isEditing ? 'Save Changes' : 'Add Contact'}
                     </Button>

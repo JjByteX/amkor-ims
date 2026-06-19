@@ -56,7 +56,7 @@ export default function MarketingForm({ material, materialTypes, platforms, mode
                                     type="button"
                                     variant="ghost"
                                     icon={X}
-                                    onClick={() => isEdit ? router.get(route('marketing.show', material.id)) : router.get(route('marketing.index'))}
+                                    onClick={() => router.get(route('marketing.index'))}
                                 >
                                     Cancel
                                 </Button>
@@ -79,7 +79,7 @@ export default function MarketingForm({ material, materialTypes, platforms, mode
                     </FormCard>
 
                     <FormActions>
-                        <Button type="button" variant="ghost" icon={X} onClick={() => isEdit ? router.get(route('marketing.show', material.id)) : router.get(route('marketing.index'))}>Cancel</Button>
+                        <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('marketing.index'))}>Cancel</Button>
                         <Button type="submit" variant="primary" icon={Save} loading={processing}>
                             {isEdit ? 'Save Changes' : 'Create Material'}
                         </Button>

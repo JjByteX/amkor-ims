@@ -47,7 +47,7 @@ export default function BillsEdit({ bill, billTypes, paymentModes }) {
                         subtitle={bill.name}
                         actions={
                             <>
-                                <Button type="button" variant="ghost" icon={X} onClick={() => router.visit(route('bills.show', bill.id))}>Cancel</Button>
+                                <Button type="button" variant="ghost" icon={X} onClick={() => router.visit(route('bills.index'))}>Cancel</Button>
                                 <Button type="submit" variant="primary" icon={Save} loading={form.processing}>Save Changes</Button>
                             </>
                         }
@@ -69,7 +69,7 @@ export default function BillsEdit({ bill, billTypes, paymentModes }) {
                     </FormCard>
 
                     <FormActions>
-                        <Button type="button" variant="ghost" icon={X} onClick={() => router.visit(route('bills.show', bill.id))}>Cancel</Button>
+                        <Button type="button" variant="ghost" icon={X} onClick={() => router.visit(route('bills.index'))}>Cancel</Button>
                         <Button type="submit" variant="primary" icon={Save} loading={form.processing}>Save Changes</Button>
                     </FormActions>
                 </FormLayout>

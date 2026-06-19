@@ -13,6 +13,8 @@ import Input from '../../../Components/UI/Input';
 import Select from '../../../Components/UI/Select';
 import Modal from '../../../Components/UI/Modal';
 
+const fmt = (d) => d ? new Date(d).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+
 const EMPTY_FORM = {
     airline:        '',
     origin:         '',
@@ -118,7 +120,7 @@ export default function AirlineRatesIndex({ rates, filters, currencies, canWrite
             label: 'Effective Date',
             render: (row) => (
                 <span className="font-body" style={{ fontSize: 'var(--font-size-small)' }}>
-                    {row.effective_date}
+                    {fmt(row.effective_date)}
                 </span>
             ),
         },

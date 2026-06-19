@@ -18,23 +18,40 @@ use Modules\Visa\Models\VisaApplication;
 
 class ReservationController extends Controller
 {
+    // ─── Roles ────────────────────────────────────────────────────────────────
+    // Canonical slugs per Amkor_IMS___Roles___Permissions_Matrix_1.md (Module 1)
+
+    // Roles that can create / update bookings (✅ Create + Update in matrix)
+    // president and COO have full control; GSM manages sales team;
+    // the three sales officer roles create/update their own bookings only (🔒)
     private const WRITE_ROLES = [
-        'general_manager',
-        'chief_operations_officer',
+        'president',
+        'chief_operating_officer',
         'general_sales_manager',
-        'accounting_officer',
-        'resa_officer',
-        'ormoc_branch_officer',
+        'accounting_assistant',         // records payment; updates AR/OR/SI numbers
+        'sales_reservation_officer',    // 🔒 own bookings only
+        'sales_ticketing_officer',      // 🔒 own bookings only
+        'group_sales_officer',          // 🔒 own bookings only
     ];
 
+    // Annotate-only roles (can update audit remarks / financial annotations, not full write)
+    private const ANNOTATE_ROLES = [
+        'finance_admin_supervisor',     // dept head oversight; annotate only
+        'administrative_assistant',     // audit remarks only
+    ];
+
+    // All roles with any read access (Module 1 — all roles with ✅ or 👁 Read)
     private const VIEW_ROLES = [
-        'general_manager',
-        'chief_operations_officer',
+        'president',
+        'chief_operating_officer',
+        'finance_admin_supervisor',     // FIX #2: was missing; view + annotate
+        'administrative_assistant',     // FIX #2: was missing; view + audit remarks
         'general_sales_manager',
-        'accounting_officer',
-        'resa_officer',
-        'ormoc_branch_officer',
-        'admin_auditor',
+        'business_development_manager', // FIX #2: was missing; view only for cross-department reporting
+        'accounting_assistant',
+        'sales_reservation_officer',    // 🔒 own bookings only
+        'sales_ticketing_officer',      // 🔒 own bookings only
+        'group_sales_officer',          // 🔒 own bookings only
     ];
 
     public function index(Request $request): Response
@@ -65,7 +82,9 @@ class ReservationController extends Controller
                 COUNT(*) as total,
                 COUNT(CASE WHEN status = 'confirmed' THEN 1 END) as confirmed,
                 COALESCE(SUM(selling_price), 0) as gross,
-                COALESCE(SUM(income), 0) as income
+                COALESCE(SUM(net_payable), 0) as net_payable,
+                COALESCE(SUM(income), 0) as income,
+                COALESCE(SUM(pax_count), 0) as pax
             ")->first(),
             'filters' => compact('search', 'status', 'agent', 'month'),
             'statuses' => fn () => ReservationBooking::STATUSES,
@@ -73,57 +92,6 @@ class ReservationController extends Controller
             'paymentModes' => fn () => ReservationBooking::PAYMENT_MODES,
             'agentCodes' => fn () => ReservationBooking::AGENT_CODES,
             'canWrite' => $this->canWrite($request),
-        ]);
-    }
-
-    public function salesReport(Request $request): Response
-    {
-        if (! ($request->user()?->can('reservation.view_sales_report') || $request->user()?->can('reservation.view_sales_report_own'))) {
-            abort(403);
-        }
-
-        $search = $request->string('search')->toString();
-        $status = $request->string('status')->toString();
-        $agent = $request->string('agent')->toString();
-        $serviceType = $request->string('service_type')->toString();
-        $month = $request->string('month')->toString();
-
-        $query = ReservationBooking::with(['branch'])
-            ->latest('date')
-            ->search($search)
-            ->forStatus($status)
-            ->forAgent($agent);
-
-        if ($serviceType !== '') {
-            $query->where('service_type', $serviceType);
-        }
-
-        $this->scopeBranch($request, $query);
-
-        if (! $request->user()?->can('reservation.view_sales_report')) {
-            $query->where('created_by', $request->user()->id);
-        }
-
-        if ($month !== '') {
-            [$year, $monthNumber] = array_map('intval', explode('-', $month.'-01'));
-            $query->whereYear('date', $year)->whereMonth('date', $monthNumber);
-        }
-
-        return Inertia::render('Reservation/SalesReport', [
-            'bookings' => $query->paginate(25)->withQueryString(),
-            'summary' => (clone $query)->toBase()->reorder()->selectRaw("
-                COUNT(*) as total,
-                COUNT(CASE WHEN status = 'confirmed' THEN 1 END) as confirmed,
-                COALESCE(SUM(selling_price), 0) as gross,
-                COALESCE(SUM(income), 0) as income,
-                COALESCE(SUM(pax_count), 0) as pax
-            ")->first(),
-            'filters' => compact('search', 'status', 'agent', 'serviceType', 'month'),
-            'statuses' => ReservationBooking::STATUSES,
-            'serviceTypes' => ReservationBooking::SERVICE_TYPES,
-            'transactionTypes' => ReservationBooking::TRANSACTION_TYPES,
-            'paymentModes' => ReservationBooking::PAYMENT_MODES,
-            'agentCodes' => ReservationBooking::AGENT_CODES,
         ]);
     }
 
@@ -138,8 +106,6 @@ class ReservationController extends Controller
             'paymentModes' => ReservationBooking::PAYMENT_MODES,
             'transactionTypes' => ReservationBooking::TRANSACTION_TYPES,
             'agentCodes' => ReservationBooking::AGENT_CODES,
-            // URL for the contact typeahead picker — lets the form search contacts
-            // by name/TIN without loading the full list upfront.
             'contactsSearchUrl' => route('contacts.search'),
         ]);
     }
@@ -167,7 +133,7 @@ class ReservationController extends Controller
         }
 
         return redirect()
-            ->route('reservation.show', $booking)
+            ->route('reservation.index')
             ->with('flash', ['type' => 'success', 'message' => "Reservation {$booking->booking_no} created."]);
     }
 
@@ -182,12 +148,10 @@ class ReservationController extends Controller
         $relatedTransactions = [];
         if ($booking->contact_id) {
             $statusVariants = [
-                // Reservation / Ormoc
                 'inquiry'    => 'neutral',
                 'quoted'     => 'info',
                 'confirmed'  => 'success',
                 'cancelled'  => 'error',
-                // Visa
                 'pending'    => 'warning',
                 'on_process' => 'info',
                 'completed'  => 'success',
@@ -282,8 +246,6 @@ class ReservationController extends Controller
         $this->requireWriter($request);
         $this->authorizeBranch($request, $booking);
 
-        // Eager-load contact so the form can pre-populate the picker with the
-        // currently linked contact's name without an extra round-trip.
         $booking->load('contact');
 
         return Inertia::render('Reservation/Form', [
@@ -318,7 +280,7 @@ class ReservationController extends Controller
         }
 
         return redirect()
-            ->route('reservation.show', $booking)
+            ->route('reservation.index')
             ->with('flash', ['type' => 'success', 'message' => 'Reservation updated.']);
     }
 
@@ -388,13 +350,6 @@ class ReservationController extends Controller
         return back()->with('flash', ['type' => 'success', 'message' => 'Reservation forwarded to accounting.']);
     }
 
-    // ─── Link / Unlink Contact ─────────────────────────────────────────────────
-    //
-    // Lets Accounting attach a Contacts record to a booking from the Show page.
-    // Once linked, TIN/address/business_style auto-fill on the BIR transaction
-    // generated when the booking is confirmed. Available to any role that can
-    // view this record.
-
     public function linkContact(Request $request, ReservationBooking $booking): RedirectResponse
     {
         $this->requireViewer($request);
@@ -448,18 +403,29 @@ class ReservationController extends Controller
 
     private function scopeBranch(Request $request, $query): void
     {
-        if ($request->user()?->getRoleNames()->first() === 'ormoc_branch_officer') {
-            $query->forBranch($request->user()->branch_id);
+        $role = $request->user()?->getRoleNames()->first();
+
+        // 🔒 Sales officers see only their own bookings (Module 1)
+        if (in_array($role, ['sales_reservation_officer', 'sales_ticketing_officer', 'group_sales_officer'], true)) {
+            $query->where('created_by', $request->user()->id);
         }
     }
 
     private function authorizeBranch(Request $request, ReservationBooking $booking): void
     {
+        $role = $request->user()?->getRoleNames()->first();
+
+        // 🔒 Sales officers may only access their own bookings (Module 1)
         if (
-            $request->user()?->getRoleNames()->first() === 'ormoc_branch_officer'
-            && $booking->branch_id !== $request->user()->branch_id
+            in_array($role, ['sales_reservation_officer', 'sales_ticketing_officer', 'group_sales_officer'], true)
+            && $booking->created_by !== $request->user()->id
         ) {
             abort(403);
         }
+    }
+
+    private function canAnnotate(Request $request): bool
+    {
+        return in_array($request->user()?->getRoleNames()->first() ?? '', self::ANNOTATE_ROLES, true);
     }
 }

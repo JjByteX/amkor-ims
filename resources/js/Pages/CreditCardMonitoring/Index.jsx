@@ -17,6 +17,8 @@ import Select from '../../Components/UI/Select';
 import Badge from '../../Components/UI/Badge';
 import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
 
+const fmt = (d) => d ? new Date(d).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+
 const STATUS_VARIANT = {
     pending : 'warning',
     paid    : 'success',
@@ -103,7 +105,7 @@ export default function CreditCardIndex({ payments, cards, summary, filters, sta
             label: 'Due Date',
             render: row => (
                 <span className="font-body text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-small)' }}>
-                    {row.due_date}
+                    {fmt(row.due_date)}
                 </span>
             ),
         },

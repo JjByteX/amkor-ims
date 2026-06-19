@@ -176,7 +176,7 @@
        Single source of truth for every <Textarea> across all pages.
        Change here → all textareas update automatically.
     */
-    --textarea-min-height   : 96px;
+    --textarea-min-height   : 57px;
     --textarea-px           : var(--space-2);          /* 16px — matches Input */
     --textarea-py           : var(--space-1);          /*  8px */
     --textarea-font-size    : var(--font-size-body);   /* 14px */
@@ -366,4 +366,40 @@ button, input, select, textarea {
         max-width   0.22s cubic-bezier(0.0, 0.0, 0.2, 1),
         padding-left  0.22s cubic-bezier(0.0, 0.0, 0.2, 1),
         padding-right 0.22s cubic-bezier(0.0, 0.0, 0.2, 1);
+}
+/* ============================================================
+   NATIVE DATE INPUT — .date-input-native
+   Applied by DatePicker.jsx to every <input type="date">.
+   Inherits design tokens; overrides browser defaults cleanly.
+   Hides the browser's built-in calendar icon (we supply our own).
+   ============================================================ */
+
+/* Remove the browser spinner/calendar icon on WebKit/Blink */
+input[type="date"].date-input-native::-webkit-calendar-picker-indicator {
+    display: none;
+    -webkit-appearance: none;
+}
+
+/* Keep the date part text readable in dark mode */
+input[type="date"].date-input-native {
+    color-scheme: light;          /* default: use light spinner */
+}
+
+.dark input[type="date"].date-input-native {
+    color-scheme: dark;           /* dark mode: use OS dark spinner */
+    color: var(--color-text);
+}
+
+/* Remove inner-spin buttons in Firefox */
+input[type="date"].date-input-native::-moz-focus-inner {
+    border: 0;
+    padding: 0;
+}
+
+/* ── Sidebar nav item hover ─────────────────────────────────────────────────
+   Uses the same background token as table headers so the hover shade is
+   consistent across the UI. CSS-driven so it works correctly on Inertia
+   <Link> elements. Only applies when the item is NOT active. */
+.nav-item-hoverable:not(.nav-item-active):hover {
+    background-color: var(--color-table-header-bg) !important;
 }

@@ -15,13 +15,19 @@ class CreditCardMonitoringController extends Controller
 {
     // ─── Roles ──────────────────────────────────────────────────────────────
 
-    private const PREPARER_ROLES = ['hr_admin_officer', 'disbursement_officer'];
+    private const PREPARER_ROLES = ['accounting_assistant'];
 
-    private const CHECKER_ROLES = ['admin_auditor', 'general_manager'];
+    private const CHECKER_ROLES = ['administrative_assistant', 'finance_admin_supervisor'];
 
-    private const APPROVER_ROLES = ['general_manager'];
+    private const APPROVER_ROLES = ['president'];
 
-    private const VIEW_ROLES = ['hr_admin_officer', 'disbursement_officer', 'admin_auditor', 'general_manager'];
+    private const VIEW_ROLES = [
+        'president',
+        'chief_operating_officer',
+        'finance_admin_supervisor',
+        'administrative_assistant',
+        'accounting_assistant',
+    ];
 
     // ════════════════════════════════════════════════════════════════════════
     // CARDS MASTER LIST
@@ -164,7 +170,7 @@ class CreditCardMonitoringController extends Controller
         $payment = CreditCardPayment::create($data);
 
         return redirect()
-            ->route('credit-cards.show', $payment)
+            ->route('credit-cards.index')
             ->with('flash', ['type' => 'success', 'message' => "Payment {$payment->payment_no} recorded."]);
     }
 

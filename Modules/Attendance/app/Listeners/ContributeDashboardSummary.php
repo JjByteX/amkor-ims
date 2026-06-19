@@ -11,7 +11,7 @@ class ContributeDashboardSummary
     {
         $collector = $event->collector;
 
-        if (! $collector->can(['general_manager', 'hr_admin_officer', 'resa_officer', 'ormoc_branch_officer', 'visa_documentation_officer', 'accounting_officer', 'disbursement_officer', 'admin_auditor', 'liaison_officer', 'marketing_officer'])) {
+        if (! $collector->can('all')) {  // all authenticated staff have an attendance record
             return;
         }
 

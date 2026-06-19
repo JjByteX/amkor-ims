@@ -3,6 +3,23 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Marketing\Http\Controllers\MarketingController;
 
+/*
+|--------------------------------------------------------------------------
+| Marketing Module Routes
+|--------------------------------------------------------------------------
+|
+| Create/Update own : sales_marketing_officer (own materials only)
+| Create/Update all : business_development_manager
+| Approve/Publish   : chief_operating_officer (reviews before publish),
+|                     business_development_manager
+| View itineraries  : all sales roles (read-only published itineraries)
+| View expenses     : accounting_assistant
+| Delete            : president only
+|
+| Workflow:
+|   Draft (sales_marketing_officer) → Submitted → Approved (COO) → Published
+*/
+
 Route::middleware(['auth', 'verified'])->prefix('marketing')->name('marketing.')->group(function () {
 
     // ── Materials (main resource) ─────────────────────────────────────────────

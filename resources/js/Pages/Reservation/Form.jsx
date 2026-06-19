@@ -53,7 +53,6 @@ export default function ReservationForm({ booking, statuses, serviceTypes, trans
     const set = (key) => (e) => setData(key, e.target.value);
     const options = (items) => Object.entries(items).map(([value, label]) => ({ value, label }));
 
-    // Auto-compute income when SP or NP changes
     function handleFinancialChange(field, value) {
         const next = { ...data, [field]: value };
         const sp   = parseFloat(next.selling_price) || 0;
@@ -70,6 +69,8 @@ export default function ReservationForm({ booking, statuses, serviceTypes, trans
         }
     }
 
+    const cancelUrl = route('reservation.index');
+
     return (
         <AppShell>
             <form
@@ -77,7 +78,7 @@ export default function ReservationForm({ booking, statuses, serviceTypes, trans
                 className="flex min-h-0 flex-1 flex-col overflow-y-auto"
                 style={{ gap: 'var(--space-2)' }}
             >
-                <FormLayout columns={2}>
+                <FormLayout columns={3}>
                     <PageHeader
                         breadcrumb={[{ label: 'Reservation & Booking', href: route('reservation.index') }]}
                         title={isEdit ? `Edit ${booking.booking_no}` : 'New Booking'}
@@ -88,11 +89,7 @@ export default function ReservationForm({ booking, statuses, serviceTypes, trans
                                     type="button"
                                     variant="ghost"
                                     icon={X}
-                                    onClick={() => router.get(
-                                        isEdit
-                                            ? route('reservation.show', booking.id)
-                                            : route('reservation.index')
-                                    )}
+                                    onClick={() => router.get(cancelUrl)}
                                 >
                                     Cancel
                                 </Button>
@@ -103,8 +100,8 @@ export default function ReservationForm({ booking, statuses, serviceTypes, trans
                         }
                     />
 
-                    {/* ── Card 1 — Client & Trip ─────────────────────────────── */}
-                    <FormCard title="Client & Trip">
+                    {/* ── Card 1 — Client & Contact ──────────────────────────── */}
+                    <FormCard title="Client & Contact">
                         <FormRow>
                             <Input
                                 label="Date"
@@ -198,7 +195,10 @@ export default function ReservationForm({ booking, statuses, serviceTypes, trans
                                 error={errors.corporate_account}
                             />
                         </FormRow>
+                    </FormCard>
 
+                    {/* ── Card 2 — Trip Details ──────────────────────────────── */}
+                    <FormCard title="Trip Details">
                         <FormRow>
                             <Input
                                 label="Destination"
@@ -265,7 +265,7 @@ export default function ReservationForm({ booking, statuses, serviceTypes, trans
                         />
                     </FormCard>
 
-                    {/* ── Card 2 — Financials, Payment & References ──────────── */}
+                    {/* ── Card 3 — Financials, Payment & References ──────────── */}
                     <FormCard title="Financials, Payment & References">
                         <FormRow>
                             <Input
@@ -399,11 +399,7 @@ export default function ReservationForm({ booking, statuses, serviceTypes, trans
                             type="button"
                             variant="ghost"
                             icon={X}
-                            onClick={() => router.get(
-                                isEdit
-                                    ? route('reservation.show', booking.id)
-                                    : route('reservation.index')
-                            )}
+                            onClick={() => router.get(cancelUrl)}
                         >
                             Cancel
                         </Button>

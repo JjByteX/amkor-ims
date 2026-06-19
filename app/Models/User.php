@@ -23,6 +23,7 @@ class User extends Authenticatable
         'email',
         'password',
         'branch_id',
+        'agent_code',
         'is_active',
         'must_change_password',
     ];

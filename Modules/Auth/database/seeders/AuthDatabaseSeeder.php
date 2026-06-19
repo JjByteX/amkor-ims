@@ -14,13 +14,15 @@ class AuthDatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        // Required by Spatie — clears cached roles/permissions before seeding
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         // ── 1. Branches ───────────────────────────────────────────────────────
+        // Amkor Travel & Tours has exactly two physical branches.
+        // The Visa & Documentation desk operates from QC Main — not a separate branch.
         $branches = [
-            ['name' => 'QC Main',      'code' => 'QC_MAIN',      'address' => 'Suite 108 West City Plaza Bldg. #66, West Avenue, Quezon City'],
-            ['name' => 'Visa Centre',  'code' => 'VISA_CENTRE',  'address' => 'Suite 107 West City Plaza Bldg. #66, West Avenue, Quezon City'],
-            ['name' => 'Ormoc Branch', 'code' => 'ORMOC',        'address' => 'Unit 315 Robinsons Place Ormoc, Cogon, Ormoc City, Leyte'],
+            ['name' => 'QC Main',      'code' => 'QC_MAIN', 'address' => 'Suite 108 West City Plaza Bldg. #66, West Avenue, Quezon City'],
+            ['name' => 'Ormoc Branch', 'code' => 'ORMOC',   'address' => 'Unit 315 Robinsons Place Ormoc, Cogon, Ormoc City, Leyte'],
         ];
 
         foreach ($branches as $branch) {
@@ -30,44 +32,167 @@ class AuthDatabaseSeeder extends Seeder
             );
         }
 
-        $qcMain     = DB::table('branches')->where('code', 'QC_MAIN')->value('id');
-        $visaCentre = DB::table('branches')->where('code', 'VISA_CENTRE')->value('id');
-        $ormoc      = DB::table('branches')->where('code', 'ORMOC')->value('id');
+        $qcMain = DB::table('branches')->where('code', 'QC_MAIN')->value('id');
+        $ormoc  = DB::table('branches')->where('code', 'ORMOC')->value('id');
 
         // ── 2. Permissions ────────────────────────────────────────────────────
+        // Pattern: module.action
+        // Scoped access (own-only, branch-only) is enforced at the controller
+        // level — the permission grants entry, scope narrows what is shown.
         $permissions = [
-            'reservation.view', 'reservation.create_inquiry', 'reservation.confirm_booking',
-            'reservation.issue_soa', 'reservation.issue_po', 'reservation.escalate_international',
-            'reservation.input_sales', 'reservation.issue_ar', 'reservation.forward_documents',
-            'reservation.view_sales_report', 'reservation.view_sales_report_own',
-            'visa.view', 'visa.create_application', 'visa.update_status', 'visa.record_transaction',
-            'visa.request_payment', 'visa.prepare_voucher', 'visa.audit_voucher',
-            'visa.approve', 'visa.release_cash', 'visa.pay_embassy', 'visa.return_or', 'visa.collect_or',
-            'ar.view', 'ar.originate', 'ar.issue_receipt', 'ar.submit_documents',
-            'ar.check_documents', 'ar.approve', 'ar.endorse_disbursement', 'ar.process_refund', 'ar.report_audit',
-            'payables.view', 'payables.request_payment', 'payables.prepare_voucher',
-            'payables.prepare_deposit_slip', 'payables.record_access_files', 'payables.send_access_files',
-            'payables.audit_voucher', 'payables.approve', 'payables.email_proof', 'payables.generate_report',
-            'disbursement.view', 'disbursement.record', 'disbursement.audit', 'disbursement.approve',
-            'cashbond.view', 'cashbond.check_balances', 'cashbond.prepare_requisition',
-            'cashbond.audit', 'cashbond.approve', 'cashbond.deposit', 'cashbond.update_monitoring',
-            'bills.view', 'bills.monitor', 'bills.prepare_voucher', 'bills.audit',
-            'bills.approve', 'bills.process_payment', 'bills.update_monitoring',
-            'creditcard.view', 'creditcard.monitor', 'creditcard.prepare_voucher', 'creditcard.audit',
-            'creditcard.approve', 'creditcard.process_payment', 'creditcard.update_monitoring',
-            'iata.view', 'iata.prepare_payment', 'iata.audit', 'iata.approve', 'iata.process_payment',
-            'bir.view', 'bir.generate_forms', 'bir.receive_reminders', 'bir.send_reports',
-            'hr.view', 'hr.manage_employees', 'hr.manage_leave', 'hr.track_regularization', 'hr.generate_report',
-            'attendance.view_own', 'attendance.view_all', 'attendance.record_own',
-            'attendance.edit_all', 'attendance.generate_report',
-            'marketing.view', 'marketing.create_material', 'marketing.submit_material',
-            'marketing.approve_material', 'marketing.publish', 'marketing.run_campaigns',
-            'marketing.monitor_analytics', 'marketing.send_blasts', 'marketing.view_expense_report',
-            'sales.view_own', 'sales.view_consolidated', 'sales.view_progress', 'sales.set_targets', 'sales.export',
-            'contacts.view', 'contacts.create', 'contacts.edit', 'contacts.delete',
-            'documents.view', 'documents.generate_ar', 'documents.generate_si', 'documents.generate_soa',
-            'documents.generate_cv', 'documents.generate_check_voucher',
-            'notifications.view', 'notifications.receive',
+            // Module 1 — Reservation & Booking (QC)
+            'reservation.view',
+            'reservation.create',
+            'reservation.update',
+            'reservation.delete',           // president only
+            'reservation.forward_accounting',
+            'reservation.view_sales_report', // full report (managers+)
+            'reservation.view_own_sales',    // own-agent summary only
+
+            // Module 2 — Ormoc Branch
+            'ormoc.view',
+            'ormoc.create',
+            'ormoc.update',
+            'ormoc.delete',                  // president only
+            'ormoc.approve',                 // branch_supervisor approval before forwarding
+            'ormoc.escalate',                // escalate to sales_ticketing_officer
+            'ormoc.forward_accounting',
+
+            // Module 3 — Visa & Documentation
+            'visa.view',
+            'visa.create',
+            'visa.update',
+            'visa.delete',                   // president only
+            'visa.update_status',
+            'visa.request_payment',
+            'visa.record_or',
+            'visa.endorse_or',
+            'visa.pay_embassy',              // liaison_officer_visa only
+
+            // Module 4 — Accounts Receivable / Collectibles
+            'ar.view',
+            'ar.create',
+            'ar.update',
+            'ar.delete',                     // president only
+            'ar.approve_coo',
+            'ar.approve_gsm',
+            'ar.endorse_disbursement',
+            'ar.process_refund',
+            'ar.view_own',                   // own bookings' AR status only
+
+            // Module 5 — Accounts Payable / Payables to Operators
+            'payables.view',
+            'payables.create',
+            'payables.update',
+            'payables.delete',               // president only
+            'payables.check',                // administrative_assistant audit step
+            'payables.approve',              // president final approval
+            'payables.release',
+            'payables.view_assigned',        // liaison officers — read assigned payable only
+
+            // Module 6 — Disbursement
+            'disbursement.view',
+            'disbursement.create',
+            'disbursement.update',
+            'disbursement.delete',           // president only
+            'disbursement.check',            // administrative_assistant audit step
+            'disbursement.approve',          // president final approval
+            'disbursement.release',          // liaison_officer_finance marks executed
+            'disbursement.export_access_file',
+
+            // Module 7 — Bills & On-Ques Monitoring
+            'bills.view',
+            'bills.create',
+            'bills.update',
+            'bills.delete',                  // president only
+            'bills.check',
+            'bills.approve',
+            'bills.mark_paid',               // liaison_officer_finance marks paid
+
+            // Module 8 — Cashbond Monitoring
+            'cashbond.view',
+            'cashbond.view_readonly',        // sales roles: portal balances only
+            'cashbond.create',
+            'cashbond.update',
+            'cashbond.delete',               // president only
+            'cashbond.check',
+            'cashbond.approve',
+            'cashbond.deposit',              // liaison_officer_finance executes deposit
+
+            // Module 9 — Credit Card Monitoring
+            'creditcard.view',
+            'creditcard.create',
+            'creditcard.update',
+            'creditcard.delete',             // president only
+            'creditcard.check',
+            'creditcard.approve',
+            'creditcard.release',
+
+            // Module 10 — IATA Payments
+            'iata.view',
+            'iata.create',
+            'iata.update',
+            'iata.delete',                   // president only
+            'iata.check',
+            'iata.approve',
+            'iata.mark_deposited',           // liaison_officer_finance marks deposited + emails
+
+            // Module 11 — BIR Compliance
+            'bir.view',
+            'bir.create',
+            'bir.update',
+            'bir.delete',                    // president only
+            'bir.export',                    // finance_admin_supervisor exports to external accountant
+            'bir.audit',                     // administrative_assistant audit remarks
+
+            // Module 12 — Sales Summary Report
+            'sales.view_all',                // all branches + departments
+            'sales.view_dept',               // own department only
+            'sales.view_own',                // own agent summary only
+            'sales.view_branch',             // own branch summary only
+            'sales.set_targets',
+            'sales.export',
+
+            // Module 13 — Marketing
+            'marketing.view',
+            'marketing.view_itinerary',      // view published itineraries only
+            'marketing.view_expenses',       // accounting: expenses view only
+            'marketing.create',
+            'marketing.update_own',          // sales_marketing_officer: own materials only
+            'marketing.update',              // business_development_manager: all materials
+            'marketing.delete',              // president only
+            'marketing.approve',             // chief_operating_officer approves before publish
+            'marketing.publish',
+            'marketing.run_campaigns',
+            'marketing.send_blasts',
+
+            // Module 14 — HR & Employee Records
+            'hr.view',                       // finance_admin_supervisor, administrative_assistant
+            'hr.view_own',                   // all other staff: own record only
+            'hr.create',
+            'hr.update',
+            'hr.delete',                     // president only
+
+            // Module 15 — Attendance
+            'attendance.view_all',           // finance_admin_supervisor, administrative_assistant, president, coo
+            'attendance.view_team',          // supervisors/managers: own team
+            'attendance.view_own',           // all staff: own record
+            'attendance.record',             // clock-in / clock-out (all)
+            'attendance.edit_all',           // finance_admin_supervisor, coo, president
+            'attendance.edit_team',          // supervisors: own team
+            'attendance.delete',             // president only
+            'attendance.report',
+
+            // Module 16 — Contacts / Directory
+            'contacts.view',
+            'contacts.create',
+            'contacts.update',
+            'contacts.update_own',           // operational officers: own entries only
+            'contacts.delete',               // president only
+
+            // Module 17 — Notifications
+            'notifications.view',
+            'notifications.receive',
         ];
 
         foreach ($permissions as $perm) {
@@ -75,111 +200,487 @@ class AuthDatabaseSeeder extends Seeder
         }
 
         // ── 3. Roles + Permission assignments ─────────────────────────────────
+        //
+        // Roles defined in the Roles & Permissions Matrix:
+        //   1  president                     (Jojit R. Tismo)
+        //   2  chief_operating_officer       (Marianne M. Tismo)
+        //   3  finance_admin_supervisor      (John Vic Galendez)
+        //   4  administrative_assistant      (Judy Ann Gregorio — also Admin Auditor)
+        //   5  accounting_assistant          (Kristia Borbe, Zarah Padecio, Ashly Ayag)
+        //   6  liaison_officer_finance       (Dialectica Baguio, Mark Lagahit)
+        //   7  general_sales_manager         (Rochelle Tienzo)
+        //   8  sales_reservation_officer     (Elaiza Joaquin, Christine Mateo, etc.)
+        //   9  sales_ticketing_officer       (Jhonalyn Ramos — OIC)
+        //  10  group_sales_officer           (Angela Lo, Kyla Luna)
+        //  11  business_development_manager  (Jhoanna Marie Tismo)
+        //  12  sales_marketing_officer       (Mitzi Vidor, Jahara Ramirez)
+        //  13  visa_documentation_supervisor (Maria Alexandria De Quiros)
+        //  14  liaison_officer_visa          (Randy Callueng)
+        //  15  visa_documentation_officer    (Ricci Joy Alcaraz, Joanne May Evasco)
+        //  16  branch_supervisor             (Anjelly Miroy)
+        //  17  branch_sales_officer          (Louie Bacalso, Rhea Dedace, Kay Parrilla)
+
         $rolePermissions = [
-            'general_manager' => $permissions,
-            'chief_operations_officer' => [
-                'ar.view', 'ar.approve',
-                'marketing.view', 'marketing.approve_material', 'marketing.monitor_analytics', 'marketing.view_expense_report',
-                'sales.view_own', 'sales.view_consolidated', 'sales.view_progress', 'sales.export',
-                'reservation.view_sales_report', 'contacts.view', 'documents.view',
+
+            // ── 1. President — all permissions ───────────────────────────────
+            'president' => $permissions,
+
+            // ── 2. Chief Operating Officer ────────────────────────────────────
+            // Modules: 1✅ 2✅ 3👁 4✏️ 5👁 6👁 7👁 8👁 9👁 10👁 11👁 12✅ 13✏️ 14👁 15✅ 16👁 17🔒
+            'chief_operating_officer' => [
+                // Module 1 — Reservation (full CRU, no delete)
+                'reservation.view', 'reservation.create', 'reservation.update',
+                'reservation.forward_accounting', 'reservation.view_sales_report',
+                // Module 2 — Ormoc (full CRU, no delete)
+                'ormoc.view', 'ormoc.create', 'ormoc.update',
+                'ormoc.approve', 'ormoc.escalate', 'ormoc.forward_accounting',
+                // Module 3 — Visa (view only)
+                'visa.view',
+                // Module 4 — AR (approve + CRU, no delete)
+                'ar.view', 'ar.update', 'ar.approve_coo', 'ar.endorse_disbursement', 'ar.process_refund',
+                // Module 5 — Payables (view only)
+                'payables.view',
+                // Module 6 — Disbursement (view only)
+                'disbursement.view',
+                // Module 7 — Bills (view only)
+                'bills.view',
+                // Module 8 — Cashbond (view only)
+                'cashbond.view',
+                // Module 9 — Credit Card (view only)
+                'creditcard.view',
+                // Module 10 — IATA (view only)
+                'iata.view',
+                // Module 11 — BIR (view only)
+                'bir.view',
+                // Module 12 — Sales Summary (all branches + depts)
+                'sales.view_all', 'sales.export',
+                // Module 13 — Marketing (reviews + approves; publish is triggered after approval, not by COO directly)
+                'marketing.view', 'marketing.approve',
+                // Module 14 — HR (view only)
+                'hr.view',
+                // Module 15 — Attendance (view all, edit all)
+                'attendance.view_all', 'attendance.view_own', 'attendance.record',
+                'attendance.edit_all', 'attendance.report',
+                // Module 16 — Contacts (view only)
+                'contacts.view',
+                // Module 17 — Notifications
                 'notifications.view', 'notifications.receive',
             ],
+
+            // ── 3. Finance & Admin Supervisor ─────────────────────────────────
+            // Oversight role across all financial modules; dept head of Finance & Admin.
+            // Modules: 1👁✏️ 2👁✏️ 3👁 4✏️ 5✏️ 6✏️ 7✏️ 8✏️ 9✏️ 10✏️ 11👁 12✅ 13🚫 14✅ 15✅ 16👁 17🔒
+            'finance_admin_supervisor' => [
+                // Module 1 — Reservation (view + annotate)
+                'reservation.view', 'reservation.update',
+                'reservation.forward_accounting', 'reservation.view_sales_report',
+                // Module 2 — Ormoc (view + annotate)
+                'ormoc.view', 'ormoc.update', 'ormoc.forward_accounting',
+                // Module 3 — Visa (view only)
+                'visa.view',
+                // Module 4 — AR (annotate / oversight)
+                'ar.view', 'ar.update',
+                // Module 5 — Payables (annotate before JRT approval)
+                'payables.view', 'payables.update',
+                // Module 6 — Disbursement (annotate)
+                'disbursement.view', 'disbursement.update',
+                // Module 7 — Bills (annotate)
+                'bills.view', 'bills.update',
+                // Module 8 — Cashbond (annotate; approves reload requests)
+                'cashbond.view', 'cashbond.update', 'cashbond.approve',
+                // Module 9 — Credit Card (annotate)
+                'creditcard.view', 'creditcard.update',
+                // Module 10 — IATA (annotate)
+                'iata.view', 'iata.update',
+                // Module 11 — BIR (view + export to external accountant)
+                'bir.view', 'bir.export',
+                // Module 12 — Sales Summary (all)
+                'sales.view_all', 'sales.export',
+                // Module 14 — HR (primary owner: full CRU, no delete)
+                'hr.view', 'hr.create', 'hr.update',
+                // Module 15 — Attendance (primary owner of all attendance)
+                'attendance.view_all', 'attendance.view_own', 'attendance.record',
+                'attendance.edit_all', 'attendance.report',
+                // Module 16 — Contacts (view only)
+                'contacts.view',
+                // Module 17 — Notifications
+                'notifications.view', 'notifications.receive',
+            ],
+
+            // ── 4. Administrative Assistant (Admin Auditor) ───────────────────
+            // Judy Ann Gregorio — holds both the Admin Assistant title and the
+            // audit function. Receives transaction copies; adds audit remarks.
+            // Modules: 1✏️ 2✏️ 3✏️ 4✏️ 5✏️ 6✏️ 7✏️ 8✏️ 9✏️ 10✏️ 11✏️ 12🚫 13🚫 14✏️ 15✅ 16👁 17🔒
+            'administrative_assistant' => [
+                // Module 1 — Reservation (audit remarks only)
+                'reservation.view', 'reservation.update',
+                // Module 2 — Ormoc (audit remarks only)
+                'ormoc.view', 'ormoc.update',
+                // Module 3 — Visa (audit remarks; receives endorsed documents)
+                'visa.view', 'visa.update',
+                // Module 4 — AR (audit remarks; receives AR report copy)
+                'ar.view', 'ar.update',
+                // Module 5 — Payables (audit check step before JRT)
+                'payables.view', 'payables.check',
+                // Module 6 — Disbursement (receives access files; adds audit remarks)
+                'disbursement.view', 'disbursement.check', 'disbursement.export_access_file',
+                // Module 7 — Bills (checks voucher)
+                'bills.view', 'bills.check',
+                // Module 8 — Cashbond (checks reload request)
+                'cashbond.view', 'cashbond.check',
+                // Module 9 — Credit Card (checks voucher)
+                'creditcard.view', 'creditcard.check',
+                // Module 10 — IATA (checks before JRT approval)
+                'iata.view', 'iata.check',
+                // Module 11 — BIR (reviews entries for audit)
+                'bir.view', 'bir.audit',
+                // Module 14 — HR (assists finance_admin_supervisor; uniform issuance)
+                'hr.view', 'hr.update',
+                // Module 15 — Attendance (logs own; reads all for payroll support)
+                'attendance.view_all', 'attendance.view_own', 'attendance.record',
+                'attendance.edit_team', 'attendance.report',
+                // Module 16 — Contacts (view only)
+                'contacts.view',
+                // Module 17 — Notifications
+                'notifications.view', 'notifications.receive',
+            ],
+
+            // ── 5. Accounting Assistant ────────────────────────────────────────
+            // Primary owner of financial modules: AR, Payables, Disbursement,
+            // Bills, Cashbond, Credit Cards, IATA, BIR.
+            // Modules: 1✏️ 2✏️ 3✏️ 4✅ 5✅ 6✅ 7✅ 8✅ 9✅ 10✅ 11✅ 12✅ 13👁expenses 14🔒 15🔒 16👁 17🔒
+            'accounting_assistant' => [
+                // Module 1 — Reservation (records payment, updates AR/OR/SI)
+                'reservation.view', 'reservation.update',
+                // Module 2 — Ormoc (records Ormoc payments)
+                'ormoc.view', 'ormoc.update',
+                // Module 3 — Visa (records OR; payment matching; prepares cash/voucher)
+                'visa.view', 'visa.update', 'visa.record_or',
+                // Module 4 — AR (primary owner: full CRU)
+                'ar.view', 'ar.create', 'ar.update',
+                'ar.endorse_disbursement', 'ar.process_refund',
+                // Module 5 — Payables (primary owner: prepares voucher, cheque, deposit slip)
+                'payables.view', 'payables.create', 'payables.update', 'payables.release',
+                // Module 6 — Disbursement (primary owner: all cash/check vouchers)
+                'disbursement.view', 'disbursement.create', 'disbursement.update',
+                'disbursement.release', 'disbursement.export_access_file',
+                // Module 7 — Bills (primary owner)
+                'bills.view', 'bills.create', 'bills.update', 'bills.mark_paid',
+                // Module 8 — Cashbond (monitors balances; prepares reload requests)
+                'cashbond.view', 'cashbond.create', 'cashbond.update', 'cashbond.deposit',
+                // Module 9 — Credit Card (primary owner)
+                'creditcard.view', 'creditcard.create', 'creditcard.update',
+                // Module 10 — IATA (primary owner)
+                'iata.view', 'iata.create', 'iata.update', 'iata.mark_deposited',
+                // Module 11 — BIR (creates SI/AR; manages VAT breakdown)
+                'bir.view', 'bir.create', 'bir.update', 'bir.export',
+                // Module 12 — Sales Summary (all departments for reconciliation)
+                'sales.view_all', 'sales.export',
+                // Module 13 — Marketing (expenses view only)
+                'marketing.view_expenses',
+                // Module 14 — HR (own record only)
+                'hr.view_own',
+                // Module 15 — Attendance (own record only)
+                'attendance.view_own', 'attendance.record',
+                // Module 16 — Contacts (view; needs TIN and bank details)
+                'contacts.view',
+                // Module 17 — Notifications
+                'notifications.view', 'notifications.receive',
+            ],
+
+            // ── 6. Liaison Officer (Finance) ───────────────────────────────────
+            // Dialectica Baguio, Mark Lagahit — executes physical payments,
+            // deposits, and purchases assigned by accounting.
+            // Modules: 1🚫 2🚫 3🚫 4🚫 5👁 6👁✏️ 7👁✏️ 8👁✏️ 9🚫 10👁✏️ 11🚫 12🚫 13🚫 14🔒 15🔒 16👁 17🔒
+            'liaison_officer_finance' => [
+                // Module 5 — Payables (reads assigned payable)
+                'payables.view_assigned',
+                // Module 6 — Disbursement (reads voucher; marks executed)
+                'disbursement.view', 'disbursement.release',
+                // Module 7 — Bills (marks paid after payment execution)
+                'bills.view', 'bills.mark_paid',
+                // Module 8 — Cashbond (executes deposit; marks as reloaded)
+                'cashbond.view_readonly', 'cashbond.deposit',
+                // Module 10 — IATA (marks deposited; emails operator with deposit slip)
+                'iata.view', 'iata.mark_deposited',
+                // Module 14 — HR (own record only)
+                'hr.view_own',
+                // Module 15 — Attendance (own record only)
+                'attendance.view_own', 'attendance.record',
+                // Module 16 — Contacts (needs supplier/bank details)
+                'contacts.view',
+                // Module 17 — Notifications
+                'notifications.view', 'notifications.receive',
+            ],
+
+            // ── 7. General Sales Manager ───────────────────────────────────────
+            // Rochelle Tienzo — approves AR flow alongside COO; oversees all sales.
+            // Modules: 1✅ 2✅ 3👁 4✏️ 5👁 6🚫 7🚫 8👁 9🚫 10👁 11👁 12✅ 13👁 14🚫 15🌿 16✅ 17🔒
             'general_sales_manager' => [
-                'ar.view', 'ar.approve',
-                'sales.view_own', 'sales.view_consolidated', 'sales.view_progress', 'sales.export',
-                'reservation.view_sales_report', 'contacts.view', 'documents.view',
+                // Module 1 — Reservation (full CRU, no delete)
+                'reservation.view', 'reservation.create', 'reservation.update',
+                'reservation.forward_accounting', 'reservation.view_sales_report',
+                // Module 2 — Ormoc (full CRU, no delete; oversight of Ormoc sales)
+                'ormoc.view', 'ormoc.create', 'ormoc.update',
+                'ormoc.approve', 'ormoc.escalate', 'ormoc.forward_accounting',
+                // Module 3 — Visa (view only)
+                'visa.view',
+                // Module 4 — AR (approves AR flow)
+                'ar.view', 'ar.update', 'ar.approve_gsm',
+                // Module 5 — Payables (view only)
+                'payables.view',
+                // Module 8 — Cashbond (view only — portal balance visibility for sales ops)
+                'cashbond.view',
+                // Module 10 — IATA (view only)
+                'iata.view',
+                // Module 11 — BIR (view only)
+                'bir.view',
+                // Module 12 — Sales Summary (all branches + departments)
+                'sales.view_all', 'sales.set_targets', 'sales.export',
+                // Module 13 — Marketing (view itineraries; receives for distribution)
+                'marketing.view', 'marketing.view_itinerary',
+                // Module 15 — Attendance (own + QC Sales team)
+                'attendance.view_team', 'attendance.view_own', 'attendance.record',
+                'attendance.edit_team', 'attendance.report',
+                // Module 16 — Contacts (manages corporate + sub-agent contacts)
+                'contacts.view', 'contacts.create', 'contacts.update',
+                // Module 17 — Notifications
                 'notifications.view', 'notifications.receive',
             ],
-            'accounting_officer' => [
-                'reservation.view', 'reservation.issue_soa', 'reservation.issue_ar', 'reservation.forward_documents',
-                'reservation.view_sales_report',
-                'ar.view', 'ar.issue_receipt', 'ar.check_documents', 'ar.endorse_disbursement', 'ar.process_refund', 'ar.report_audit',
-                'payables.view', 'payables.request_payment', 'payables.prepare_voucher', 'payables.prepare_deposit_slip',
-                'disbursement.view', 'disbursement.record',
-                'bir.view', 'bir.generate_forms', 'bir.receive_reminders',
-                'sales.view_own', 'sales.view_consolidated', 'sales.view_progress', 'sales.export',
-                'contacts.view', 'contacts.create', 'contacts.edit',
-                'documents.view', 'documents.generate_ar', 'documents.generate_si', 'documents.generate_soa',
-                'documents.generate_cv', 'documents.generate_check_voucher',
+
+            // ── 8. Sales & Reservation Officer ────────────────────────────────
+            // Own bookings only (🔒). Cannot see peer records.
+            // Modules: 1🔒 2🚫 3🚫 4🔒 5🚫 6🚫 7🚫 8👁 9🚫 10🚫 11🚫 12🔒 13👁 14🔒 15🔒 16✏️ 17🔒
+            'sales_reservation_officer' => [
+                // Module 1 — Reservation (own bookings only)
+                'reservation.view', 'reservation.create', 'reservation.update',
+                'reservation.forward_accounting', 'reservation.view_own_sales',
+                // Module 4 — AR (own bookings' AR status only)
+                'ar.view_own',
+                // Module 8 — Cashbond (read-only — portal balances before finalizing)
+                'cashbond.view_readonly',
+                // Module 12 — Sales Summary (own agent summary only)
+                'sales.view_own',
+                // Module 13 — Marketing (view published itineraries only)
+                'marketing.view_itinerary',
+                // Module 14 — HR (own record only)
+                'hr.view_own',
+                // Module 15 — Attendance (own record only)
+                'attendance.view_own', 'attendance.record',
+                // Module 16 — Contacts (creates client contacts; edits own entries)
+                'contacts.view', 'contacts.create', 'contacts.update_own',
+                // Module 17 — Notifications
                 'notifications.view', 'notifications.receive',
             ],
-            'disbursement_officer' => [
-                'visa.view', 'visa.prepare_voucher', 'visa.release_cash',
-                'payables.view', 'payables.prepare_voucher', 'payables.prepare_deposit_slip',
-                'payables.record_access_files', 'payables.send_access_files', 'payables.email_proof', 'payables.generate_report',
-                'disbursement.view', 'disbursement.record',
-                'cashbond.view', 'cashbond.check_balances', 'cashbond.prepare_requisition', 'cashbond.deposit', 'cashbond.update_monitoring',
-                'bills.view', 'bills.monitor', 'bills.prepare_voucher', 'bills.process_payment', 'bills.update_monitoring',
-                'creditcard.view', 'creditcard.monitor', 'creditcard.prepare_voucher', 'creditcard.process_payment', 'creditcard.update_monitoring',
-                'iata.view', 'iata.prepare_payment', 'iata.process_payment',
-                'bir.view', 'bir.generate_forms', 'bir.receive_reminders', 'bir.send_reports',
-                'contacts.view', 'contacts.create', 'contacts.edit',
-                'documents.view', 'documents.generate_cv', 'documents.generate_check_voucher',
+
+            // ── 9. Sales & Ticketing Officer (OIC) ────────────────────────────
+            // Jhonalyn Ramos — OIC; escalation point for Ormoc international bookings.
+            // Has override access to escalated Ormoc records (scoped, not full branch).
+            // Modules: 1🔒 2✏️(escalated only) 3🚫 4🔒 5🚫 6🚫 7🚫 8👁 9🚫 10🚫 11🚫 12🔒 13👁 14🔒 15🔒 16✏️ 17🔒
+            'sales_ticketing_officer' => [
+                // Module 1 — Reservation (own bookings; handles Ormoc escalations)
+                'reservation.view', 'reservation.create', 'reservation.update',
+                'reservation.forward_accounting', 'reservation.view_own_sales',
+                // Module 2 — Ormoc (OIC override — escalated records only)
+                'ormoc.view', 'ormoc.create', 'ormoc.update',
+                // Module 4 — AR (own bookings' AR status only)
+                'ar.view_own',
+                // Module 8 — Cashbond (read-only — portal balances for booking + Ormoc escalations)
+                'cashbond.view_readonly',
+                // Module 12 — Sales Summary (own agent summary only)
+                'sales.view_own',
+                // Module 13 — Marketing (view published itineraries only)
+                'marketing.view_itinerary',
+                // Module 14 — HR (own record only)
+                'hr.view_own',
+                // Module 15 — Attendance (own record only)
+                'attendance.view_own', 'attendance.record',
+                // Module 16 — Contacts (creates client contacts; edits own entries)
+                'contacts.view', 'contacts.create', 'contacts.update_own',
+                // Module 17 — Notifications
                 'notifications.view', 'notifications.receive',
             ],
-            'admin_auditor' => [
+
+            // ── 10. Group Sales Officer ────────────────────────────────────────
+            // Angela Lo, Kyla Luna — own bookings only; corporate/group contacts.
+            // Modules: 1🔒 2🚫 3🚫 4🔒 5🚫 6🚫 7🚫 8👁 9🚫 10🚫 11🚫 12🔒 13👁 14🔒 15🔒 16✏️ 17🔒
+            'group_sales_officer' => [
+                // Module 1 — Reservation (own bookings only)
+                'reservation.view', 'reservation.create', 'reservation.update',
+                'reservation.forward_accounting', 'reservation.view_own_sales',
+                // Module 4 — AR (own bookings' AR status only)
+                'ar.view_own',
+                // Module 8 — Cashbond (read-only — portal balances before booking)
+                'cashbond.view_readonly',
+                // Module 12 — Sales Summary (own agent summary only)
+                'sales.view_own',
+                // Module 13 — Marketing (view published itineraries only)
+                'marketing.view_itinerary',
+                // Module 14 — HR (own record only)
+                'hr.view_own',
+                // Module 15 — Attendance (own record only)
+                'attendance.view_own', 'attendance.record',
+                // Module 16 — Contacts (creates corporate/group contacts; edits own)
+                'contacts.view', 'contacts.create', 'contacts.update_own',
+                // Module 17 — Notifications
+                'notifications.view', 'notifications.receive',
+            ],
+
+            // ── 11. Business Development Manager ──────────────────────────────
+            // Jhoanna Marie Tismo — oversees Marketing team + Business Dev contacts.
+            // Modules: 1👁 2👁 3👁 4👁 5🚫 6🚫 7🚫 8🚫 9🚫 10🚫 11🚫 12✏️(BD+Visa) 13✅ 14🚫 15🌿 16✅ 17🔒
+            'business_development_manager' => [
+                // Module 1 — Reservation (view only — cross-dept reporting)
                 'reservation.view', 'reservation.view_sales_report',
-                'visa.view', 'visa.audit_voucher',
-                'ar.view', 'ar.process_refund', 'ar.report_audit',
-                'payables.view', 'payables.audit_voucher',
-                'disbursement.view', 'disbursement.audit',
-                'cashbond.view', 'cashbond.audit',
-                'bills.view', 'bills.audit',
-                'creditcard.view', 'creditcard.audit',
-                'iata.view', 'iata.audit',
-                'bir.view', 'bir.receive_reminders',
-                'hr.view', 'attendance.view_all', 'marketing.view',
-                'sales.view_own', 'sales.view_consolidated', 'sales.view_progress', 'sales.export',
-                'contacts.view', 'contacts.create', 'contacts.edit', 'contacts.delete',
-                'documents.view', 'notifications.view', 'notifications.receive',
-            ],
-            'hr_admin_officer' => [
-                'bills.view', 'bills.monitor', 'bills.prepare_voucher', 'bills.process_payment', 'bills.update_monitoring',
-                'creditcard.view', 'creditcard.monitor', 'creditcard.prepare_voucher', 'creditcard.process_payment', 'creditcard.update_monitoring',
-                'hr.view', 'hr.manage_employees', 'hr.manage_leave', 'hr.track_regularization', 'hr.generate_report',
-                'attendance.view_own', 'attendance.view_all', 'attendance.record_own', 'attendance.edit_all', 'attendance.generate_report',
-                'contacts.view', 'notifications.view', 'notifications.receive',
-            ],
-            'liaison_officer' => [
-                'visa.view', 'visa.pay_embassy', 'visa.return_or',
-                'contacts.view', 'attendance.view_own', 'attendance.record_own',
+                // Module 2 — Ormoc (view only)
+                'ormoc.view',
+                // Module 3 — Visa (view only)
+                'visa.view',
+                // Module 4 — AR (view only)
+                'ar.view',
+                // Module 12 — Sales Summary (BD + Visa departments only)
+                'sales.view_dept', 'sales.export',
+                // Module 13 — Marketing (dept head: full CRU, no delete)
+                'marketing.view', 'marketing.create', 'marketing.update',
+                'marketing.run_campaigns', 'marketing.send_blasts',
+                'marketing.publish',
+                // Module 15 — Attendance (own + BD/Marketing team)
+                'attendance.view_team', 'attendance.view_own', 'attendance.record',
+                'attendance.edit_team', 'attendance.report',
+                // Module 16 — Contacts (manages BD contacts)
+                'contacts.view', 'contacts.create', 'contacts.update',
+                // Module 17 — Notifications
                 'notifications.view', 'notifications.receive',
             ],
-            'resa_officer' => [
-                'reservation.view', 'reservation.create_inquiry', 'reservation.confirm_booking',
-                'reservation.issue_soa', 'reservation.issue_po', 'reservation.input_sales',
-                'reservation.issue_ar', 'reservation.forward_documents', 'reservation.view_sales_report_own',
-                'ar.view', 'ar.originate', 'ar.issue_receipt', 'ar.submit_documents',
-                'sales.view_own', 'contacts.view',
-                'documents.view', 'documents.generate_ar', 'documents.generate_soa',
-                'attendance.view_own', 'attendance.record_own',
+
+            // ── 12. Sales & Marketing Officer ─────────────────────────────────
+            // Mitzi Vidor, Jahara Ramirez — creates campaigns; edits own materials only.
+            // Modules: 1🚫 2🚫 3🚫 4🚫 5🚫 6🚫 7🚫 8🚫 9🚫 10🚫 11🚫 12🚫 13🔒 14🔒 15🔒 16👁 17🔒
+            'sales_marketing_officer' => [
+                // Module 13 — Marketing (creates campaigns; edits own materials only)
+                'marketing.view', 'marketing.create', 'marketing.update_own',
+                'marketing.run_campaigns', 'marketing.send_blasts',
+                // Module 14 — HR (own record only)
+                'hr.view_own',
+                // Module 15 — Attendance (own record only)
+                'attendance.view_own', 'attendance.record',
+                // Module 16 — Contacts (view only)
+                'contacts.view',
+                // Module 17 — Notifications
                 'notifications.view', 'notifications.receive',
             ],
-            'ormoc_branch_officer' => [
-                'reservation.view', 'reservation.create_inquiry', 'reservation.confirm_booking',
-                'reservation.issue_soa', 'reservation.issue_po', 'reservation.escalate_international',
-                'reservation.input_sales', 'reservation.issue_ar', 'reservation.forward_documents',
-                'reservation.view_sales_report_own',
-                'ar.view', 'ar.originate', 'ar.issue_receipt', 'ar.submit_documents',
-                'sales.view_own', 'contacts.view',
-                'documents.view', 'documents.generate_ar', 'documents.generate_soa',
-                'attendance.view_own', 'attendance.record_own',
+
+            // ── 13. Visa & Documentation Supervisor ───────────────────────────
+            // Maria Alexandria De Quiros — full Visa access; can override any officer's record.
+            // Modules: 1🚫 2🚫 3✅ 4👁(own dept) 5👁 6🚫 7🚫 8🚫 9🚫 10🚫 11🚫 12✅(Visa dept) 13👁 14🔒 15🌿 16✅ 17🔒
+            'visa_documentation_supervisor' => [
+                // Module 3 — Visa (full CRU, no delete; can override any officer)
+                'visa.view', 'visa.create', 'visa.update',
+                'visa.update_status', 'visa.request_payment', 'visa.record_or', 'visa.endorse_or',
+                // Module 4 — AR (own dept collectibles only)
+                'ar.view_own',
+                // Module 5 — Payables (reads Visa-originated payables only)
+                'payables.view_assigned',
+                // Module 12 — Sales Summary (Visa department only)
+                'sales.view_dept',
+                // Module 13 — Marketing (view published itineraries only)
+                'marketing.view_itinerary',
+                // Module 14 — HR (own record only)
+                'hr.view_own',
+                // Module 15 — Attendance (own + Visa & Documentation team)
+                'attendance.view_team', 'attendance.view_own', 'attendance.record',
+                'attendance.edit_team', 'attendance.report',
+                // Module 16 — Contacts (manages embassy + visa supplier contacts)
+                'contacts.view', 'contacts.create', 'contacts.update',
+                // Module 17 — Notifications
                 'notifications.view', 'notifications.receive',
             ],
+
+            // ── 14. Liaison Officer (Visa) ─────────────────────────────────────
+            // Randy Callueng — physically pays embassy; updates OR number after payment.
+            // Modules: 1🚫 2🚫 3✏️ 4🚫 5👁 6🚫 7🚫 8🚫 9🚫 10🚫 11🚫 12🚫 13🚫 14🔒 15🔒 16👁 17🔒
+            'liaison_officer_visa' => [
+                // Module 3 — Visa (reads embassy payment details; pays embassy; records OR)
+                'visa.view', 'visa.pay_embassy', 'visa.endorse_or',
+                // Module 5 — Payables (reads Visa-originated payables only)
+                'payables.view_assigned',
+                // Module 14 — HR (own record only)
+                'hr.view_own',
+                // Module 15 — Attendance (own record only)
+                'attendance.view_own', 'attendance.record',
+                // Module 16 — Contacts (needs embassy contact details for filing)
+                'contacts.view',
+                // Module 17 — Notifications
+                'notifications.view', 'notifications.receive',
+            ],
+
+            // ── 15. Visa & Documentation Officer ──────────────────────────────
+            // Ricci Joy Alcaraz, Joanne May Evasco — own applications only.
+            // Modules: 1🚫 2🚫 3🔒 4🚫 5🚫 6🚫 7🚫 8🚫 9🚫 10🚫 11🚫 12🔒 13👁 14🔒 15🔒 16✏️ 17🔒
             'visa_documentation_officer' => [
-                'visa.view', 'visa.create_application', 'visa.update_status', 'visa.record_transaction',
-                'visa.request_payment', 'visa.collect_or',
-                'ar.view', 'ar.originate', 'ar.issue_receipt', 'ar.submit_documents',
-                'sales.view_own', 'contacts.view',
-                'documents.view', 'documents.generate_ar', 'documents.generate_soa',
-                'attendance.view_own', 'attendance.record_own',
+                // Module 3 — Visa (own applications only)
+                'visa.view', 'visa.create', 'visa.update',
+                'visa.update_status', 'visa.request_payment',
+                // Module 12 — Sales Summary (own agent summary only)
+                'sales.view_own',
+                // Module 13 — Marketing (view published itineraries only)
+                'marketing.view_itinerary',
+                // Module 14 — HR (own record only)
+                'hr.view_own',
+                // Module 15 — Attendance (own record only)
+                'attendance.view_own', 'attendance.record',
+                // Module 16 — Contacts (creates client contacts; edits own entries)
+                'contacts.view', 'contacts.create', 'contacts.update_own',
+                // Module 17 — Notifications
                 'notifications.view', 'notifications.receive',
             ],
-            'marketing_officer' => [
-                'marketing.view', 'marketing.create_material', 'marketing.submit_material',
-                'marketing.publish', 'marketing.run_campaigns', 'marketing.monitor_analytics',
-                'marketing.send_blasts', 'marketing.view_expense_report',
-                'contacts.view', 'attendance.view_own', 'attendance.record_own',
+
+            // ── 16. Branch Supervisor ─────────────────────────────────────────
+            // Anjelly Miroy — full access to all Ormoc records; formally approves
+            // before forwarding invoice + quotation + payment to QC accounting.
+            // Modules: 1🚫 2🌿 3🚫 4🌿 5🚫 6🚫 7🚫 8👁 9🚫 10🚫 11🚫 12🌿 13👁 14🔒 15🌿 16✏️ 17🔒
+            'branch_supervisor' => [
+                // Module 2 — Ormoc (full branch access: CRU, no delete)
+                'ormoc.view', 'ormoc.create', 'ormoc.update',
+                'ormoc.approve', 'ormoc.escalate', 'ormoc.forward_accounting',
+                // Module 4 — AR (read Ormoc collectibles only)
+                'ar.view_own',
+                // Module 8 — Cashbond (read-only — portal balances before Ormoc bookings)
+                'cashbond.view_readonly',
+                // Module 12 — Sales Summary (Ormoc branch summary only)
+                'sales.view_branch',
+                // Module 13 — Marketing (view published itineraries only)
+                'marketing.view_itinerary',
+                // Module 14 — HR (own record only; HR is centralized at QC)
+                'hr.view_own',
+                // Module 15 — Attendance (own + Ormoc team)
+                'attendance.view_team', 'attendance.view_own', 'attendance.record',
+                'attendance.edit_team', 'attendance.report',
+                // Module 16 — Contacts (creates Ormoc client contacts; edits own entries)
+                'contacts.view', 'contacts.create', 'contacts.update_own',
+                // Module 17 — Notifications
+                'notifications.view', 'notifications.receive',
+            ],
+
+            // ── 17. Branch Sales Officer ───────────────────────────────────────
+            // Louie Bacalso, Rhea Dedace, Kay Parrilla — own bookings only.
+            // Modules: 1🚫 2🔒 3🚫 4🚫 5🚫 6🚫 7🚫 8👁 9🚫 10🚫 11🚫 12🔒 13👁 14🔒 15🔒 16✏️ 17🔒
+            'branch_sales_officer' => [
+                // Module 2 — Ormoc (own bookings only)
+                'ormoc.view', 'ormoc.create', 'ormoc.update',
+                // Module 8 — Cashbond (read-only — portal balances before Ormoc bookings)
+                'cashbond.view_readonly',
+                // Module 12 — Sales Summary (own agent summary only)
+                'sales.view_own',
+                // Module 13 — Marketing (view published itineraries only)
+                'marketing.view_itinerary',
+                // Module 14 — HR (own record only)
+                'hr.view_own',
+                // Module 15 — Attendance (own record only)
+                'attendance.view_own', 'attendance.record',
+                // Module 16 — Contacts (creates Ormoc client contacts; edits own entries)
+                'contacts.view', 'contacts.create', 'contacts.update_own',
+                // Module 17 — Notifications
                 'notifications.view', 'notifications.receive',
             ],
         ];
@@ -189,59 +690,83 @@ class AuthDatabaseSeeder extends Seeder
             $role->syncPermissions($perms);
         }
 
-        // ── 4. Users ──────────────────────────────────────────────────────────
+        // ── 4. Placeholder users ──────────────────────────────────────────────
         $password = Hash::make('AmkorIMS2026!');
 
         $users = [
-            ['name' => 'JRT',                    'email' => 'jrt@amkor.ph',        'role' => 'general_manager',            'branch_id' => $qcMain],
-            ['name' => 'Dalle',                  'email' => 'dalle@amkor.ph',      'role' => 'disbursement_officer',       'branch_id' => $qcMain],
-            ['name' => 'Ms. Jhona Ramos',        'email' => 'jhona@amkor.ph',      'role' => 'resa_officer',               'branch_id' => $qcMain],
-            ['name' => '[COO]',                  'email' => 'coo@amkor.ph',        'role' => 'chief_operations_officer',   'branch_id' => $qcMain],
-            ['name' => '[GSM]',                  'email' => 'gsm@amkor.ph',        'role' => 'general_sales_manager',      'branch_id' => $qcMain],
-            ['name' => '[Accounting Officer]',   'email' => 'accounting@amkor.ph', 'role' => 'accounting_officer',         'branch_id' => $qcMain],
-            ['name' => '[Admin Auditor]',        'email' => 'auditor@amkor.ph',    'role' => 'admin_auditor',              'branch_id' => $qcMain],
-            ['name' => '[HR & Admin Officer]',   'email' => 'hradmin@amkor.ph',    'role' => 'hr_admin_officer',           'branch_id' => $qcMain],
-            ['name' => '[Liaison Officer]',      'email' => 'liaison@amkor.ph',    'role' => 'liaison_officer',            'branch_id' => $qcMain],
-            ['name' => '[Ormoc Branch Officer]', 'email' => 'ormoc@amkor.ph',      'role' => 'ormoc_branch_officer',       'branch_id' => $ormoc],
-            ['name' => '[Visa Officer]',         'email' => 'visa@amkor.ph',       'role' => 'visa_documentation_officer', 'branch_id' => $visaCentre],
-            ['name' => '[Marketing Officer]',    'email' => 'marketing@amkor.ph',  'role' => 'marketing_officer',          'branch_id' => $qcMain],
+            // Confirmed real users
+            ['name' => 'Jojit R. Tismo',              'email' => 'jrt@amkor.ph',         'role' => 'president',                    'branch_id' => $qcMain],
+            ['name' => 'Marianne M. Tismo',            'email' => 'marianne@amkor.ph',    'role' => 'chief_operating_officer',      'branch_id' => $qcMain],
+            ['name' => 'John Vic Galendez',            'email' => 'johnvic@amkor.ph',     'role' => 'finance_admin_supervisor',     'branch_id' => $qcMain],
+            ['name' => 'Judy Ann Gregorio',            'email' => 'judyann@amkor.ph',     'role' => 'administrative_assistant',     'branch_id' => $qcMain],
+            ['name' => 'Dialectica Baguio',            'email' => 'dalle@amkor.ph',       'role' => 'liaison_officer_finance',      'branch_id' => $qcMain],
+            ['name' => 'Mark Stephen Lagahit',         'email' => 'mark@amkor.ph',        'role' => 'liaison_officer_finance',      'branch_id' => $qcMain],
+            ['name' => 'Rochelle Tienzo',              'email' => 'rochelle@amkor.ph',    'role' => 'general_sales_manager',        'branch_id' => $qcMain],
+            ['name' => 'Jhonalyn Ramos',               'email' => 'jhona@amkor.ph',       'role' => 'sales_ticketing_officer',      'branch_id' => $qcMain],
+            ['name' => 'Jhoanna Marie Tismo',          'email' => 'jhoanna@amkor.ph',     'role' => 'business_development_manager', 'branch_id' => $qcMain],
+            ['name' => 'Maria Alexandria De Quiros',   'email' => 'alex@amkor.ph',        'role' => 'visa_documentation_supervisor','branch_id' => $qcMain],
+            ['name' => 'Randy Callueng',               'email' => 'randy@amkor.ph',       'role' => 'liaison_officer_visa',         'branch_id' => $qcMain],
+            ['name' => 'Anjelly Miroy',                'email' => 'anjelly@amkor.ph',     'role' => 'branch_supervisor',            'branch_id' => $ormoc],
+            // Placeholder accounts (to be updated with real emails)
+            ['name' => '[Accounting Assistant 1]',     'email' => 'accounting1@amkor.ph', 'role' => 'accounting_assistant',         'branch_id' => $qcMain],
+            ['name' => '[Accounting Assistant 2]',     'email' => 'accounting2@amkor.ph', 'role' => 'accounting_assistant',         'branch_id' => $qcMain],
+            ['name' => '[Accounting Assistant 3]',     'email' => 'accounting3@amkor.ph', 'role' => 'accounting_assistant',         'branch_id' => $qcMain],
+            ['name' => '[RESA Officer 1]',             'email' => 'resa1@amkor.ph',       'role' => 'sales_reservation_officer',    'branch_id' => $qcMain],
+            ['name' => '[RESA Officer 2]',             'email' => 'resa2@amkor.ph',       'role' => 'sales_reservation_officer',    'branch_id' => $qcMain],
+            ['name' => '[RESA Officer 3]',             'email' => 'resa3@amkor.ph',       'role' => 'sales_reservation_officer',    'branch_id' => $qcMain],
+            ['name' => '[RESA Officer 4]',             'email' => 'resa4@amkor.ph',       'role' => 'sales_reservation_officer',    'branch_id' => $qcMain],
+            ['name' => '[RESA Officer 5]',             'email' => 'resa5@amkor.ph',       'role' => 'sales_reservation_officer',    'branch_id' => $qcMain],
+            ['name' => '[RESA Officer 6]',             'email' => 'resa6@amkor.ph',       'role' => 'sales_reservation_officer',    'branch_id' => $qcMain],
+            ['name' => '[Group Sales Officer 1]',      'email' => 'groups1@amkor.ph',     'role' => 'group_sales_officer',          'branch_id' => $qcMain],
+            ['name' => '[Group Sales Officer 2]',      'email' => 'groups2@amkor.ph',     'role' => 'group_sales_officer',          'branch_id' => $qcMain],
+            ['name' => '[Marketing Officer 1]',        'email' => 'marketing1@amkor.ph',  'role' => 'sales_marketing_officer',      'branch_id' => $qcMain],
+            ['name' => '[Marketing Officer 2]',        'email' => 'marketing2@amkor.ph',  'role' => 'sales_marketing_officer',      'branch_id' => $qcMain],
+            ['name' => '[Visa Officer 1]',             'email' => 'visa1@amkor.ph',       'role' => 'visa_documentation_officer',   'branch_id' => $qcMain],
+            ['name' => '[Visa Officer 2]',             'email' => 'visa2@amkor.ph',       'role' => 'visa_documentation_officer',   'branch_id' => $qcMain],
+            ['name' => '[Branch Sales Officer 1]',     'email' => 'ormoc1@amkor.ph',      'role' => 'branch_sales_officer',         'branch_id' => $ormoc],
+            ['name' => '[Branch Sales Officer 2]',     'email' => 'ormoc2@amkor.ph',      'role' => 'branch_sales_officer',         'branch_id' => $ormoc],
+            ['name' => '[Branch Sales Officer 3]',     'email' => 'ormoc3@amkor.ph',      'role' => 'branch_sales_officer',         'branch_id' => $ormoc],
         ];
 
         foreach ($users as $userData) {
             $role = $userData['role'];
             unset($userData['role']);
+
             $user = User::updateOrCreate(
                 ['email' => $userData['email']],
-                array_merge($userData, ['password' => $password, 'is_active' => true, 'must_change_password' => true])
+                array_merge($userData, [
+                    'password'             => $password,
+                    'is_active'            => true,
+                    'must_change_password' => true,
+                ])
             );
+
             $user->syncRoles([$role]);
         }
 
         // ── 5. Agent codes ────────────────────────────────────────────────────
+        // Agent codes are used for sales-report attribution. Each officer's
+        // code maps to their department and optionally a sub-group.
         $agentCodes = [
-            ['code' => 'RT',    'department' => 'resa',  'sub_group' => 'individual'],
-            ['code' => 'RP',    'department' => 'resa',  'sub_group' => 'individual'],
-            ['code' => 'EJ',    'department' => 'resa',  'sub_group' => 'individual'],
-            ['code' => 'KG',    'department' => 'resa',  'sub_group' => 'individual'],
-            ['code' => 'CM',    'department' => 'resa',  'sub_group' => 'individual'],
-            ['code' => 'JR',    'department' => 'resa',  'sub_group' => 'individual'],
-            ['code' => 'EB',    'department' => 'resa',  'sub_group' => 'individual'],
-            ['code' => 'JF',    'department' => 'resa',  'sub_group' => 'individual'],
-            ['code' => 'MMT',   'department' => 'resa',  'sub_group' => 'groups'],
-            ['code' => 'AL',    'department' => 'resa',  'sub_group' => 'groups'],
-            ['code' => 'KL',    'department' => 'resa',  'sub_group' => 'groups'],
-            ['code' => 'JMMT',  'department' => 'resa',  'sub_group' => 'groups'],
-            ['code' => 'ALEX',  'department' => 'visa',  'sub_group' => null],
-            ['code' => 'RICCI', 'department' => 'visa',  'sub_group' => null],
-            ['code' => 'MEL',   'department' => 'visa',  'sub_group' => null],
-            ['code' => 'KAE',   'department' => 'visa',  'sub_group' => null],
-            ['code' => 'MIMI',  'department' => 'visa',  'sub_group' => null],
-            ['code' => 'MMT',   'department' => 'visa',  'sub_group' => null],
-            ['code' => 'AM',    'department' => 'ormoc', 'sub_group' => null],
-            ['code' => 'LB',    'department' => 'ormoc', 'sub_group' => null],
-            ['code' => 'RD',    'department' => 'ormoc', 'sub_group' => null],
-            ['code' => 'KP',    'department' => 'ormoc', 'sub_group' => null],
-            ['code' => 'MMT',   'department' => 'ormoc', 'sub_group' => null],
+            // RESA — Individual bookings
+            ['code' => 'EJ',    'department' => 'resa', 'sub_group' => 'individual'],  // Elaiza Joaquin
+            ['code' => 'CM',    'department' => 'resa', 'sub_group' => 'individual'],  // Christine Mateo
+            ['code' => 'KG',    'department' => 'resa', 'sub_group' => 'individual'],  // Kristine Grefal
+            ['code' => 'EB',    'department' => 'resa', 'sub_group' => 'individual'],  // Ederlyn Boyles
+            ['code' => 'JF',    'department' => 'resa', 'sub_group' => 'individual'],  // Jezielyn Ferol
+            ['code' => 'WAN',   'department' => 'resa', 'sub_group' => 'individual'],  // Wenchelle Anne Novelo
+            ['code' => 'JR',    'department' => 'resa', 'sub_group' => 'individual'],  // Jhonalyn Ramos (OIC)
+            // RESA — Group bookings
+            ['code' => 'AL',    'department' => 'resa', 'sub_group' => 'groups'],       // Angela Lo
+            ['code' => 'KL',    'department' => 'resa', 'sub_group' => 'groups'],       // Kyla Luna
+            // Visa
+            ['code' => 'ALEX',  'department' => 'visa', 'sub_group' => null],           // Maria Alexandria De Quiros
+            ['code' => 'RICCI', 'department' => 'visa', 'sub_group' => null],           // Ricci Joy Alcaraz
+            ['code' => 'JME',   'department' => 'visa', 'sub_group' => null],           // Joanne May Evasco
+            // Ormoc Branch
+            ['code' => 'LJB',   'department' => 'ormoc', 'sub_group' => null],          // Louie Jay Bacalso
+            ['code' => 'RMD',   'department' => 'ormoc', 'sub_group' => null],          // Rhea Mae Dedace
+            ['code' => 'KAP',   'department' => 'ormoc', 'sub_group' => null],          // Kay Ann Mavel Parrilla
         ];
 
         foreach ($agentCodes as $code) {
@@ -249,6 +774,22 @@ class AuthDatabaseSeeder extends Seeder
                 ['code' => $code['code'], 'department' => $code['department']],
                 array_merge($code, ['is_active' => true, 'created_at' => now(), 'updated_at' => now()])
             );
+        }
+
+        // ── 6. Link known users to their agent codes ──────────────────────────
+        // Only named staff with confirmed codes are linked here.
+        // Placeholder users ([RESA Officer N] etc.) should be updated via the
+        // admin UI once real staff are assigned to those accounts.
+        $userCodeLinks = [
+            // email                    => agent code
+            'jhona@amkor.ph'            => 'JR',    // Jhonalyn Ramos — sales_ticketing_officer
+            'alex@amkor.ph'             => 'ALEX',  // Maria Alexandria De Quiros — visa_documentation_supervisor
+        ];
+
+        foreach ($userCodeLinks as $email => $code) {
+            DB::table('users')
+                ->where('email', $email)
+                ->update(['agent_code' => $code, 'updated_at' => now()]);
         }
     }
 }

@@ -3,7 +3,7 @@ import { router } from '@inertiajs/react';
 import DetailPanel, { TableWithPanel, useDetailPanel } from '../../Components/Shared/DetailPanel';
 import { BookingContent } from './Show';
 
-import { BanknoteArrowUp, ChartSpline, CircleCheckBig, ClipboardList, Eye, Plus, Search } from 'lucide-react';
+import { BanknoteArrowDown, BanknoteArrowUp, ChartSpline, CircleCheckBig, Eye, Plus, Search, Users } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
 import DataTable from '../../Components/Shared/DataTable';
@@ -24,7 +24,6 @@ const STATUS_VARIANT = { inquiry: 'neutral', quoted: 'info', confirmed: 'success
 export default function ReservationIndex({ bookings, summary, filters, statuses, agentCodes, canWrite }) {
     const [search, setSearch] = useState(filters.search ?? '');
 
-    // ─── Detail panel ──────────────────────────────────────────────────────────
     const panel = useDetailPanel((id) => route('reservation.show', id));
     const [showPanel, setShowPanel] = useState(false);
     const d = panel.data;
@@ -83,10 +82,11 @@ export default function ReservationIndex({ bookings, summary, filters, statuses,
                 />
 
                 <StatGrid>
-                    <StatCard icon={ClipboardList} label="Records" value={summary.total} />
-                    <StatCard icon={CircleCheckBig} label="Confirmed" value={summary.confirmed} tone="success" />
-                    <StatCard icon={BanknoteArrowUp} label="Gross Sales" value={money(summary.gross)} />
-                    <StatCard icon={ChartSpline} label="Income" value={money(summary.income)} tone="primary" />
+                    <StatCard icon={CircleCheckBig}    label="Confirmed"    value={summary.confirmed}              tone="success" />
+                    <StatCard icon={Users}             label="Pax"          value={summary.pax ?? 0} />
+                    <StatCard icon={BanknoteArrowUp}   label="Gross Sales"  value={money(summary.gross)} />
+                    <StatCard icon={BanknoteArrowDown} label="Net Payable"  value={money(summary.gross - summary.income)} tone="warning" />
+                    <StatCard icon={ChartSpline}       label="Income"       value={money(summary.income)}          tone="primary" />
                 </StatGrid>
 
                 <TableWithPanel

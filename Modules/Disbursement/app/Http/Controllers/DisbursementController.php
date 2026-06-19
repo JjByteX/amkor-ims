@@ -21,24 +21,25 @@ class DisbursementController extends Controller
     // ─── Roles ─────────────────────────────────────────────────────────────
 
     private const PREPARER_ROLES = [
-        'disbursement_officer',
-        'accounting_officer',
+        'accounting_assistant',
     ];
 
     private const CHECKER_ROLES = [
-        'admin_auditor',
-        'general_manager',
+        'administrative_assistant',
+        'finance_admin_supervisor',
     ];
 
     private const APPROVER_ROLES = [
-        'general_manager',
+        'president',
     ];
 
     private const VIEW_ROLES = [
-        'disbursement_officer',
-        'accounting_officer',
-        'admin_auditor',
-        'general_manager',
+        'president',
+        'chief_operating_officer',
+        'finance_admin_supervisor',
+        'administrative_assistant',
+        'accounting_assistant',
+        'liaison_officer_finance',
     ];
 
     // ════════════════════════════════════════════════════════════════════════
@@ -61,8 +62,8 @@ class DisbursementController extends Controller
         $query = Voucher::with(['branch', 'createdBy', 'checker', 'approver'])
             ->latest('date');
 
-        // Disbursement officer sees own branch records; GM/Auditor see all
-        if (! in_array($role, ['general_manager', 'admin_auditor'], true)) {
+        // accounting_assistant sees own branch; president/finance_admin_supervisor/administrative_assistant/chief_operating_officer see all
+        if (! in_array($role, ['president', 'chief_operating_officer', 'finance_admin_supervisor', 'administrative_assistant', 'accounting_assistant'], true)) {
             $query->forBranch($request->user()->branch_id);
         }
 
@@ -123,7 +124,7 @@ class DisbursementController extends Controller
         // (entry will be created in the approve action)
 
         return redirect()
-            ->route('disbursement.vouchers.show', $voucher)
+            ->route('disbursement.vouchers.index')
             ->with('flash', ['type' => 'success', 'message' => "Voucher {$voucher->voucher_no} created."]);
     }
 
@@ -164,7 +165,7 @@ class DisbursementController extends Controller
         $this->requirePreparer($request);
 
         if ($voucher->isApproved()) {
-            return redirect()->route('disbursement.vouchers.show', $voucher)
+            return redirect()->route('disbursement.vouchers.index')
                 ->with('flash', ['type' => 'warning', 'message' => 'Voucher is approved and locked.']);
         }
 
@@ -189,7 +190,7 @@ class DisbursementController extends Controller
         $voucher->update($data);
 
         return redirect()
-            ->route('disbursement.vouchers.show', $voucher)
+            ->route('disbursement.vouchers.index')
             ->with('flash', ['type' => 'success', 'message' => 'Voucher updated.']);
     }
 
@@ -197,7 +198,7 @@ class DisbursementController extends Controller
     {
         $role = $request->user()?->getRoleNames()->first();
 
-        if (! in_array($role, ['general_manager', 'disbursement_officer'], true)) {
+        if ($role !== 'president') {
             abort(403);
         }
 
@@ -279,7 +280,7 @@ class DisbursementController extends Controller
     {
         $role = $request->user()?->getRoleNames()->first();
 
-        if (! in_array($role, ['disbursement_officer', 'accounting_officer', 'general_manager'], true)) {
+        if (! in_array($role, ['accounting_assistant', 'liaison_officer_finance', 'president'], true)) {
             abort(403);
         }
 
@@ -309,7 +310,7 @@ class DisbursementController extends Controller
     public function voucherPdf(Request $request, Voucher $voucher): \Illuminate\Http\RedirectResponse
     {
         $role = $request->user()?->getRoleNames()->first();
-        $allowed = ['disbursement_officer', 'accounting_officer', 'admin_auditor', 'general_manager'];
+        $allowed = ['accounting_assistant', 'liaison_officer_finance', 'administrative_assistant', 'finance_admin_supervisor', 'president', 'chief_operating_officer'];
 
         if (! in_array($role, $allowed, true)) {
             abort(403, 'You do not have permission to generate voucher PDFs.');
@@ -353,7 +354,7 @@ class DisbursementController extends Controller
             ->latest('date');
 
         // Branch scoping
-        if (! in_array($role, ['general_manager', 'admin_auditor', 'accounting_officer'], true)) {
+        if (! in_array($role, ['president', 'chief_operating_officer', 'finance_admin_supervisor', 'administrative_assistant', 'accounting_assistant'], true)) {
             $query->forBranch($request->user()->branch_id);
         } elseif ($branch) {
             $query->forBranch((int) $branch);
@@ -441,7 +442,7 @@ class DisbursementController extends Controller
     {
         $role = $request->user()?->getRoleNames()->first();
 
-        if (! in_array($role, ['general_manager', 'disbursement_officer'], true)) {
+        if ($role !== 'president') {
             abort(403);
         }
 
@@ -496,8 +497,8 @@ class DisbursementController extends Controller
         $branchId   = null;
         $branchName = 'All Branches';
 
-        if (! in_array($role, ['general_manager', 'admin_auditor'], true)) {
-            // Disbursement officer is always scoped to their own branch
+        if (! in_array($role, ['president', 'chief_operating_officer', 'finance_admin_supervisor', 'administrative_assistant', 'accounting_assistant'], true)) {
+            // Liaison/finance roles are scoped to their own branch
             $branchId   = $request->user()->branch_id;
             $branchName = $request->user()->branch?->name ?? 'Branch';
         } elseif ($request->has('branch_id')) {

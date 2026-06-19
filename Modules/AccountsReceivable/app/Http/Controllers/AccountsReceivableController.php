@@ -18,22 +18,40 @@ class AccountsReceivableController extends Controller
 {
     // ─── Roles ────────────────────────────────────────────────────────────────
 
-    // Originating officers — can create and submit
+    // ─── Roles ────────────────────────────────────────────────────────────────
+    // Canonical slugs per Amkor_IMS___Roles___Permissions_Matrix_1.md (Module 4)
+
+    // Primary owner — creates and manages all AR transactions
     private const ORIGINATOR_ROLES = [
-        'resa_officer',
-        'ormoc_branch_officer',
-        'visa_documentation_officer',
-        'accounting_officer',
+        'accounting_assistant',
     ];
 
-    // Roles that can see everything (all branches)
+    // Can annotate / update (audit remarks, approval steps)
+    private const ANNOTATOR_ROLES = [
+        'finance_admin_supervisor',    // dept head; approves financial actions
+        'administrative_assistant',    // audit remarks; receives AR report copy
+        'general_sales_manager',       // approves collectibles in AR flow
+        'chief_operating_officer',     // approves collectibles in AR flow
+    ];
+
+    // Roles that can see all records across all branches
     private const FULL_VIEW_ROLES = [
-        'general_manager',
-        'accounting_officer',
-        'chief_operations_officer',
+        'president',
+        'chief_operating_officer',
+        'finance_admin_supervisor',
+        'administrative_assistant',
         'general_sales_manager',
-        'admin_auditor',
-        'disbursement_officer',
+        'business_development_manager',
+        'accounting_assistant',
+    ];
+
+    // Roles with scoped / limited read access (enforced per-query)
+    private const SCOPED_VIEW_ROLES = [
+        'visa_documentation_supervisor', // own dept collectibles only
+        'sales_reservation_officer',     // own bookings' AR status only
+        'sales_ticketing_officer',       // own bookings' AR status only
+        'group_sales_officer',           // own bookings' AR status only
+        'branch_supervisor',             // Ormoc collectibles only (branch-scoped)
     ];
 
     // ─── Index ────────────────────────────────────────────────────────────────
@@ -42,6 +60,12 @@ class AccountsReceivableController extends Controller
     {
         $user = $request->user();
         $role = $user?->getRoleNames()->first();
+
+        // Gate — deny roles with no access at all
+        $allViewRoles = array_merge(self::FULL_VIEW_ROLES, self::ANNOTATOR_ROLES, self::SCOPED_VIEW_ROLES, self::ORIGINATOR_ROLES);
+        if (! in_array($role, $allViewRoles, true)) {
+            abort(403);
+        }
 
         $search = $request->get('search');
         $dept = $request->get('department');
@@ -52,11 +76,16 @@ class AccountsReceivableController extends Controller
         $query = Collectible::with(['branch', 'createdBy'])
             ->latest('date');
 
-        // Branch-scoped roles see only their own branch records
-        if (in_array($role, ['resa_officer', 'visa_documentation_officer'], true)) {
+        // Scoped views per Module 4 matrix
+        if ($role === 'branch_supervisor') {
+            // Ormoc branch collectibles only (🌿 branch-scoped)
             $query->forBranch($user->branch_id);
-        } elseif ($role === 'ormoc_branch_officer') {
-            $query->forBranch($user->branch_id);
+        } elseif (in_array($role, ['sales_reservation_officer', 'sales_ticketing_officer', 'group_sales_officer'], true)) {
+            // Own bookings' AR status only (🔒)
+            $query->where('created_by', $user->id);
+        } elseif ($role === 'visa_documentation_supervisor') {
+            // Own dept collectibles only (👁 read own dept)
+            $query->where('department', 'visa');
         }
 
         $query->search($search)
@@ -77,8 +106,13 @@ class AccountsReceivableController extends Controller
             ->forAgent($agent)
             ->forStatus($status);
 
-        if (in_array($role, ['resa_officer', 'visa_documentation_officer', 'ormoc_branch_officer'], true)) {
+        // Mirror the same scoping applied to the main query
+        if ($role === 'branch_supervisor') {
             $summaryQuery->forBranch($user->branch_id);
+        } elseif (in_array($role, ['sales_reservation_officer', 'sales_ticketing_officer', 'group_sales_officer'], true)) {
+            $summaryQuery->where('created_by', $user->id);
+        } elseif ($role === 'visa_documentation_supervisor') {
+            $summaryQuery->where('department', 'visa');
         }
 
         $summary = $summaryQuery->selectRaw('
@@ -115,9 +149,9 @@ class AccountsReceivableController extends Controller
 
         // Pre-select department based on role
         $defaultDept = match ($role) {
-            'resa_officer' => 'resa',
-            'visa_documentation_officer' => 'visa',
-            'ormoc_branch_officer' => 'ormoc',
+            'sales_reservation_officer', 'sales_ticketing_officer', 'group_sales_officer' => 'resa',
+            'visa_documentation_officer', 'visa_documentation_supervisor' => 'visa',
+            'branch_supervisor', 'branch_sales_officer' => 'ormoc',
             default => null,
         };
 
@@ -156,7 +190,7 @@ class AccountsReceivableController extends Controller
         CollectibleSubmittedForApproval::dispatch($collectible);
 
         return redirect()
-            ->route('ar.show', $collectible)
+            ->route('ar.index')
             ->with('flash', ['type' => 'success', 'message' => 'Collectible recorded.']);
     }
 
@@ -166,7 +200,20 @@ class AccountsReceivableController extends Controller
     {
         $role = $request->user()?->getRoleNames()->first();
 
-        if (! in_array($role, array_merge(self::ORIGINATOR_ROLES, self::FULL_VIEW_ROLES), true)) {
+        if (! in_array($role, array_merge(self::ORIGINATOR_ROLES, self::FULL_VIEW_ROLES, self::ANNOTATOR_ROLES, self::SCOPED_VIEW_ROLES), true)) {
+            abort(403);
+        }
+
+        // Enforce per-record scope for roles with limited read access (mirrors index() scoping)
+        $user = $request->user();
+        if (in_array($role, ['sales_reservation_officer', 'sales_ticketing_officer', 'group_sales_officer'], true)
+            && $ar->created_by !== $user->id) {
+            abort(403);
+        }
+        if ($role === 'branch_supervisor' && $ar->branch_id !== $user->branch_id) {
+            abort(403);
+        }
+        if ($role === 'visa_documentation_supervisor' && $ar->department !== 'visa') {
             abort(403);
         }
 
@@ -182,7 +229,7 @@ class AccountsReceivableController extends Controller
             'canApprove' => $this->canApprove($request),
             'canApproveCoo' => $this->canApproveCoo($request),
             'canApproveGsm' => $this->canApproveGsm($request),
-            'canAudit' => $role === 'admin_auditor' || $role === 'general_manager',
+            'canAudit' => in_array($role, ['administrative_assistant', 'president'], true),
         ]);
         }
         return Inertia::render('AccountsReceivable/Show', [
@@ -194,7 +241,7 @@ class AccountsReceivableController extends Controller
             'canApprove' => $this->canApprove($request),
             'canApproveCoo' => $this->canApproveCoo($request),
             'canApproveGsm' => $this->canApproveGsm($request),
-            'canAudit' => $role === 'admin_auditor' || $role === 'general_manager',
+            'canAudit' => in_array($role, ['administrative_assistant', 'president'], true),
         ]);
     }
 
@@ -206,7 +253,7 @@ class AccountsReceivableController extends Controller
 
         // Lock record if fully approved — only admin auditor / GM can unlock (out of scope Phase 6)
         if ($ar->isFullyApproved()) {
-            return redirect()->route('ar.show', $ar)
+            return redirect()->route('ar.index')
                 ->with('flash', ['type' => 'warning', 'message' => 'Record is approved and locked for editing.']);
         }
 
@@ -258,7 +305,7 @@ class AccountsReceivableController extends Controller
         $ar->save();
 
         return redirect()
-            ->route('ar.show', $ar)
+            ->route('ar.index')
             ->with('flash', ['type' => 'success', 'message' => 'Collectible updated.']);
     }
 
@@ -268,8 +315,8 @@ class AccountsReceivableController extends Controller
     {
         $role = $request->user()?->getRoleNames()->first();
 
-        // Only GM or accounting officer can soft-delete
-        if (! in_array($role, ['general_manager', 'accounting_officer'], true)) {
+        // Only president can soft-delete financial records (per matrix: Delete is never granted to operational staff)
+        if ($role !== 'president') {
             abort(403);
         }
 
@@ -286,8 +333,8 @@ class AccountsReceivableController extends Controller
     {
         $role = $request->user()?->getRoleNames()->first();
 
-        if (! in_array($role, ['chief_operations_officer', 'general_manager'], true)) {
-            abort(403, 'Only the COO or General Manager can approve as COO.');
+        if (! in_array($role, ['chief_operating_officer', 'president'], true)) {
+            abort(403, 'Only the COO or President can approve as COO.');
         }
 
         if ($ar->approved_by_coo_at) {
@@ -320,8 +367,8 @@ class AccountsReceivableController extends Controller
     {
         $role = $request->user()?->getRoleNames()->first();
 
-        if (! in_array($role, ['general_sales_manager', 'general_manager'], true)) {
-            abort(403, 'Only the GSM or General Manager can approve as GSM.');
+        if (! in_array($role, ['general_sales_manager', 'president'], true)) {
+            abort(403, 'Only the GSM or President can approve as GSM.');
         }
 
         if ($ar->approved_by_gsm_at) {
@@ -354,7 +401,7 @@ class AccountsReceivableController extends Controller
     {
         $role = $request->user()?->getRoleNames()->first();
 
-        if (! in_array($role, array_merge(self::ORIGINATOR_ROLES, ['general_manager', 'accounting_officer']), true)) {
+        if (! in_array($role, array_merge(self::ORIGINATOR_ROLES, self::ANNOTATOR_ROLES, ['president']), true)) {
             abort(403);
         }
 
@@ -389,9 +436,10 @@ class AccountsReceivableController extends Controller
         $this->requireFullyApproved($ar);
         $role = $request->user()?->getRoleNames()->first();
 
-        if (! in_array($role, ['accounting_officer', 'general_manager'], true)) {
+        if (! in_array($role, ['accounting_assistant', 'president'], true)) {
             abort(403);
         }
+
         if ($ar->endorsed_to_disbursement) {
             return back()->with('flash', ['type' => 'warning', 'message' => 'Already endorsed to Disbursement.']);
         }
@@ -413,7 +461,7 @@ class AccountsReceivableController extends Controller
         $this->requireFullyApproved($ar);
         $role = $request->user()?->getRoleNames()->first();
 
-        if (! in_array($role, ['accounting_officer', 'admin_auditor', 'general_manager'], true)) {
+        if (! in_array($role, ['accounting_assistant', 'administrative_assistant', 'president'], true)) {
             abort(403);
         }
         if ($ar->refund_processed) {
@@ -437,7 +485,7 @@ class AccountsReceivableController extends Controller
         $this->requireFullyApproved($ar);
         $role = $request->user()?->getRoleNames()->first();
 
-        if (! in_array($role, ['accounting_officer', 'general_manager'], true)) {
+        if (! in_array($role, ['accounting_assistant', 'president'], true)) {
             abort(403);
         }
         if ($ar->documents_endorsed) {
@@ -468,7 +516,7 @@ class AccountsReceivableController extends Controller
     {
         return in_array(
             $request->user()?->getRoleNames()->first() ?? '',
-            ['chief_operations_officer', 'general_sales_manager', 'general_manager'],
+            ['chief_operating_officer', 'general_sales_manager', 'president'],
             true
         );
     }
@@ -477,7 +525,7 @@ class AccountsReceivableController extends Controller
     {
         return in_array(
             $request->user()?->getRoleNames()->first() ?? '',
-            ['chief_operations_officer', 'general_manager'],
+            ['chief_operating_officer', 'president'],
             true
         );
     }
@@ -486,7 +534,7 @@ class AccountsReceivableController extends Controller
     {
         return in_array(
             $request->user()?->getRoleNames()->first() ?? '',
-            ['general_sales_manager', 'general_manager'],
+            ['general_sales_manager', 'president'],
             true
         );
     }

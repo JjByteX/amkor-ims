@@ -48,7 +48,7 @@ export default function VoucherEdit({ voucher, types, currencies }) {
                         subtitle="Update voucher details"
                         actions={
                             <>
-                                <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('disbursement.vouchers.show', voucher.id))}>Cancel</Button>
+                                <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('disbursement.vouchers.index'))}>Cancel</Button>
                                 <Button type="submit" variant="primary" icon={Save} loading={processing}>Save Changes</Button>
                             </>
                         }
@@ -94,7 +94,7 @@ export default function VoucherEdit({ voucher, types, currencies }) {
                     </FormCard>
 
                     <FormActions>
-                        <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('disbursement.vouchers.show', voucher.id))}>Cancel</Button>
+                        <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('disbursement.vouchers.index'))}>Cancel</Button>
                         <Button type="submit" variant="primary" icon={Save} loading={processing}>Save Changes</Button>
                     </FormActions>
                 </FormLayout>

@@ -7,6 +7,7 @@ import {
     PanelColumns, PanelCol, PanelColRight,
     PanelSection, PanelField, PanelFieldRow, PanelDivider,
 } from '../../Components/Shared/DetailPanel';
+import ApprovalStepper from '../../Components/Shared/ApprovalStepper';
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
 import Modal from '../../Components/UI/Modal';
@@ -58,7 +59,50 @@ export function ReloadContent({ reload, approvalStatuses, canWrite, canCheck, ca
     const fmt   = (d) => d ? new Date(d).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
     const fmtDt = (d) => d ? new Date(d).toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 
-    const isReleased = reload.approval_status === 'released';
+    const steps = [
+        {
+            label  : 'Prepared',
+            done   : true,
+            person : reload.created_by?.name,
+            at     : reload.created_at,
+        },
+        {
+            label  : 'Checked',
+            done   : !!reload.checked_at,
+            person : reload.checker?.name,
+            at     : reload.checked_at,
+            action : canCheck && !reload.checked_at
+                ? <Button variant="secondary" size="sm" icon={CheckCircle2} onClick={() => setCheckModal(true)} style={{ width: '100%' }}>Mark as Checked</Button>
+                : null,
+        },
+        {
+            label  : 'Approved',
+            done   : !!reload.approved_at,
+            person : reload.approver?.name,
+            at     : reload.approved_at,
+            action : canApprove && !reload.approved_at && reload.checked_at
+                ? <Button variant="primary" size="sm" icon={ThumbsUp} onClick={submitApprove} style={{ width: '100%' }}>Approve</Button>
+                : null,
+        },
+        {
+            label  : 'Released / Deposited',
+            done   : !!reload.released_at,
+            person : reload.releaser?.name,
+            at     : reload.released_at,
+            action : canWrite && !reload.released_at && reload.approved_at
+                ? <Button variant="secondary" size="sm" icon={Send} onClick={() => setReleaseModal(true)} style={{ width: '100%' }}>Mark as Deposited</Button>
+                : null,
+        },
+        {
+            label  : 'Supplier Notified',
+            done   : !!reload.supplier_notified,
+            person : null,
+            at     : reload.supplier_notified_at,
+            action : canWrite && reload.released_at && !reload.supplier_notified
+                ? <Button variant="ghost" size="sm" icon={Bell} onClick={submitNotify} style={{ width: '100%' }}>Record Notification</Button>
+                : null,
+        },
+    ];
 
     return (
         <>
@@ -82,17 +126,7 @@ export function ReloadContent({ reload, approvalStatuses, canWrite, canCheck, ca
 
                     <PanelDivider />
 
-                    <PanelSection title="Audit">
-                        <PanelField
-                            label="Created by"
-                            value={reload.created_by ? `${reload.created_by.name} · ${fmtDt(reload.created_at)}` : fmtDt(reload.created_at)}
-                        />
-                    </PanelSection>
-                </PanelCol>
-
-                {/* Right column — approval chain */}
-                <PanelColRight>
-                    <PanelSection title="Badges">
+                    <PanelSection title="Status">
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                             <Badge variant={APPROVAL_VARIANT[reload.approval_status] ?? 'neutral'}>
                                 {approvalStatuses[reload.approval_status] ?? reload.approval_status}
@@ -100,87 +134,6 @@ export function ReloadContent({ reload, approvalStatuses, canWrite, canCheck, ca
                             {reload.balance_updated   && <Badge variant="success">Balance Updated</Badge>}
                             {reload.supplier_notified && <Badge variant="neutral">Supplier Notified</Badge>}
                         </div>
-                    </PanelSection>
-
-                    <PanelDivider />
-
-                    <PanelSection title="Approval Chain">
-                        {/* Checked */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                            <Badge variant={reload.checked_at ? 'info' : 'warning'}>
-                                {reload.checked_at ? 'Checked' : 'Awaiting Check'}
-                            </Badge>
-                            {reload.checked_at && (
-                                <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>
-                                    {reload.checker?.name ?? '—'} · {fmtDt(reload.checked_at)}
-                                </span>
-                            )}
-                            {canCheck && !reload.checked_at && (
-                                <Button variant="secondary" size="sm" icon={CheckCircle2} onClick={() => setCheckModal(true)}>
-                                    Mark as Checked
-                                </Button>
-                            )}
-                        </div>
-
-                        <PanelDivider />
-
-                        {/* Approved */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                            <Badge variant={reload.approved_at ? 'success' : 'warning'}>
-                                {reload.approved_at ? 'Approved' : 'Awaiting Approval'}
-                            </Badge>
-                            {reload.approved_at && (
-                                <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>
-                                    {reload.approver?.name ?? '—'} · {fmtDt(reload.approved_at)}
-                                </span>
-                            )}
-                            {canApprove && !reload.approved_at && reload.checked_at && (
-                                <Button variant="primary" size="sm" icon={ThumbsUp} onClick={submitApprove}>
-                                    Approve
-                                </Button>
-                            )}
-                        </div>
-
-                        <PanelDivider />
-
-                        {/* Released */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                            <Badge variant={reload.released_at ? 'neutral' : 'warning'}>
-                                {reload.released_at ? 'Released / Deposited' : 'Awaiting Deposit'}
-                            </Badge>
-                            {reload.released_at && (
-                                <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>
-                                    {reload.releaser?.name ?? '—'} · {fmtDt(reload.released_at)}
-                                </span>
-                            )}
-                            {canWrite && !reload.released_at && reload.approved_at && (
-                                <Button variant="secondary" size="sm" icon={Send} onClick={() => setReleaseModal(true)}>
-                                    Mark as Deposited
-                                </Button>
-                            )}
-                        </div>
-
-                        {/* Notify supplier */}
-                        {isReleased && (
-                            <>
-                                <PanelDivider />
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                    <Badge variant={reload.supplier_notified ? 'neutral' : 'warning'}>
-                                        {reload.supplier_notified ? 'Supplier Notified' : 'Supplier Not Yet Notified'}
-                                    </Badge>
-                                    {reload.supplier_notified_at && (
-                                        <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>
-                                            {fmtDt(reload.supplier_notified_at)}
-                                        </span>
-                                    )}
-                                    {canWrite && !reload.supplier_notified && (
-                                        <Button variant="ghost" size="sm" icon={Bell} onClick={submitNotify}>
-                                            Record Notification
-                                        </Button>
-                                    )}
-                                </div>
-                            </>
-                        )}
                     </PanelSection>
 
                     {reload.audit_remarks && (
@@ -191,6 +144,22 @@ export function ReloadContent({ reload, approvalStatuses, canWrite, canCheck, ca
                             </PanelSection>
                         </>
                     )}
+
+                    <PanelDivider />
+
+                    <PanelSection title="Audit">
+                        <PanelField
+                            label="Created by"
+                            value={reload.created_by ? `${reload.created_by.name} · ${fmtDt(reload.created_at)}` : fmtDt(reload.created_at)}
+                        />
+                    </PanelSection>
+                </PanelCol>
+
+                {/* Right column — approval stepper */}
+                <PanelColRight>
+                    <PanelSection title="Approval Chain">
+                        <ApprovalStepper steps={steps} fmtDt={fmtDt} />
+                    </PanelSection>
                 </PanelColRight>
             </PanelColumns>
 
@@ -232,7 +201,6 @@ export function ReloadContent({ reload, approvalStatuses, canWrite, canCheck, ca
 
 /**
  * Full-page view — reached from direct URL or breadcrumb.
- * Breadcrumb now points back to cashbond.index (not the removed reloads list).
  */
 export default function CashbondReloadShow({ reload, approvalStatuses, canWrite, canCheck, canApprove }) {
     const { flash } = usePage().props;

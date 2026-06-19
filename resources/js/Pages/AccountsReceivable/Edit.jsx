@@ -45,7 +45,7 @@ export default function AREdit({ collectible, departments, statuses }) {
             <div className="flex flex-col gap-[var(--space-3)]" style={{ padding: 'var(--space-4)', maxWidth: 860, margin: '0 auto' }}>
 
                 <div className="flex items-center gap-[var(--space-2)]">
-                    <Button variant="ghost" icon={ArrowLeft} onClick={() => router.visit(route('ar.show', collectible.id))}>
+                    <Button variant="ghost" icon={ArrowLeft} onClick={() => router.visit(route('ar.index'))}>
                         Back
                     </Button>
                 </div>
@@ -141,7 +141,7 @@ export default function AREdit({ collectible, departments, statuses }) {
 
                     {/* Submit */}
                     <div className="flex justify-end gap-[var(--space-2)]">
-                        <Button variant="ghost" type="button" onClick={() => router.visit(route('ar.show', collectible.id))}>
+                        <Button variant="ghost" type="button" onClick={() => router.visit(route('ar.index'))}>
                             Cancel
                         </Button>
                         <Button variant="primary" type="submit" loading={processing}>

@@ -14,13 +14,20 @@ class BillsMonitoringController extends Controller
     // ─── Roles ──────────────────────────────────────────────────────────────
 
     // HR Admin and Disbursement Officer are co-owners per Roles.md
-    private const PREPARER_ROLES = ['hr_admin_officer', 'disbursement_officer'];
+    private const PREPARER_ROLES = ['accounting_assistant'];
 
-    private const CHECKER_ROLES = ['admin_auditor', 'general_manager'];
+    private const CHECKER_ROLES = ['administrative_assistant', 'finance_admin_supervisor'];
 
-    private const APPROVER_ROLES = ['general_manager'];
+    private const APPROVER_ROLES = ['president'];
 
-    private const VIEW_ROLES = ['hr_admin_officer', 'disbursement_officer', 'admin_auditor', 'general_manager'];
+    private const VIEW_ROLES = [
+        'president',
+        'chief_operating_officer',
+        'finance_admin_supervisor',
+        'administrative_assistant',
+        'accounting_assistant',
+        'liaison_officer_finance',
+    ];
 
     // ─── Index ───────────────────────────────────────────────────────────────
 
@@ -116,13 +123,13 @@ class BillsMonitoringController extends Controller
         $bill = Bill::create($data);
 
         return redirect()
-            ->route('bills.show', $bill)
+            ->route('bills.index')
             ->with('flash', ['type' => 'success', 'message' => "Bill \"{$bill->name}\" recorded."]);
     }
 
     // ─── Show ────────────────────────────────────────────────────────────────
 
-    public function show(Request $request, Bill $bill): Response
+    public function show(Request $request, Bill $bill): Response|\Illuminate\Http\JsonResponse
     {
         $role = $request->user()?->getRoleNames()->first();
         if (! in_array($role, self::VIEW_ROLES, true)) {
@@ -130,6 +137,19 @@ class BillsMonitoringController extends Controller
         }
 
         $bill->load(['branch', 'createdBy', 'updatedBy', 'checker', 'approver', 'releaser', 'voucher']);
+
+        if ($request->wantsJson() || $request->get('json')) {
+            return response()->json([
+                'bill'            => $bill,
+                'billTypes'       => Bill::BILL_TYPES,
+                'statuses'        => Bill::STATUSES,
+                'approvalStatuses' => Bill::APPROVAL_STATUSES,
+                'paymentModes'    => Bill::PAYMENT_MODES,
+                'canWrite'        => $this->canPrepare($request),
+                'canCheck'        => $this->canCheck($request),
+                'canApprove'      => $this->canApprove($request),
+            ]);
+        }
 
         return Inertia::render('BillsMonitoring/Show', [
             'bill' => $bill,
@@ -150,7 +170,7 @@ class BillsMonitoringController extends Controller
         $this->requirePreparer($request);
 
         if ($bill->isApproved()) {
-            return redirect()->route('bills.show', $bill)
+            return redirect()->route('bills.index')
                 ->with('flash', ['type' => 'warning', 'message' => 'Record is approved and locked.']);
         }
 
@@ -190,7 +210,7 @@ class BillsMonitoringController extends Controller
         $bill->update($data);
 
         return redirect()
-            ->route('bills.show', $bill)
+            ->route('bills.index')
             ->with('flash', ['type' => 'success', 'message' => 'Bill updated.']);
     }
 
@@ -199,7 +219,7 @@ class BillsMonitoringController extends Controller
     public function destroy(Request $request, Bill $bill): RedirectResponse
     {
         $role = $request->user()?->getRoleNames()->first();
-        if (! in_array($role, ['general_manager', 'disbursement_officer', 'hr_admin_officer'], true)) {
+        if ($role !== 'president') {
             abort(403);
         }
         if ($bill->isApproved()) {

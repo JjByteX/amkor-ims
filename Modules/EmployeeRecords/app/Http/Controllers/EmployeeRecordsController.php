@@ -15,9 +15,26 @@ use Modules\EmployeeRecords\Models\Employee;
 class EmployeeRecordsController extends Controller
 {
     // From Roles.md — HR module
-    private const MANAGE_ROLES = ['hr_admin_officer', 'general_manager'];
+    private const MANAGE_ROLES = ['president', 'finance_admin_supervisor'];
 
-    private const VIEW_ROLES = ['hr_admin_officer', 'general_manager', 'admin_auditor'];
+    private const VIEW_ROLES = ['president', 'chief_operating_officer', 'finance_admin_supervisor', 'administrative_assistant'];
+
+    // FIX #2 (Module 14): All other roles may view their own employee record only (🔒)
+    private const OWN_RECORD_ROLES = [
+        'accounting_assistant',
+        'liaison_officer_finance',
+        'liaison_officer_visa',
+        'visa_documentation_supervisor',
+        'visa_documentation_officer',
+        'sales_marketing_officer',
+        'sales_reservation_officer',
+        'sales_ticketing_officer',
+        'group_sales_officer',
+        'business_development_manager',
+        'general_sales_manager',
+        'branch_supervisor',
+        'branch_sales_officer',
+    ];
 
     // ════════════════════════════════════════════════════════════════════════
     // INDEX
@@ -26,6 +43,15 @@ class EmployeeRecordsController extends Controller
     public function index(Request $request): Response
     {
         $this->requireViewAccess($request);
+
+        // 🔒 Own-record-only roles: redirect straight to their own employee record
+        if ($this->canViewOwnOnly($request)) {
+            $ownRecord = \Modules\EmployeeRecords\Models\Employee::where('user_id', $request->user()->id)->first();
+            if ($ownRecord) {
+                return redirect()->route('employees.show', $ownRecord->id);
+            }
+            abort(403, 'No employee record found for your account. Contact HR.');
+        }
 
         $search = $request->get('search');
         $status = $request->get('status');
@@ -40,8 +66,8 @@ class EmployeeRecordsController extends Controller
             ->forDepartment($dept)
             ->latest('date_hired');
 
-        // Branch scope: only JRT / HR Admin / Auditor see all branches
-        if (! in_array($role, ['general_manager', 'admin_auditor'], true)) {
+        // Branch scope: only president / finance_admin_supervisor / administrative_assistant / COO see all branches
+        if (! in_array($role, ['president', 'chief_operating_officer', 'finance_admin_supervisor', 'administrative_assistant'], true)) {
             $query->forBranch($request->user()->branch_id);
         } elseif ($branch) {
             $query->forBranch((int) $branch);
@@ -51,7 +77,7 @@ class EmployeeRecordsController extends Controller
 
         // Stats
         $statsQuery = Employee::query();
-        if (! in_array($role, ['general_manager', 'admin_auditor'], true)) {
+        if (! in_array($role, ['president', 'chief_operating_officer', 'finance_admin_supervisor', 'administrative_assistant'], true)) {
             $statsQuery->forBranch($request->user()->branch_id);
         }
 
@@ -90,6 +116,15 @@ class EmployeeRecordsController extends Controller
     public function show(Request $request, Employee $employee): Response|JsonResponse
     {
         $this->requireViewAccess($request);
+
+        // 🔒 Own-record-only roles may only view their own employee record
+        if ($this->canViewOwnOnly($request)) {
+            $ownRecord = \Modules\EmployeeRecords\Models\Employee::where('user_id', $request->user()->id)->first();
+            if (! $ownRecord || $ownRecord->id !== $employee->id) {
+                abort(403, 'You can only view your own employee record.');
+            }
+        }
+
         $employee->load(['branch', 'createdBy', 'updatedBy', 'user']);
 
         if ($request->wantsJson() || $request->get('json')) {
@@ -161,7 +196,7 @@ class EmployeeRecordsController extends Controller
         $employee = Employee::create($data);
 
         return redirect()
-            ->route('employees.show', $employee)
+            ->route('employees.index')
             ->with('flash', ['type' => 'success', 'message' => "Employee record for {$employee->display_name} created."]);
     }
 
@@ -215,7 +250,7 @@ class EmployeeRecordsController extends Controller
         $employee->update($data);
 
         return redirect()
-            ->route('employees.show', $employee)
+            ->route('employees.index')
             ->with('flash', ['type' => 'success', 'message' => 'Employee record updated.']);
     }
 
@@ -226,8 +261,8 @@ class EmployeeRecordsController extends Controller
     public function destroy(Request $request, Employee $employee): RedirectResponse
     {
         $role = $request->user()?->getRoleNames()->first();
-        if ($role !== 'general_manager') {
-            abort(403, 'Only the General Manager can remove employee records.');
+        if ($role !== 'president') {
+            abort(403, 'Only the President can remove employee records.');
         }
 
         $employee->delete();
@@ -261,9 +296,19 @@ class EmployeeRecordsController extends Controller
 
     private function requireViewAccess(Request $request): void
     {
-        if (! in_array($request->user()?->getRoleNames()->first(), self::VIEW_ROLES, true)) {
+        $role = $request->user()?->getRoleNames()->first();
+        // Full VIEW_ROLES see all records; OWN_RECORD_ROLES are handled by the index/show
+        // redirect logic — they are still allowed past this gate since show() will scope them.
+        if (! in_array($role, array_merge(self::VIEW_ROLES, self::OWN_RECORD_ROLES), true)) {
             abort(403, 'You do not have access to employee records.');
         }
+    }
+
+    private function canViewOwnOnly(Request $request): bool
+    {
+        $role = $request->user()?->getRoleNames()->first();
+        return in_array($role, self::OWN_RECORD_ROLES, true)
+            && ! in_array($role, self::VIEW_ROLES, true);
     }
 
     private function requireManageAccess(Request $request): void

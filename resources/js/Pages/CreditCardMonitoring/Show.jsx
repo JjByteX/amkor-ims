@@ -3,6 +3,7 @@ import { router, usePage, useForm } from '@inertiajs/react';
 import { CheckCircle2, ThumbsUp, Send } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import DetailPanel, {PanelActions, PanelCol, PanelColRight, PanelColumns, PanelDivider, PanelField, PanelFieldRow, PanelMeta, PanelMetaItem, PanelSection} from '../../Components/Shared/DetailPanel';
+import ApprovalStepper from '../../Components/Shared/ApprovalStepper';
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
 import Modal from '../../Components/UI/Modal';
@@ -12,21 +13,6 @@ import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
 
 const STATUS_VARIANT   = { pending: 'warning', paid: 'success', overdue: 'error' };
 const APPROVAL_VARIANT = { pending: 'warning', checked: 'info', approved: 'success', released: 'neutral' };
-
-function ApprovalStep({ label, done, person, at, fmtDt }) {
-    return (
-        <div className="flex flex-col gap-1">
-            <Badge variant={done ? (label === 'Approved' ? 'success' : 'info') : 'warning'}>
-                {done ? label : `Awaiting ${label}`}
-            </Badge>
-            {done && person && (
-                <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>
-                    {person} · {fmtDt(at)}
-                </span>
-            )}
-        </div>
-    );
-}
 
 export function CreditCardContent({ payment, statuses, approvalStatuses, canWrite, canCheck, canApprove }) {
 
@@ -49,6 +35,42 @@ export function CreditCardContent({ payment, statuses, approvalStatuses, canWrit
 
     const card = payment.credit_card;
 
+    const steps = [
+        {
+            label  : 'Prepared',
+            done   : true,
+            person : payment.created_by?.name,
+            at     : payment.created_at,
+        },
+        {
+            label  : 'Checked',
+            done   : !!payment.checked_at,
+            person : payment.checker?.name,
+            at     : payment.checked_at,
+            action : canCheck && !payment.checked_at
+                ? <Button variant="secondary" size="sm" icon={CheckCircle2} onClick={() => setCheckOpen(true)} style={{ width: '100%' }}>Check Payment</Button>
+                : null,
+        },
+        {
+            label  : 'Approved',
+            done   : !!payment.approved_at,
+            person : payment.approver?.name,
+            at     : payment.approved_at,
+            action : canApprove && payment.checked_at && !payment.approved_at
+                ? <Button variant="primary" size="sm" icon={ThumbsUp} onClick={() => setApproveOpen(true)} style={{ width: '100%' }}>Approve Payment</Button>
+                : null,
+        },
+        {
+            label  : 'Released',
+            done   : !!payment.released_at,
+            person : payment.releaser?.name,
+            at     : payment.released_at,
+            action : canWrite && payment.approved_at && !payment.released_at
+                ? <Button variant="primary" size="sm" icon={Send} onClick={() => setReleaseOpen(true)} style={{ width: '100%' }}>Release Payment</Button>
+                : null,
+        },
+    ];
+
     const content = (
         <>
             <PanelColumns>
@@ -63,10 +85,10 @@ export function CreditCardContent({ payment, statuses, approvalStatuses, canWrit
                         <PanelDivider />
                         <PanelField label="Amount" value={<CurrencyDisplay amount={payment.amount} currency="PHP" />} highlight />
                         <PanelFieldRow>
-                            <PanelField label="Due Date"       value={payment.due_date} />
-                            <PanelField label="Statement Date" value={payment.statement_date} />
+                            <PanelField label="Due Date"       value={fmtDt(payment.due_date)} />
+                            <PanelField label="Statement Date" value={fmtDt(payment.statement_date)} />
                         </PanelFieldRow>
-                        <PanelField label="Payment Date" value={payment.payment_date} />
+                        <PanelField label="Payment Date" value={fmtDt(payment.payment_date)} />
                         {payment.remarks && <PanelField label="Remarks" value={payment.remarks} />}
                     </PanelSection>
 
@@ -85,39 +107,11 @@ export function CreditCardContent({ payment, statuses, approvalStatuses, canWrit
                     </PanelMeta>
                 </PanelCol>
 
-                {/* RIGHT — approval chain + workflow */}
+                {/* RIGHT — approval stepper */}
                 <PanelColRight>
                     <PanelSection title="Approval Chain">
-                        <ApprovalStep label="Prepared"  done fmtDt={fmtDt} person={payment.created_by?.name} at={payment.created_at} />
-                        <ApprovalStep label="Checked"   done={!!payment.checked_at}  fmtDt={fmtDt} person={payment.checker?.name}  at={payment.checked_at} />
-                        <ApprovalStep label="Approved"  done={!!payment.approved_at} fmtDt={fmtDt} person={payment.approver?.name} at={payment.approved_at} />
-                        <ApprovalStep label="Released"  done={!!payment.released_at} fmtDt={fmtDt} person={payment.releaser?.name} at={payment.released_at} />
+                        <ApprovalStepper steps={steps} fmtDt={fmtDt} />
                     </PanelSection>
-
-                    <PanelDivider />
-
-                    <PanelActions>
-                        {canCheck && !payment.checked_at && (
-                            <Button variant="secondary" icon={CheckCircle2} onClick={() => setCheckOpen(true)} style={{ width: '100%' }}>
-                                Check Payment
-                            </Button>
-                        )}
-                        {canApprove && payment.checked_at && !payment.approved_at && (
-                            <Button variant="primary" icon={ThumbsUp} onClick={() => setApproveOpen(true)} style={{ width: '100%' }}>
-                                Approve Payment
-                            </Button>
-                        )}
-                        {canWrite && payment.approved_at && !payment.released_at && (
-                            <Button variant="primary" icon={Send} onClick={() => setReleaseOpen(true)} style={{ width: '100%' }}>
-                                Release Payment
-                            </Button>
-                        )}
-                        {!canCheck && !canApprove && !(canWrite && payment.approved_at && !payment.released_at) && (
-                            <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>
-                                No actions available at this stage.
-                            </span>
-                        )}
-                    </PanelActions>
                 </PanelColRight>
             </PanelColumns>
 
@@ -177,7 +171,7 @@ export default function CreditCardShow({ payment, statuses, approvalStatuses, ca
                 open
                 onClose={() => router.visit(route('credit-cards.index'), { preserveState: false })}
                 title={payment.payment_no}
-                subtitle={card?.card_name ?? 'Credit Card Payment'}
+                subtitle={payment.credit_card?.card_name ?? 'Credit Card Payment'}
                 badges={
                 <>
                 <Badge variant={STATUS_VARIANT[payment.status] ?? 'neutral'}>

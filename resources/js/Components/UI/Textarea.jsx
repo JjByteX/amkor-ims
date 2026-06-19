@@ -6,7 +6,7 @@
  * token in app.css and every Textarea across all pages updates automatically.
  *
  * Tokens consumed:
- *   --textarea-min-height   minimum height before the user resizes  (default 96px)
+ *   --textarea-min-height   minimum height before the user resizes  (default 57px = 2 rows)
  *   --textarea-px           horizontal padding                       (= --space-2)
  *   --textarea-py           vertical padding                         (= --space-1)
  *   --textarea-font-size    (= --font-size-body)
@@ -24,7 +24,7 @@
  *   value       : string
  *   onChange    : fn(e)
  *   error       : string | null
- *   rows        : number       (default: 4)
+ *   rows        : number       (default: 2)
  *   disabled    : bool
  *   placeholder : string
  *   id          : string
@@ -36,7 +36,7 @@ export default function Textarea({
     value,
     onChange,
     error       = null,
-    rows        = 4,
+    rows        = 2,
     disabled    = false,
     placeholder = '',
     id,

@@ -3,6 +3,7 @@ import { router, usePage, useForm } from '@inertiajs/react';
 import { CheckCircle2, ThumbsUp, Send, Bell } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import DetailPanel, {PanelActions, PanelCol, PanelColRight, PanelColumns, PanelDivider, PanelField, PanelFieldRow, PanelMeta, PanelMetaItem, PanelSection} from '../../Components/Shared/DetailPanel';
+import ApprovalStepper from '../../Components/Shared/ApprovalStepper';
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
 import Modal from '../../Components/UI/Modal';
@@ -12,21 +13,6 @@ import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
 
 const STATUS_VARIANT   = { pending: 'warning', paid: 'success', overdue: 'error' };
 const APPROVAL_VARIANT = { pending: 'warning', checked: 'info', approved: 'success', released: 'neutral' };
-
-function ApprovalStep({ label, done, person, at, fmtDt }) {
-    return (
-        <div className="flex flex-col gap-1">
-            <Badge variant={done ? (label === 'Approved' ? 'success' : 'info') : 'warning'}>
-                {done ? label : `Awaiting ${label}`}
-            </Badge>
-            {done && person && (
-                <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>
-                    {person} · {fmtDt(at)}
-                </span>
-            )}
-        </div>
-    );
-}
 
 export function IataContent({ payment, statuses, approvalStatuses, canWrite, canCheck, canApprove }) {
 
@@ -53,6 +39,51 @@ export function IataContent({ payment, statuses, approvalStatuses, canWrite, can
 
     const fmtDt = (d) => d ? new Date(d).toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 
+    const steps = [
+        {
+            label  : 'Prepared',
+            done   : true,
+            person : payment.created_by?.name,
+            at     : payment.created_at,
+        },
+        {
+            label  : 'Checked',
+            done   : !!payment.checked_at,
+            person : payment.checker?.name,
+            at     : payment.checked_at,
+            action : canCheck && !payment.checked_at
+                ? <Button variant="secondary" size="sm" icon={CheckCircle2} onClick={() => setCheckOpen(true)} style={{ width: '100%' }}>Check IATA Payment</Button>
+                : null,
+        },
+        {
+            label  : 'Approved',
+            done   : !!payment.approved_at,
+            person : payment.approver?.name,
+            at     : payment.approved_at,
+            action : canApprove && payment.checked_at && !payment.approved_at
+                ? <Button variant="primary" size="sm" icon={ThumbsUp} onClick={() => setApproveOpen(true)} style={{ width: '100%' }}>Approve IATA Payment</Button>
+                : null,
+        },
+        {
+            label  : 'Released',
+            done   : !!payment.released_at,
+            person : payment.releaser?.name,
+            at     : payment.released_at,
+            action : canWrite && payment.approved_at && !payment.released_at
+                ? <Button variant="primary" size="sm" icon={Send} onClick={() => setReleaseOpen(true)} style={{ width: '100%' }}>Release &amp; File</Button>
+                : null,
+        },
+        {
+            label  : 'Operator Notified',
+            done   : !!payment.operator_notified,
+            person : null,
+            at     : payment.operator_notified_at,
+            action : canWrite && payment.released_at && !payment.operator_notified
+                ? <Button variant="secondary" size="sm" icon={Bell} onClick={() => setNotifyOpen(true)} style={{ width: '100%' }}>Notify Operator</Button>
+                : null,
+        },
+    ];
+
     const content = (
         <>
             <PanelColumns>
@@ -62,12 +93,12 @@ export function IataContent({ payment, statuses, approvalStatuses, canWrite, can
                         <PanelField label="Operator"          value={payment.operator_name} highlight />
                         <PanelField label="Billing Reference" value={payment.billing_reference} mono />
                         <PanelFieldRow>
-                            <PanelField label="Billing Date" value={payment.billing_date} />
-                            <PanelField label="Due Date"     value={payment.due_date} />
+                            <PanelField label="Billing Date" value={fmtDt(payment.billing_date)} />
+                            <PanelField label="Due Date"     value={fmtDt(payment.due_date)} />
                         </PanelFieldRow>
                         <PanelField label="Amount" value={<CurrencyDisplay amount={payment.amount} currency="PHP" />} highlight />
                         <PanelFieldRow>
-                            <PanelField label="Payment Date" value={payment.payment_date} />
+                            <PanelField label="Payment Date" value={fmtDt(payment.payment_date)} />
                             <PanelField label="Branch"       value={payment.branch?.name} />
                         </PanelFieldRow>
                         {payment.remarks && <PanelField label="Remarks" value={payment.remarks} />}
@@ -88,44 +119,11 @@ export function IataContent({ payment, statuses, approvalStatuses, canWrite, can
                     </PanelMeta>
                 </PanelCol>
 
-                {/* RIGHT — approval chain + workflow */}
+                {/* RIGHT — approval stepper */}
                 <PanelColRight>
                     <PanelSection title="Approval Chain">
-                        <ApprovalStep label="Prepared" done fmtDt={fmtDt} person={payment.created_by?.name} at={payment.created_at} />
-                        <ApprovalStep label="Checked"  done={!!payment.checked_at}  fmtDt={fmtDt} person={payment.checker?.name}  at={payment.checked_at} />
-                        <ApprovalStep label="Approved" done={!!payment.approved_at} fmtDt={fmtDt} person={payment.approver?.name} at={payment.approved_at} />
-                        <ApprovalStep label="Released" done={!!payment.released_at} fmtDt={fmtDt} person={payment.releaser?.name} at={payment.released_at} />
+                        <ApprovalStepper steps={steps} fmtDt={fmtDt} />
                     </PanelSection>
-
-                    <PanelDivider />
-
-                    <PanelActions>
-                        {canCheck && !payment.checked_at && (
-                            <Button variant="secondary" icon={CheckCircle2} onClick={() => setCheckOpen(true)} style={{ width: '100%' }}>
-                                Check IATA Payment
-                            </Button>
-                        )}
-                        {canApprove && payment.checked_at && !payment.approved_at && (
-                            <Button variant="primary" icon={ThumbsUp} onClick={() => setApproveOpen(true)} style={{ width: '100%' }}>
-                                Approve IATA Payment
-                            </Button>
-                        )}
-                        {canWrite && payment.approved_at && !payment.released_at && (
-                            <Button variant="primary" icon={Send} onClick={() => setReleaseOpen(true)} style={{ width: '100%' }}>
-                                Release &amp; File
-                            </Button>
-                        )}
-                        {canWrite && payment.released_at && !payment.operator_notified && (
-                            <Button variant="secondary" icon={Bell} onClick={() => setNotifyOpen(true)} style={{ width: '100%' }}>
-                                Notify Operator
-                            </Button>
-                        )}
-                        {!canCheck && !canApprove && !(canWrite && payment.approved_at && !payment.released_at) && !(canWrite && payment.released_at && !payment.operator_notified) && (
-                            <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>
-                                No actions available at this stage.
-                            </span>
-                        )}
-                    </PanelActions>
                 </PanelColRight>
             </PanelColumns>
 

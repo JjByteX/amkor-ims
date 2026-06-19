@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import { Edit2, CheckCircle, ThumbsUp, Package, FileText } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
-import DetailPanel, {PanelActions, PanelCol, PanelColRight, PanelColumns, PanelDivider, PanelField, PanelFieldRow, PanelFullRow, PanelSection} from '../../Components/Shared/DetailPanel';
+import DetailPanel, {PanelCol, PanelColRight, PanelColumns, PanelDivider, PanelField, PanelFieldRow, PanelFullRow, PanelSection} from '../../Components/Shared/DetailPanel';
+import ApprovalStepper from '../../Components/Shared/ApprovalStepper';
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
 import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
@@ -25,15 +26,51 @@ export function VoucherContent({
 }) {
 
     const { url } = usePage();
-    const isPanel = url?.includes('panel=1');
     const [submitting, setSubmitting] = useState(false);
 
-    const fmt = (d) => d ? new Date(d).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
+    const fmt   = (d) => d ? new Date(d).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
+    const fmtDt = (d) => d ? new Date(d).toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : null;
 
     function doPost(routeName) {
         setSubmitting(true);
         router.post(route(routeName, voucher.id), {}, { onFinish: () => setSubmitting(false) });
     }
+
+    const steps = [
+        {
+            label  : 'Prepared',
+            done   : true,
+            person : voucher.created_by?.name,
+            at     : voucher.created_at,
+        },
+        {
+            label  : 'Checked',
+            done   : !!voucher.checked_at,
+            person : voucher.checker?.name,
+            at     : voucher.checked_at,
+            action : canCheck && voucher.approval_status === 'pending'
+                ? <Button variant="secondary" size="sm" icon={CheckCircle} loading={submitting} onClick={() => doPost('disbursement.vouchers.check')} style={{ width: '100%' }}>Mark Checked</Button>
+                : null,
+        },
+        {
+            label  : 'Approved',
+            done   : !!voucher.approved_at,
+            person : voucher.approver?.name,
+            at     : voucher.approved_at,
+            action : canApprove && voucher.approval_status === 'checked'
+                ? <Button variant="primary" size="sm" icon={ThumbsUp} loading={submitting} onClick={() => doPost('disbursement.vouchers.approve')} style={{ width: '100%' }}>Approve (JRT)</Button>
+                : null,
+        },
+        {
+            label  : 'Released',
+            done   : !!voucher.released_at,
+            person : voucher.releaser?.name,
+            at     : voucher.released_at,
+            action : canWrite && voucher.approval_status === 'approved'
+                ? <Button variant="primary" size="sm" icon={Package} loading={submitting} onClick={() => doPost('disbursement.vouchers.release')} style={{ width: '100%' }}>Release</Button>
+                : null,
+        },
+    ];
 
     const content = (
         <>
@@ -66,20 +103,8 @@ export function VoucherContent({
                         {voucher.remarks && <PanelField label="Remarks" value={voucher.remarks} />}
                     </PanelSection>
 
-                    {(voucher.checker || voucher.approver || voucher.releaser) && (
-                        <>
-                            <PanelDivider />
-                            <PanelSection>
-                                {voucher.checker  && <PanelField label="Checked by"  value={`${voucher.checker.name} — ${fmt(voucher.checked_at)}`} />}
-                                {voucher.approver && <PanelField label="Approved by" value={`${voucher.approver.name} — ${fmt(voucher.approved_at)}`} />}
-                                {voucher.releaser && <PanelField label="Released by" value={`${voucher.releaser.name} — ${fmt(voucher.released_at)}`} />}
-                            </PanelSection>
-                        </>
-                    )}
-                </PanelCol>
+                    <PanelDivider />
 
-                {/* RIGHT — amounts + actions */}
-                <PanelColRight>
                     <PanelSection title="Amounts">
                         <PanelFieldRow>
                             <PanelField label="PHP" value={<CurrencyDisplay amount={voucher.amount ?? 0}     currency="PHP" />} highlight />
@@ -88,48 +113,28 @@ export function VoucherContent({
                         <PanelField label="JPY" value={<CurrencyDisplay amount={voucher.amount_jpy ?? 0} currency="JPY" />} />
                     </PanelSection>
 
-                    <PanelDivider />
+                    {canWrite && voucher.approval_status === 'pending' && (
+                        <Button variant="secondary" icon={Edit2}
+                            onClick={() => router.get(route('disbursement.vouchers.edit', voucher.id))}
+                            style={{ width: '100%' }}>
+                            Edit Voucher
+                        </Button>
+                    )}
 
-                    <PanelActions>
-                        {canWrite && voucher.approval_status === 'pending' && (
-                            <Button variant="secondary" icon={Edit2}
-                                onClick={() => router.get(route('disbursement.vouchers.edit', voucher.id))}
-                                style={{ width: '100%' }}>
-                                Edit Voucher
-                            </Button>
-                        )}
-                        {canCheck && voucher.approval_status === 'pending' && (
-                            <Button variant="secondary" icon={CheckCircle} loading={submitting}
-                                onClick={() => doPost('disbursement.vouchers.check')} style={{ width: '100%' }}>
-                                Mark Checked
-                            </Button>
-                        )}
-                        {canApprove && voucher.approval_status === 'checked' && (
-                            <Button variant="primary" icon={ThumbsUp} loading={submitting}
-                                onClick={() => doPost('disbursement.vouchers.approve')} style={{ width: '100%' }}>
-                                Approve (JRT)
-                            </Button>
-                        )}
-                        {canWrite && voucher.approval_status === 'approved' && (
-                            <Button variant="primary" icon={Package} loading={submitting}
-                                onClick={() => doPost('disbursement.vouchers.release')} style={{ width: '100%' }}>
-                                Release
-                            </Button>
-                        )}
-                        {['approved', 'released'].includes(voucher.approval_status) && (
-                            <Button variant="ghost" icon={FileText}
-                                onClick={() => window.open(route(voucher.type === 'check' ? 'documents.check-voucher' : 'documents.cash-voucher', voucher.id), '_blank')} style={{ width: '100%' }}>
-                                Generate PDF
-                            </Button>
-                        )}
-                        {voucher.approval_status === 'released' && (
-                            <div style={{ padding: 'var(--space-2)', background: 'color-mix(in srgb, var(--color-success) 10%, var(--color-card))', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
-                                <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-success)' }}>
-                                    Released ✓
-                                </span>
-                            </div>
-                        )}
-                    </PanelActions>
+                    {['approved', 'released'].includes(voucher.approval_status) && (
+                        <Button variant="ghost" icon={FileText}
+                            onClick={() => window.open(route(voucher.type === 'check' ? 'documents.check-voucher' : 'documents.cash-voucher', voucher.id), '_blank')}
+                            style={{ width: '100%' }}>
+                            Generate PDF
+                        </Button>
+                    )}
+                </PanelCol>
+
+                {/* RIGHT — approval stepper */}
+                <PanelColRight>
+                    <PanelSection title="Approval Chain">
+                        <ApprovalStepper steps={steps} fmtDt={fmtDt} />
+                    </PanelSection>
                 </PanelColRight>
             </PanelColumns>
 

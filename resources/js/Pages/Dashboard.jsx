@@ -106,7 +106,7 @@ function Dashboard({ dashboardSections = [], loginActivity = [] }) {
                 className="dashboard-grid"
                 style={{
                     display            : 'grid',
-                    gridTemplateColumns: 'var(--dash-profile-col, 280px) 1fr',
+                    gridTemplateColumns: 'var(--dash-profile-col, 340px) 1fr',
                     gap                : 'var(--space-2)',
                     alignItems         : 'stretch',
                     flex               : '1 1 0',

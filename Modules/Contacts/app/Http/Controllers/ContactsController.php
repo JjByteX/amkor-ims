@@ -13,15 +13,39 @@ use Modules\Contacts\Models\Contact;
 
 class ContactsController extends Controller
 {
-    /**
-     * Roles allowed to create, edit, and delete contacts.
-     * All other authenticated roles may only view.
-     */
+    // ─── Roles ─────────────────────────────────────────────────────────────────
+    // Canonical slugs per Amkor_IMS___Roles___Permissions_Matrix_1.md (Module 16)
+
+    // Full write — can create + edit ANY contact
+    private const FULL_WRITE_ROLES = [
+        'president',
+        'general_sales_manager',
+        'business_development_manager',
+        'visa_documentation_supervisor',
+    ];
+
+    // Own-record write — can create contacts and edit only their own entries (🔒)
+    private const OWN_WRITE_ROLES = [
+        'visa_documentation_officer',
+        'sales_reservation_officer',
+        'sales_ticketing_officer',
+        'group_sales_officer',
+        'branch_supervisor',
+        'branch_sales_officer',
+    ];
+
+    // Combined — any role that may call store() / create()
     private const WRITE_ROLES = [
-        'general_manager',
-        'accounting_officer',
-        'disbursement_officer',
-        'admin_auditor',
+        'president',
+        'general_sales_manager',
+        'business_development_manager',
+        'visa_documentation_supervisor',
+        'visa_documentation_officer',
+        'sales_reservation_officer',
+        'sales_ticketing_officer',
+        'group_sales_officer',
+        'branch_supervisor',
+        'branch_sales_officer',
     ];
 
     // ─── Index ────────────────────────────────────────────────────────────────
@@ -137,6 +161,12 @@ class ContactsController extends Controller
     {
         $this->requireWriteAccess($request);
 
+        // Own-record roles may only edit contacts they created (🔒)
+        $role = $request->user()?->getRoleNames()->first();
+        if (in_array($role, self::OWN_WRITE_ROLES, true) && $contact->created_by !== $request->user()->id) {
+            abort(403, 'You can only edit contacts you created.');
+        }
+
         return Inertia::render('Contacts/Form', [
             'contact' => $contact,
             'types' => Contact::TYPES,
@@ -151,13 +181,19 @@ class ContactsController extends Controller
     {
         $this->requireWriteAccess($request);
 
+        // Own-record roles may only update contacts they created (🔒)
+        $role = $request->user()?->getRoleNames()->first();
+        if (in_array($role, self::OWN_WRITE_ROLES, true) && $contact->created_by !== $request->user()->id) {
+            abort(403, 'You can only edit contacts you created.');
+        }
+
         $data = $request->validated();
         $data['updated_by'] = $request->user()->id;
 
         $contact->update($data);
 
         return redirect()
-            ->route('contacts.show', $contact)
+            ->route('contacts.index')
             ->with('flash', ['type' => 'success', 'message' => 'Contact updated successfully.']);
     }
 
@@ -179,7 +215,7 @@ class ContactsController extends Controller
 
     private function canWrite(Request $request): bool
     {
-        $role = $request->user()?->role ?? '';
+        $role = $request->user()?->getRoleNames()->first() ?? '';
 
         return in_array($role, self::WRITE_ROLES, true);
     }

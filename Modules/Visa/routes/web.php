@@ -8,9 +8,23 @@ use Modules\Visa\Http\Controllers\VisaController;
 | Visa & Documentation Module Routes
 |--------------------------------------------------------------------------
 |
-| Write roles : visa_documentation_officer, general_manager
-| View roles  : + disbursement_officer, admin_auditor, accounting_officer
-| Liaison Officer has no system view — physical tasks only.
+| Create/Update own  : visa_documentation_officer (own applications only)
+| Create/Update all  : visa_documentation_supervisor (can override any officer)
+| Manage all         : president, chief_operating_officer (view),
+|                      accounting_assistant (payment matching / OR recording),
+|                      administrative_assistant (audit remarks)
+| Pay embassy        : liaison_officer_visa (physical embassy payment; records OR)
+| View only          : finance_admin_supervisor, administrative_assistant,
+|                      general_sales_manager, chief_operating_officer, president
+| Delete             : president only
+|
+| The Visa & Documentation desk operates from QC Main — not a separate branch.
+|
+| Workflow:
+|   Officer creates application → update_status →
+|   request_payment (triggers accounting_assistant) →
+|   liaison_officer_visa pays embassy + endorse_or →
+|   accounting_assistant records OR → visa_documentation_supervisor endorses
 */
 
 Route::middleware(['auth'])->group(function () {
@@ -30,8 +44,17 @@ Route::middleware(['auth'])->group(function () {
     // ── Workflow actions ────────────────────────────────────────────────────
     Route::post('visa/{visa}/status', [VisaController::class, 'updateStatus'])->name('visa.update-status');
     Route::post('visa/{visa}/notes', [VisaController::class, 'updateNotes'])->name('visa.update-notes');
+
+    // visa_documentation_officer / supervisor → triggers payment request to accounting_assistant
     Route::post('visa/{visa}/payment-request', [VisaController::class, 'sendPaymentRequest'])->name('visa.payment-request');
+
+    // accounting_assistant records the OR number after payment matching
     Route::post('visa/{visa}/or', [VisaController::class, 'recordOr'])->name('visa.record-or');
+
+    // liaison_officer_visa physically pays embassy then endorses OR back to the system
+    Route::post('visa/{visa}/pay-embassy', [VisaController::class, 'payEmbassy'])->name('visa.pay-embassy');
+
+    // visa_documentation_supervisor endorses OR to accounting after verification
     Route::post('visa/{visa}/endorse', [VisaController::class, 'endorseOr'])->name('visa.endorse-or');
 
     // ── Contact link (TIN auto-pull) ────────────────────────────────────────
