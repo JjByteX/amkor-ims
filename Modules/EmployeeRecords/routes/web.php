@@ -8,9 +8,14 @@ use Modules\EmployeeRecords\Http\Controllers\EmployeeRecordsController;
 | Employee Records Module Routes
 |--------------------------------------------------------------------------
 |
-| View:   hr_admin_officer, general_manager, admin_auditor
-| Manage: hr_admin_officer, general_manager
-| Delete: general_manager only
+| View all:    finance_admin_supervisor, administrative_assistant,
+|              president, chief_operating_officer
+| View own:    all other authenticated roles (own record only)
+| Create/Edit: finance_admin_supervisor, administrative_assistant, president
+| Delete:      president only
+|
+| HR is centralised at QC Main. Ormoc branch staff records are managed
+| by the finance_admin_supervisor at head office.
 |
 | Attendance is a separate module (Modules/Attendance).
 */
@@ -18,7 +23,6 @@ use Modules\EmployeeRecords\Http\Controllers\EmployeeRecordsController;
 Route::middleware(['auth'])->group(function () {
 
     // ── Sidebar link: /hr ─────────────────────────────────────────────────
-    // Sidebar.jsx links to /hr — redirect to the employees list.
     Route::get('hr', function () {
         return redirect()->route('employees.index');
     })->name('hr');

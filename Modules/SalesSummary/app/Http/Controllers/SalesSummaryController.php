@@ -17,15 +17,34 @@ use Modules\SalesSummary\Models\SalesTarget;
 
 class SalesSummaryController extends Controller
 {
-    private const VIEW_ROLES = [
-        'general_manager',
-        'chief_operations_officer',
-        'general_sales_manager',
-        'accounting_officer',
-        'admin_auditor',
-        'resa_officer',
-        'ormoc_branch_officer',
+    // ─── Roles ─────────────────────────────────────────────────────────────────
+    // Canonical slugs per Amkor_IMS___Roles___Permissions_Matrix_1.md (Module 12)
+    // Each role sees their own slice; scoping applied per-query below.
+
+    // Roles that see only their own agent code rows (🔒) — enforced by auto-injecting
+    // $user->agent_code into the filters so it cannot be bypassed via URL param.
+    private const OWN_AGENT_ROLES = [
+        'sales_reservation_officer',
+        'sales_ticketing_officer',
+        'group_sales_officer',
         'visa_documentation_officer',
+        'branch_sales_officer',
+    ];
+
+    private const VIEW_ROLES = [
+        'president',                      // all branches, all departments
+        'chief_operating_officer',        // all branches, all departments
+        'finance_admin_supervisor',       // all branches, all departments
+        'general_sales_manager',          // all branches, all departments
+        'business_development_manager',   // Business Development + Visa departments only
+        'accounting_assistant',           // all departments (needed for reconciliation)
+        'visa_documentation_supervisor',  // Visa department only
+        'visa_documentation_officer',     // 🔒 own agent summary only
+        'sales_reservation_officer',      // 🔒 own agent summary only
+        'sales_ticketing_officer',        // 🔒 own agent summary only
+        'group_sales_officer',            // 🔒 own agent summary only
+        'branch_supervisor',              // 🌿 Ormoc branch summary only
+        'branch_sales_officer',           // 🔒 own agent summary only
     ];
 
     public function index(Request $request): Response
@@ -101,12 +120,23 @@ class SalesSummaryController extends Controller
 
     private function filters(Request $request): array
     {
+        $user = $request->user();
+        $role = $user?->getRoleNames()->first();
+
+        // Own-agent roles: always force the filter to their own code regardless
+        // of what the URL says — prevents scope bypass by removing the param.
+        if (in_array($role, self::OWN_AGENT_ROLES, true)) {
+            $agentCode = $user->agent_code ?? null;
+        } else {
+            $agentCode = $request->string('agent_code')->toString() ?: null;
+        }
+
         return [
-            'year' => (int) $request->integer('year', now()->year),
-            'month' => (int) $request->integer('month', now()->month),
+            'year'       => (int) $request->integer('year', now()->year),
+            'month'      => (int) $request->integer('month', now()->month),
             'department' => $request->string('department')->toString() ?: null,
-            'branch_id' => $request->integer('branch_id') ?: null,
-            'agent_code' => $request->string('agent_code')->toString() ?: null,
+            'branch_id'  => $request->integer('branch_id') ?: null,
+            'agent_code' => $agentCode,
         ];
     }
 
@@ -117,7 +147,7 @@ class SalesSummaryController extends Controller
             ->merge($this->ormocRows($filters))
             ->merge($this->visaRows($filters))
             ->merge($this->receivableRows($filters))
-            ->when($request->user()?->getRoleNames()->first() === 'ormoc_branch_officer', function (Collection $rows) use ($request) {
+            ->when($request->user()?->getRoleNames()->first() === 'branch_supervisor', function (Collection $rows) use ($request) {
                 return $rows->where('branch_id', $request->user()->branch_id);
             })
             ->when($filters['department'], fn (Collection $rows) => $rows->where('department', $filters['department']))
@@ -275,7 +305,7 @@ class SalesSummaryController extends Controller
             ->when($filters['branch_id'], fn ($q) => $q->where('branch_id', $filters['branch_id']))
             ->when($filters['agent_code'], fn ($q) => $q->where('agent_code', $filters['agent_code']));
 
-        if ($request->user()?->getRoleNames()->first() === 'ormoc_branch_officer') {
+        if ($request->user()?->getRoleNames()->first() === 'branch_supervisor') {
             $query->where('branch_id', $request->user()->branch_id);
         }
 

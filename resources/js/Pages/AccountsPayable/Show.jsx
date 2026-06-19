@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { router, usePage, useForm } from '@inertiajs/react';
 import { CheckCircle, ThumbsUp, Package, CreditCard } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
-import DetailPanel, {PanelActions, PanelCol, PanelColRight, PanelColumns, PanelDivider, PanelField, PanelFieldRow, PanelSection} from '../../Components/Shared/DetailPanel';
+import DetailPanel, {PanelCol, PanelColRight, PanelColumns, PanelDivider, PanelField, PanelFieldRow, PanelSection} from '../../Components/Shared/DetailPanel';
+import ApprovalStepper from '../../Components/Shared/ApprovalStepper';
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
 import Modal from '../../Components/UI/Modal';
@@ -31,7 +32,6 @@ export function APContent({
 }) {
 
     const { url } = usePage();
-    const isPanel = url?.includes('panel=1');
 
     const [paymentModal, setPaymentModal] = useState(false);
     const [releaseModal, setReleaseModal] = useState(false);
@@ -57,7 +57,44 @@ export function APContent({
         router.post(route('ap.approve', payable.id), {}, { onFinish: () => setSubmitting(false) });
     }
 
-    const fmt = (d) => d ? new Date(d).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
+    const fmt   = (d) => d ? new Date(d).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
+    const fmtDt = (d) => d ? new Date(d).toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : null;
+
+    const steps = [
+        {
+            label  : 'Prepared',
+            done   : true,
+            person : payable.created_by?.name,
+            at     : payable.created_at,
+        },
+        {
+            label  : 'Checked',
+            done   : !!payable.checked_at,
+            person : payable.checker?.name,
+            at     : payable.checked_at,
+            action : canCheck && payable.approval_status === 'pending'
+                ? <Button variant="secondary" size="sm" icon={CheckCircle} onClick={() => setCheckModal(true)} style={{ width: '100%' }}>Mark Checked</Button>
+                : null,
+        },
+        {
+            label  : 'Approved',
+            done   : !!payable.approved_at,
+            person : payable.approver?.name,
+            at     : payable.approved_at,
+            action : canApprove && payable.approval_status === 'checked'
+                ? <Button variant="primary" size="sm" icon={ThumbsUp} loading={submitting} onClick={doApprove} style={{ width: '100%' }}>Approve (JRT)</Button>
+                : null,
+        },
+        {
+            label  : 'Released & Filed',
+            done   : !!payable.released_at,
+            person : payable.releaser?.name,
+            at     : payable.released_at,
+            action : canWrite && payable.approval_status === 'approved'
+                ? <Button variant="primary" size="sm" icon={Package} onClick={() => setReleaseModal(true)} style={{ width: '100%' }}>Release &amp; File</Button>
+                : null,
+        },
+    ];
 
     const content = (
         <>
@@ -86,36 +123,23 @@ export function APContent({
                         {payable.remarks && <PanelField label="Remarks" value={payable.remarks} />}
                     </PanelSection>
 
-                    <PanelDivider />
-
-                    <PanelSection>
-                        {payable.checker  && <PanelField label="Checked by"  value={`${payable.checker.name} — ${fmt(payable.checked_at)}`} />}
-                        {payable.approver && <PanelField label="Approved by" value={`${payable.approver.name} — ${fmt(payable.approved_at)}`} />}
-                        {payable.releaser && <PanelField label="Released by" value={`${payable.releaser.name} — ${fmt(payable.released_at)}`} />}
-                        {!payable.checker && !payable.approver && !payable.releaser && (
-                            <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>
-                                No approvals recorded yet.
-                            </span>
-                        )}
-                        {payable.audit_remarks && (
-                            <>
-                                <PanelDivider />
-                                <p className="font-body" style={{ fontSize: 'var(--font-size-small)', margin: 0 }}>
-                                    {payable.audit_remarks}
-                                </p>
-                            </>
-                        )}
-                    </PanelSection>
+                    {payable.audit_remarks && (
+                        <>
+                            <PanelDivider />
+                            <p className="font-body" style={{ fontSize: 'var(--font-size-small)', margin: 0 }}>
+                                {payable.audit_remarks}
+                            </p>
+                        </>
+                    )}
 
                     {payable.deposit_slip_attached && (
                         <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-success)' }}>
                             ✓ Deposit slip attached {fmt(payable.deposit_slip_attached_at)}
                         </span>
                     )}
-                </PanelCol>
 
-                {/* RIGHT — amounts + actions */}
-                <PanelColRight>
+                    <PanelDivider />
+
                     <PanelSection title="Amounts">
                         <PanelFieldRow>
                             <PanelField label="Invoice PHP" value={<CurrencyDisplay amount={payable.invoice_amount_php ?? 0} currency="PHP" />} />
@@ -140,39 +164,18 @@ export function APContent({
                         <PanelField label="Balance JPY" value={<CurrencyDisplay amount={payable.balance_jpy ?? 0} currency="JPY" />} />
                     </PanelSection>
 
-                    <PanelDivider />
+                    {canWrite && !['paid', 'filed'].includes(payable.status) && (
+                        <Button variant="secondary" icon={CreditCard} onClick={() => setPaymentModal(true)} style={{ width: '100%' }}>
+                            Record Payment
+                        </Button>
+                    )}
+                </PanelCol>
 
-                    <PanelActions>
-                        {canWrite && !['paid', 'filed'].includes(payable.status) && (
-                            // 'received' is a manual flag, not a closed state — payment can
-                            // still be recorded for visa-sourced payables marked as received
-                            <Button variant="secondary" icon={CreditCard} onClick={() => setPaymentModal(true)} style={{ width: '100%' }}>
-                                Record Payment
-                            </Button>
-                        )}
-                        {canCheck && payable.approval_status === 'pending' && (
-                            <Button variant="secondary" icon={CheckCircle} onClick={() => setCheckModal(true)} style={{ width: '100%' }}>
-                                Mark Checked
-                            </Button>
-                        )}
-                        {canApprove && payable.approval_status === 'checked' && (
-                            <Button variant="primary" icon={ThumbsUp} loading={submitting} onClick={doApprove} style={{ width: '100%' }}>
-                                Approve (JRT)
-                            </Button>
-                        )}
-                        {canWrite && payable.approval_status === 'approved' && (
-                            <Button variant="primary" icon={Package} onClick={() => setReleaseModal(true)} style={{ width: '100%' }}>
-                                Release &amp; File
-                            </Button>
-                        )}
-                        {payable.approval_status === 'released' && (
-                            <div style={{ padding: 'var(--space-2)', background: 'color-mix(in srgb, var(--color-success) 10%, var(--color-card))', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
-                                <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-success)' }}>
-                                    Released &amp; Filed ✓
-                                </span>
-                            </div>
-                        )}
-                    </PanelActions>
+                {/* RIGHT — approval stepper */}
+                <PanelColRight>
+                    <PanelSection title="Approval Chain">
+                        <ApprovalStepper steps={steps} fmtDt={fmtDt} />
+                    </PanelSection>
                 </PanelColRight>
             </PanelColumns>
 

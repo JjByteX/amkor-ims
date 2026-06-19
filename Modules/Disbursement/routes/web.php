@@ -8,13 +8,16 @@ use Modules\Disbursement\Http\Controllers\DisbursementController;
 | Disbursement Module Routes
 |--------------------------------------------------------------------------
 |
-| Preparers   : disbursement_officer, accounting_officer
-| Checkers    : admin_auditor, general_manager
-| Approvers   : general_manager (JRT only)
+| Preparers   : accounting_assistant
+| Checkers    : administrative_assistant, finance_admin_supervisor
+| Approvers   : president (JRT only)
+| Executors   : liaison_officer_finance (marks voucher released / executed)
 |
-| Voucher approval chain: Prepared → Checked (Auditor) → Approved (JRT) → Released
+| Voucher approval chain:
+|   Prepared (Accounting) → Checked (Admin Asst) → Approved (President) → Released (Liaison)
+|
 | Disbursement entry is auto-created when a voucher is approved.
-| Access file export is a Phase 9 stub.
+| Access file export: administrative_assistant receives the file.
 */
 
 Route::middleware(['auth'])->group(function () {
@@ -38,7 +41,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('disbursement/vouchers/{voucher}/approve', [DisbursementController::class, 'voucherApprove'])->name('disbursement.vouchers.approve');
     Route::post('disbursement/vouchers/{voucher}/release', [DisbursementController::class, 'voucherRelease'])->name('disbursement.vouchers.release');
 
-    // ── PDF stub (Phase 9) ────────────────────────────────────────────────
+    // ── PDF stub ──────────────────────────────────────────────────────────
     Route::post('disbursement/vouchers/{voucher}/pdf', [DisbursementController::class, 'voucherPdf'])->name('disbursement.vouchers.pdf');
 
     // ── Disbursement Ledger ───────────────────────────────────────────────
@@ -50,8 +53,8 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('disbursement/ledger/{entry}', [DisbursementController::class, 'ledgerDestroy'])->name('disbursement.ledger.destroy');
 
     // ── Access file export ────────────────────────────────────────────────
-    // Phase 9: GET so the browser downloads the file directly.
+    // GET so the browser downloads the file directly.
     // Pass ?period=first_half or ?period=second_half to override auto-detection.
-    // Pass ?branch_id= (GM / Auditor only) to scope to a specific branch.
+    // Pass ?branch_id= (president / admin_asst only) to scope to a specific branch.
     Route::get('disbursement/access-file-export', [DisbursementController::class, 'accessFileExport'])->name('disbursement.access-file-export');
 });

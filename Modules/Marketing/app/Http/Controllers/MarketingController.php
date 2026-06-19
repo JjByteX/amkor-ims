@@ -3,6 +3,7 @@
 namespace Modules\Marketing\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -13,22 +14,47 @@ use Modules\Marketing\Models\MarketingMaterial;
 
 class MarketingController extends Controller
 {
-    // ── Role constants (per Roles.md) ─────────────────────────────────────────
-    private const MARKETER_ROLES = ['marketing_officer'];
+    // ── Role constants (per Roles.md Module 13) ───────────────────────────────
+    // Creates campaigns + edits own materials
+    private const MARKETER_ROLES = ['sales_marketing_officer', 'business_development_manager'];
 
-    private const REVIEWER_ROLES = ['chief_operations_officer', 'general_manager'];
+    // Reviews and approves all marketing materials before publishing
+    private const REVIEWER_ROLES = ['president', 'chief_operating_officer'];
 
-    private const VIEW_ROLES = ['marketing_officer', 'chief_operations_officer', 'general_manager'];
+    // Roles limited to the Expenses sub-section only (M13: accounting_assistant = 👁 expenses only)
+    private const EXPENSES_ONLY_ROLES = ['accounting_assistant'];
+
+    // All roles that may access any part of the Marketing module
+    private const VIEW_ROLES = [
+        'president',
+        'chief_operating_officer',
+        'general_sales_manager',
+        'business_development_manager',
+        'accounting_assistant',
+        'sales_marketing_officer',
+        'visa_documentation_supervisor',
+        'visa_documentation_officer',
+        'sales_reservation_officer',
+        'sales_ticketing_officer',
+        'group_sales_officer',
+        'branch_supervisor',
+        'branch_sales_officer',
+    ];
 
     // ════════════════════════════════════════════════════════════════════════
     // MATERIALS — Index
     // ════════════════════════════════════════════════════════════════════════
 
-    public function index(Request $request): Response
+    public function index(Request $request): Response|RedirectResponse
     {
         $role = $request->user()?->getRoleNames()->first();
         if (! in_array($role, self::VIEW_ROLES, true)) {
             abort(403);
+        }
+
+        // accounting_assistant may only view expenses (M13: 👁 expenses only)
+        if (in_array($role, self::EXPENSES_ONLY_ROLES, true)) {
+            return redirect()->route('marketing.expenses');
         }
 
         $search = $request->get('search');
@@ -100,17 +126,22 @@ class MarketingController extends Controller
         $material = MarketingMaterial::create($data);
 
         return redirect()
-            ->route('marketing.show', $material)
+            ->route('marketing.index')
             ->with('flash', ['type' => 'success', 'message' => "Material \"{$material->title}\" created."]);
     }
 
     // ── Materials — Show ─────────────────────────────────────────────────────
 
-    public function show(Request $request, MarketingMaterial $marketing): Response
+    public function show(Request $request, MarketingMaterial $marketing): Response|JsonResponse|RedirectResponse
     {
         $role = $request->user()?->getRoleNames()->first();
         if (! in_array($role, self::VIEW_ROLES, true)) {
             abort(403);
+        }
+
+        // accounting_assistant may only view expenses (M13: 👁 expenses only)
+        if (in_array($role, self::EXPENSES_ONLY_ROLES, true)) {
+            return redirect()->route('marketing.expenses');
         }
 
         $marketing->load([
@@ -120,15 +151,21 @@ class MarketingController extends Controller
 
         $totalSpend = $marketing->expenses->sum('amount');
 
-        return Inertia::render('Marketing/Show', [
-            'material' => $marketing,
-            'totalSpend' => $totalSpend,
+        $payload = [
+            'material'      => $marketing,
+            'totalSpend'    => $totalSpend,
             'materialTypes' => MarketingMaterial::MATERIAL_TYPES,
-            'statuses' => MarketingMaterial::STATUSES,
-            'platforms' => MarketingMaterial::PLATFORMS,
-            'canCreate' => $this->canCreate($request),
-            'canReview' => $this->canReview($request),
-        ]);
+            'statuses'      => MarketingMaterial::STATUSES,
+            'platforms'     => MarketingMaterial::PLATFORMS,
+            'canCreate'     => $this->canCreate($request),
+            'canReview'     => $this->canReview($request),
+        ];
+
+        if ($request->wantsJson() || $request->get('json')) {
+            return response()->json($payload);
+        }
+
+        return Inertia::render('Marketing/Show', $payload);
     }
 
     // ── Materials — Edit ─────────────────────────────────────────────────────
@@ -138,7 +175,7 @@ class MarketingController extends Controller
         $this->requireMarketer($request);
 
         if (! in_array($marketing->status, ['draft', 'archived'], true)) {
-            return redirect()->route('marketing.show', $marketing)
+            return redirect()->route('marketing.index')
                 ->with('flash', ['type' => 'error', 'message' => 'Only draft or archived materials can be edited.']);
         }
 
@@ -169,7 +206,7 @@ class MarketingController extends Controller
         $marketing->update($data);
 
         return redirect()
-            ->route('marketing.show', $marketing)
+            ->route('marketing.index')
             ->with('flash', ['type' => 'success', 'message' => 'Material updated.']);
     }
 
@@ -190,7 +227,7 @@ class MarketingController extends Controller
         ]);
 
         return redirect()
-            ->route('marketing.show', $marketing)
+            ->route('marketing.index')
             ->with('flash', ['type' => 'success', 'message' => 'Material submitted for COO review.']);
     }
 
@@ -212,7 +249,7 @@ class MarketingController extends Controller
         ]);
 
         return redirect()
-            ->route('marketing.show', $marketing)
+            ->route('marketing.index')
             ->with('flash', ['type' => 'success', 'message' => 'Material approved.']);
     }
 
@@ -239,7 +276,7 @@ class MarketingController extends Controller
         ]);
 
         return redirect()
-            ->route('marketing.show', $marketing)
+            ->route('marketing.index')
             ->with('flash', ['type' => 'warning', 'message' => 'Material sent back for revision.']);
     }
 
@@ -261,7 +298,7 @@ class MarketingController extends Controller
         ]);
 
         return redirect()
-            ->route('marketing.show', $marketing)
+            ->route('marketing.index')
             ->with('flash', ['type' => 'success', 'message' => 'Material marked as published.']);
     }
 
@@ -434,11 +471,16 @@ class MarketingController extends Controller
     // ANALYTICS
     // ═══════════════════════════════════════════════════════════════════════
 
-    public function analytics(Request $request): Response
+    public function analytics(Request $request): Response|RedirectResponse
     {
         $role = $request->user()?->getRoleNames()->first();
         if (! in_array($role, self::VIEW_ROLES, true)) {
             abort(403);
+        }
+
+        // accounting_assistant may only view expenses (M13: 👁 expenses only)
+        if (in_array($role, self::EXPENSES_ONLY_ROLES, true)) {
+            return redirect()->route('marketing.expenses');
         }
 
         $year = (int) $request->get('year', now()->year);

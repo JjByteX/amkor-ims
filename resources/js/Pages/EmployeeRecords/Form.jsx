@@ -130,7 +130,7 @@ export default function EmployeeForm({ employee, statuses, departments, genders,
         method(url, { ...form }, { onFinish: () => setSubmitting(false) });
     }
 
-    const backUrl = isEdit ? route('employees.show', employee.id) : route('employees.index');
+    const backUrl = route('employees.index');
 
     return (
         <AppShell>

@@ -8,12 +8,12 @@ use Modules\AccountsPayable\Http\Controllers\AccountsPayableController;
 | Accounts Payable / Operator Payables Routes
 |--------------------------------------------------------------------------
 |
-| Preparers  : accounting_officer, disbursement_officer
-| Checkers   : admin_auditor, general_manager
-| Approvers  : general_manager (JRT only)
-| Viewers    : + resa_officer (originate payment requests)
+| Preparers  : accounting_assistant
+| Checkers   : administrative_assistant, finance_admin_supervisor
+| Approvers  : president (JRT only)
+| Viewers    : + liaison_officer_finance (assigned payables only)
 |
-| Approval chain: Prepared → Checked (Auditor) → Approved (JRT) → Released
+| Approval chain: Prepared → Checked (Admin Asst) → Approved (President) → Released
 | Note: USD transactions are always settled in cash, never check.
 */
 

@@ -76,9 +76,11 @@ class ContributeDashboardSummary
         $collector = $event->collector;
 
         if (! $collector->can([
-            'general_manager', 'chief_operations_officer', 'general_sales_manager',
-            'accounting_officer', 'admin_auditor', 'resa_officer',
-            'ormoc_branch_officer', 'visa_documentation_officer',
+            'president', 'chief_operating_officer', 'finance_admin_supervisor',
+            'administrative_assistant', 'general_sales_manager', 'accounting_assistant',
+            'business_development_manager', 'visa_documentation_supervisor',
+            'sales_reservation_officer', 'sales_ticketing_officer', 'group_sales_officer',
+            'branch_supervisor', 'branch_sales_officer', 'visa_documentation_officer',
         ])) {
             return;
         }

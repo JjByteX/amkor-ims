@@ -8,9 +8,13 @@ use Modules\AccountsReceivable\Http\Controllers\AccountsReceivableController;
 | Accounts Receivable / Collectibles Routes
 |--------------------------------------------------------------------------
 |
-| Originators : resa_officer, ormoc_branch_officer, visa_documentation_officer, accounting_officer
-| Approvers   : chief_operations_officer, general_sales_manager, general_manager
-| Viewers     : + admin_auditor, disbursement_officer
+| Originators : sales_reservation_officer, sales_ticketing_officer,
+|               group_sales_officer, branch_sales_officer,
+|               visa_documentation_officer, visa_documentation_supervisor,
+|               accounting_assistant
+| Approvers   : chief_operating_officer, general_sales_manager, president
+| Viewers     : + administrative_assistant, finance_admin_supervisor,
+|               liaison_officer_finance
 |
 | Both COO and GSM must approve before post-approval actions unlock.
 */

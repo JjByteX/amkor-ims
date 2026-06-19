@@ -12,7 +12,7 @@ class ContributeDashboardSummary
     {
         $collector = $event->collector;
 
-        if (! $collector->can(['general_manager', 'chief_operations_officer', 'marketing_officer'])) {
+        if (! $collector->can(['president', 'chief_operating_officer', 'business_development_manager', 'sales_marketing_officer', 'accounting_assistant'])) {
             return;
         }
 

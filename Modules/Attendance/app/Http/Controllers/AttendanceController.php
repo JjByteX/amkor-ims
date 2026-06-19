@@ -5,6 +5,7 @@ namespace Modules\Attendance\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,9 +17,22 @@ use Modules\Attendance\Models\AttendanceRecord;
 class AttendanceController extends Controller
 {
     // ── Role constants ────────────────────────────────────────────────────────
-    private const HR_ROLES = ['hr_admin_officer', 'general_manager'];
+    // Module 15: president + COO have full update; finance_admin_supervisor is primary owner.
+    private const HR_ROLES = ['president', 'chief_operating_officer', 'finance_admin_supervisor'];
 
-    private const VIEW_ALL = ['hr_admin_officer', 'general_manager', 'admin_auditor'];
+    // Roles that see the full attendance table (not just own records).
+    // Team-scoped roles (general_sales_manager, business_development_manager,
+    // visa_documentation_supervisor, branch_supervisor) are handled via branch/dept
+    // scoping in the index query rather than here.
+    private const VIEW_ALL = ['president', 'chief_operating_officer', 'finance_admin_supervisor', 'administrative_assistant'];
+
+    // FIX #2 (Module 15): Team-scoped roles see their own team's attendance (🌿)
+    private const TEAM_SCOPE_ROLES = [
+        'general_sales_manager',          // own + QC Sales team
+        'business_development_manager',   // own + Business Development / Marketing team
+        'visa_documentation_supervisor',  // own + Visa & Documentation team
+        'branch_supervisor',              // own + Ormoc branch team
+    ];
 
     // ════════════════════════════════════════════════════════════════════════
     // INDEX — HR/Auditor: full table with filters + stats
@@ -29,9 +43,10 @@ class AttendanceController extends Controller
         $user = $request->user();
         $role = $user?->getRoleNames()->first();
         $isHr = in_array($role, self::VIEW_ALL, true);
+        $isTeamScoped = in_array($role, self::TEAM_SCOPE_ROLES, true);
 
         // Employees can only see their own records
-        if (! $isHr) {
+        if (! $isHr && ! $isTeamScoped) {
             return $this->selfView($request);
         }
 
@@ -57,8 +72,28 @@ class AttendanceController extends Controller
             $query->whereHas('user', fn ($q) => $q->where(DB::raw('LOWER(name)'), 'like', '%'.strtolower($search).'%'));
         }
 
-        // Branch-scope: General Manager sees all branches; others see their branch
-        if ($role !== 'general_manager') {
+        // FIX #2: Branch/team scoping per Module 15
+        // Team-scoped managers see their department/branch; HR see all
+        if (in_array($role, ['president', 'chief_operating_officer', 'finance_admin_supervisor'], true)) {
+            // See all branches — no scope applied
+        } elseif ($role === 'administrative_assistant') {
+            // Reads all for payroll support — no branch scope
+        } elseif ($role === 'general_sales_manager') {
+            // Own + QC Sales team: sales_reservation_officer, sales_ticketing_officer, group_sales_officer, GSM herself
+            $salesRoles = ['sales_reservation_officer', 'sales_ticketing_officer', 'group_sales_officer', 'general_sales_manager'];
+            $query->whereHas('user', fn ($q) => $q->whereHas('roles', fn ($r) => $r->whereIn('name', $salesRoles)));
+        } elseif ($role === 'business_development_manager') {
+            // Own + Business Development / Marketing team
+            $bdmRoles = ['business_development_manager', 'sales_marketing_officer'];
+            $query->whereHas('user', fn ($q) => $q->whereHas('roles', fn ($r) => $r->whereIn('name', $bdmRoles)));
+        } elseif ($role === 'visa_documentation_supervisor') {
+            // Own + Visa & Documentation team
+            $visaRoles = ['visa_documentation_supervisor', 'liaison_officer_visa', 'visa_documentation_officer'];
+            $query->whereHas('user', fn ($q) => $q->whereHas('roles', fn ($r) => $r->whereIn('name', $visaRoles)));
+        } elseif ($role === 'branch_supervisor') {
+            // Own + Ormoc branch team
+            $query->forBranch($user->branch_id);
+        } else {
             $query->forBranch($user->branch_id);
         }
 
@@ -66,7 +101,7 @@ class AttendanceController extends Controller
 
         // Summary stats for the selected month — now includes overtime + overbreak
         $statsBase = AttendanceRecord::forMonth($year, $month);
-        if ($role !== 'general_manager' && $branchId) {
+        if (! in_array($role, ['president', 'chief_operating_officer', 'finance_admin_supervisor'], true) && $branchId) {
             $statsBase->forBranch((int) $branchId);
         }
 
@@ -156,26 +191,36 @@ class AttendanceController extends Controller
     // SHOW — single record detail
     // ════════════════════════════════════════════════════════════════════════
 
-    public function show(Request $request, AttendanceRecord $attendance): Response
+    public function show(Request $request, AttendanceRecord $attendance): Response|JsonResponse
     {
         $user = $request->user();
         $role = $user?->getRoleNames()->first();
 
-        if (! in_array($role, self::VIEW_ALL, true) && $attendance->user_id !== $user->id) {
+        $isViewAll   = in_array($role, self::VIEW_ALL, true);
+        $isOwnRecord = $attendance->user_id === $user->id;
+        $isTeamRecord = $this->isWithinTeamScope($role, $user, $attendance);
+
+        if (! $isViewAll && ! $isOwnRecord && ! $isTeamRecord) {
             abort(403, 'You can only view your own attendance records.');
         }
 
         $attendance->load(['user', 'branch', 'recordedBy']);
 
-        return Inertia::render('Attendance/Show', [
+        $payload = [
             'record'    => array_merge($attendance->toArray(), [
                 'hours_worked'  => $attendance->hours_worked,
                 'is_clocked_in' => $attendance->is_clocked_in,
             ]),
-            'statuses'  => AttendanceRecord::STATUSES,
+            'statuses'   => AttendanceRecord::STATUSES,
             'leaveTypes' => AttendanceRecord::LEAVE_TYPES,
-            'canManage' => $this->canManage($request),
-        ]);
+            'canManage'  => $this->canManage($request),
+        ];
+
+        if ($request->wantsJson() || $request->get('json')) {
+            return response()->json($payload);
+        }
+
+        return Inertia::render('Attendance/Show', $payload);
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -319,7 +364,7 @@ class AttendanceController extends Controller
         $record = AttendanceRecord::create($data);
 
         return redirect()
-            ->route('attendance.show', $record)
+            ->route('attendance.index')
             ->with('flash', ['type' => 'success', 'message' => 'Attendance record created.']);
     }
 
@@ -370,7 +415,7 @@ class AttendanceController extends Controller
         $attendance->update($data);
 
         return redirect()
-            ->route('attendance.show', $attendance)
+            ->route('attendance.index')
             ->with('flash', ['type' => 'success', 'message' => 'Attendance record updated.']);
     }
 
@@ -380,8 +425,8 @@ class AttendanceController extends Controller
 
     public function destroy(Request $request, AttendanceRecord $attendance): RedirectResponse
     {
-        if ($request->user()?->getRoleNames()->first() !== 'general_manager') {
-            abort(403, 'Only the General Manager can remove attendance records.');
+        if ($request->user()?->getRoleNames()->first() !== 'president') {
+            abort(403, 'Only the President can remove attendance records.');
         }
 
         $attendance->delete();
@@ -398,7 +443,7 @@ class AttendanceController extends Controller
     public function report(Request $request): Response
     {
         $role = $request->user()?->getRoleNames()->first();
-        if (! in_array($role, self::VIEW_ALL, true)) {
+        if (! in_array($role, array_merge(self::VIEW_ALL, self::TEAM_SCOPE_ROLES), true)) {
             abort(403, 'Access denied.');
         }
 
@@ -428,7 +473,18 @@ class AttendanceController extends Controller
 
         if ($branchId) {
             $query->forBranch((int) $branchId);
-        } elseif ($role !== 'general_manager') {
+        } elseif (in_array($role, ['president', 'chief_operating_officer', 'finance_admin_supervisor', 'administrative_assistant'], true)) {
+            // Full company view — no additional scope
+        } elseif ($role === 'general_sales_manager') {
+            $salesRoles = ['sales_reservation_officer', 'sales_ticketing_officer', 'group_sales_officer', 'general_sales_manager'];
+            $query->whereHas('user', fn ($q) => $q->whereHas('roles', fn ($r) => $r->whereIn('name', $salesRoles)));
+        } elseif ($role === 'business_development_manager') {
+            $bdmRoles = ['business_development_manager', 'sales_marketing_officer'];
+            $query->whereHas('user', fn ($q) => $q->whereHas('roles', fn ($r) => $r->whereIn('name', $bdmRoles)));
+        } elseif ($role === 'visa_documentation_supervisor') {
+            $visaRoles = ['visa_documentation_supervisor', 'liaison_officer_visa', 'visa_documentation_officer'];
+            $query->whereHas('user', fn ($q) => $q->whereHas('roles', fn ($r) => $r->whereIn('name', $visaRoles)));
+        } elseif ($role === 'branch_supervisor') {
             $query->forBranch($request->user()->branch_id);
         }
 
@@ -439,7 +495,7 @@ class AttendanceController extends Controller
             'summary'   => $summary,
             'filters'   => compact('month', 'year', 'branchId'),
             'branches'  => $branches,
-            'canExport' => in_array($role, self::VIEW_ALL, true),
+            'canExport' => in_array($role, array_merge(self::VIEW_ALL, self::TEAM_SCOPE_ROLES), true),
         ]);
     }
 
@@ -450,12 +506,38 @@ class AttendanceController extends Controller
     private function requireHr(Request $request): void
     {
         if (! in_array($request->user()?->getRoleNames()->first(), self::HR_ROLES, true)) {
-            abort(403, 'Only the HR & Admin Officer or General Manager can manage attendance records.');
+            abort(403, 'Only the Finance & Admin Supervisor, COO, or President can manage attendance records.');
         }
     }
 
     private function canManage(Request $request): bool
     {
         return in_array($request->user()?->getRoleNames()->first() ?? '', self::HR_ROLES, true);
+    }
+
+    /**
+     * Returns true if the given attendance record belongs to a user
+     * within the team-scoped manager's team (mirrors index() logic).
+     */
+    private function isWithinTeamScope(string $role, \App\Models\User $manager, AttendanceRecord $record): bool
+    {
+        if (! in_array($role, self::TEAM_SCOPE_ROLES, true)) {
+            return false;
+        }
+
+        $employee = \App\Models\User::find($record->user_id);
+        if (! $employee) {
+            return false;
+        }
+
+        $employeeRole = $employee->getRoleNames()->first();
+
+        return match ($role) {
+            'general_sales_manager'         => in_array($employeeRole, ['sales_reservation_officer', 'sales_ticketing_officer', 'group_sales_officer', 'general_sales_manager'], true),
+            'business_development_manager'  => in_array($employeeRole, ['business_development_manager', 'sales_marketing_officer'], true),
+            'visa_documentation_supervisor' => in_array($employeeRole, ['visa_documentation_supervisor', 'liaison_officer_visa', 'visa_documentation_officer'], true),
+            'branch_supervisor'             => $employee->branch_id === $manager->branch_id,
+            default                         => false,
+        };
     }
 }

@@ -30,6 +30,7 @@ export default function CashbondIndex({
     portals, reloads, summary, filters,
     approvalStatuses,
     canWrite, canCheck, canApprove,
+    balanceOnly = false,
 }) {
     const { flash } = usePage().props;
 
@@ -187,7 +188,7 @@ export default function CashbondIndex({
                     />
                 </StatGrid>
 
-                <TableWithPanel
+                {!balanceOnly && <TableWithPanel
                     panelOpen={showPanel}
                     panel={
                         <DetailPanel
@@ -258,7 +259,7 @@ export default function CashbondIndex({
                             </FilterStrip>
                         }
                     />
-                </TableWithPanel>
+                </TableWithPanel>}
 
             </PageStack>
         </AppShell>

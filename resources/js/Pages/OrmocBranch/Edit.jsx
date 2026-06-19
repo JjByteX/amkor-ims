@@ -88,20 +88,20 @@ export default function OrmocBranchEdit({ booking, statuses, bookingTypes, agent
                 className="flex min-h-0 flex-1 flex-col overflow-y-auto"
                 style={{ gap: 'var(--space-2)' }}
             >
-                <FormLayout split="5fr 7fr 5fr">
+                <FormLayout columns={3}>
                     <PageHeader
                         breadcrumb={[{ label: 'Ormoc Branch', href: route('ormoc.index') }]}
                         title={`Edit Booking — ${booking.client_name}`}
                         actions={
                             <>
-                                <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('ormoc.show', booking.id))}>Cancel</Button>
+                                <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('ormoc.index'))}>Cancel</Button>
                                 <Button type="submit" variant="primary" icon={Save} loading={processing}>Save Changes</Button>
                             </>
                         }
                     />
 
-                    {/* Card 1 — Client & Trip */}
-                    <FormCard title="Client & Trip">
+                    {/* Card 1 — Client & Travel */}
+                    <FormCard title="Client & Travel">
                         <FormRow>
                             <Select label="Agent Code *" options={[{ value: '', label: 'Select agent…' }, ...agentOptions]} value={data.agent_code} onChange={(e) => setData('agent_code', e.target.value)} error={errors.agent_code} />
                             <Input label="Booking Date *" type="date" value={data.date} onChange={(e) => setData('date', e.target.value)} error={errors.date} />
@@ -131,18 +131,19 @@ export default function OrmocBranchEdit({ booking, statuses, bookingTypes, agent
                                 )}
                             </div>
                         </FormRow>
+                    </FormCard>
+
+                    {/* Card 2 — Trip Details & Financials */}
+                    <FormCard title="Trip Details & Financials">
                         <FormRow>
                             <Input label="Hotel" value={data.hotel} onChange={(e) => setData('hotel', e.target.value)} error={errors.hotel} />
                             <Input label="Room Type" value={data.room_type} onChange={(e) => setData('room_type', e.target.value)} error={errors.room_type} />
                         </FormRow>
-                        <Textarea label="Flight Details" value={data.flight_details} onChange={(e) => setData('flight_details', e.target.value)} error={errors.flight_details} rows={3} />
-                        <Textarea label="Inclusions" value={data.inclusions} onChange={(e) => setData('inclusions', e.target.value)} error={errors.inclusions} rows={3} />
-                        <Textarea label="Exclusions" value={data.exclusions} onChange={(e) => setData('exclusions', e.target.value)} error={errors.exclusions} rows={3} />
-                        <Textarea label="Remarks" value={data.remarks} onChange={(e) => setData('remarks', e.target.value)} error={errors.remarks} rows={3} />
-                    </FormCard>
+                        <Textarea label="Flight Details" value={data.flight_details} onChange={(e) => setData('flight_details', e.target.value)} error={errors.flight_details} rows={2} />
+                        <Textarea label="Inclusions" value={data.inclusions} onChange={(e) => setData('inclusions', e.target.value)} error={errors.inclusions} rows={2} />
+                        <Textarea label="Exclusions" value={data.exclusions} onChange={(e) => setData('exclusions', e.target.value)} error={errors.exclusions} rows={2} />
+                        <Textarea label="Remarks" value={data.remarks} onChange={(e) => setData('remarks', e.target.value)} error={errors.remarks} rows={2} />
 
-                    {/* Card 2 — Money & Payment */}
-                    <FormCard title="Money & Payment">
                         <FormRow>
                             <Input label="Selling Price (PHP)" type="number" step="0.01" value={data.selling_price} onChange={(e) => handleFinancialChange('selling_price', e.target.value)} error={errors.selling_price} />
                             <Input label="Net Payable (PHP)" type="number" step="0.01" value={data.net_payable} onChange={(e) => handleFinancialChange('net_payable', e.target.value)} error={errors.net_payable} />
@@ -168,21 +169,27 @@ export default function OrmocBranchEdit({ booking, statuses, bookingTypes, agent
                         <Input label="Date of Payment" type="date" value={data.date_of_payment} onChange={(e) => setData('date_of_payment', e.target.value)} error={errors.date_of_payment} />
                     </FormCard>
 
-                    {/* Card 3 — References */}
-                    <FormCard title="References">
-                        <Input label="PO Number"  value={data.po_number}  onChange={(e) => setData('po_number',  e.target.value)} error={errors.po_number} />
-                        <Input label="SI Number"  value={data.si_number}  onChange={(e) => setData('si_number',  e.target.value)} error={errors.si_number} />
-                        <Input label="OR Number"  value={data.or_number}  onChange={(e) => setData('or_number',  e.target.value)} error={errors.or_number} />
-                        <Input label="AR Number"  value={data.ar_number}  onChange={(e) => setData('ar_number',  e.target.value)} error={errors.ar_number} />
+                    {/* Card 3 — References & Audit */}
+                    <FormCard title="References & Audit">
+                        <FormRow>
+                            <Input label="PO Number"  value={data.po_number}  onChange={(e) => setData('po_number',  e.target.value)} error={errors.po_number} />
+                            <Input label="SI Number"  value={data.si_number}  onChange={(e) => setData('si_number',  e.target.value)} error={errors.si_number} />
+                        </FormRow>
+                        <FormRow>
+                            <Input label="OR Number"  value={data.or_number}  onChange={(e) => setData('or_number',  e.target.value)} error={errors.or_number} />
+                            <Input label="AR Number"  value={data.ar_number}  onChange={(e) => setData('ar_number',  e.target.value)} error={errors.ar_number} />
+                        </FormRow>
                         <Input label="SOA Number" value={data.soa_number} onChange={(e) => setData('soa_number', e.target.value)} error={errors.soa_number} />
-                        <Input label="Transaction Type" value={data.transaction_type} onChange={(e) => setData('transaction_type', e.target.value)} error={errors.transaction_type} />
-                        <Input label="Source" value={data.source} onChange={(e) => setData('source', e.target.value)} error={errors.source} />
+                        <FormRow>
+                            <Input label="Transaction Type" value={data.transaction_type} onChange={(e) => setData('transaction_type', e.target.value)} error={errors.transaction_type} />
+                            <Input label="Source" value={data.source} onChange={(e) => setData('source', e.target.value)} error={errors.source} />
+                        </FormRow>
                         <Textarea label="Audit Remarks" value={data.audit_remarks} onChange={(e) => setData('audit_remarks', e.target.value)} error={errors.audit_remarks} rows={2} />
                         <Textarea label="Notes" value={data.notes} onChange={(e) => setData('notes', e.target.value)} error={errors.notes} rows={2} />
                     </FormCard>
 
                     <FormActions>
-                        <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('ormoc.show', booking.id))}>Cancel</Button>
+                        <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('ormoc.index'))}>Cancel</Button>
                         <Button type="submit" variant="primary" icon={Save} loading={processing}>Save Changes</Button>
                     </FormActions>
                 </FormLayout>

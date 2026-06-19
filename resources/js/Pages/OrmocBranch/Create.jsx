@@ -97,8 +97,8 @@ export default function OrmocBranchCreate({ statuses, bookingTypes, agentCodes, 
                         }
                     />
 
-                    {/* Card 1 — Client & Trip */}
-                    <FormCard title="Client & Trip">
+                    {/* Card 1 — Client & Travel */}
+                    <FormCard title="Client & Travel">
                         <FormRow>
                             <Select
                                 label="Agent Code *"
@@ -139,6 +139,10 @@ export default function OrmocBranchCreate({ statuses, bookingTypes, agentCodes, 
                                 )}
                             </div>
                         </FormRow>
+                    </FormCard>
+
+                    {/* Card 2 — Trip Details & Accommodation */}
+                    <FormCard title="Trip Details & Accommodation">
                         <FormRow>
                             <Input label="Hotel" value={data.hotel} onChange={(e) => setData('hotel', e.target.value)} error={errors.hotel} />
                             <Input label="Room Type" value={data.room_type} onChange={(e) => setData('room_type', e.target.value)} error={errors.room_type} />
@@ -147,10 +151,8 @@ export default function OrmocBranchCreate({ statuses, bookingTypes, agentCodes, 
                         <Textarea label="Inclusions" value={data.inclusions} onChange={(e) => setData('inclusions', e.target.value)} error={errors.inclusions} rows={2} />
                         <Textarea label="Exclusions" value={data.exclusions} onChange={(e) => setData('exclusions', e.target.value)} error={errors.exclusions} rows={2} />
                         <Textarea label="Remarks" value={data.remarks} onChange={(e) => setData('remarks', e.target.value)} error={errors.remarks} rows={2} />
-                    </FormCard>
 
-                    {/* Card 2 — Financials & Payment */}
-                    <FormCard title="Financials & Payment">
+                        {/* Financials & Payment */}
                         <FormRow>
                             <Input label="Selling Price (PHP)" type="number" step="0.01" value={data.selling_price} onChange={(e) => handleFinancialChange('selling_price', e.target.value)} error={errors.selling_price} />
                             <Input label="Net Payable (PHP)" type="number" step="0.01" value={data.net_payable} onChange={(e) => handleFinancialChange('net_payable', e.target.value)} error={errors.net_payable} />

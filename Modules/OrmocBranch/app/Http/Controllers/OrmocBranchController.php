@@ -20,20 +20,32 @@ use Modules\Visa\Models\VisaApplication;
 
 class OrmocBranchController extends Controller
 {
-    // ─── Roles with full write access ─────────────────────────────────────────
+    // ─── Roles with write access ───────────────────────────────────────────────
+    // branch_supervisor: full branch access; branch_sales_officer: own records only
+    // sales_ticketing_officer: OIC — escalated records only (not full branch access)
+    // president, COO, GSM, accounting_assistant: per matrix M2
     private const WRITE_ROLES = [
-        'general_manager',
-        'ormoc_branch_officer',
+        'president',
+        'chief_operating_officer',
+        'general_sales_manager',
+        'accounting_assistant',
+        'sales_ticketing_officer',
+        'branch_supervisor',
+        'branch_sales_officer',
     ];
 
     // Roles that can view Ormoc records
     private const VIEW_ROLES = [
-        'general_manager',
-        'ormoc_branch_officer',
-        'resa_officer',
-        'accounting_officer',
-        'disbursement_officer',
-        'admin_auditor',
+        'president',
+        'chief_operating_officer',
+        'finance_admin_supervisor',
+        'administrative_assistant',
+        'general_sales_manager',
+        'business_development_manager',
+        'accounting_assistant',
+        'sales_ticketing_officer',
+        'branch_supervisor',
+        'branch_sales_officer',
     ];
 
     // ─── Index ────────────────────────────────────────────────────────────────
@@ -52,9 +64,19 @@ class OrmocBranchController extends Controller
         $query = OrmocBooking::with(['branch', 'createdBy'])
             ->latest('date');
 
-        // Ormoc officers see only Ormoc-tagged records
-        if ($role === 'ormoc_branch_officer') {
+        // branch_supervisor sees all records in their branch (🌿)
+        if ($role === 'branch_supervisor') {
             $query->forBranch($user->branch_id);
+        }
+
+        // branch_sales_officer sees only their own records (🔒)
+        if ($role === 'branch_sales_officer') {
+            $query->where('created_by', $user->id);
+        }
+
+        // sales_ticketing_officer (OIC) — escalated records only, NOT full branch access (M2)
+        if ($role === 'sales_ticketing_officer') {
+            $query->where('escalated_to_head_office', true);
         }
 
         $query->search($search);
@@ -135,7 +157,7 @@ class OrmocBranchController extends Controller
         $booking = OrmocBooking::create($data);
 
         return redirect()
-            ->route('ormoc.show', $booking)
+            ->route('ormoc.index')
             ->with('flash', ['type' => 'success', 'message' => 'Booking recorded.']);
     }
 
@@ -149,8 +171,18 @@ class OrmocBranchController extends Controller
             abort(403);
         }
 
-        // Ormoc officers can only see their own branch records
-        if ($role === 'ormoc_branch_officer' && $ormoc->branch_id !== $request->user()->branch_id) {
+        // branch_supervisor may only see records within their branch (🌿)
+        if ($role === 'branch_supervisor' && $ormoc->branch_id !== $request->user()->branch_id) {
+            abort(403);
+        }
+
+        // branch_sales_officer may only see their own records (🔒)
+        if ($role === 'branch_sales_officer' && $ormoc->created_by !== $request->user()->id) {
+            abort(403);
+        }
+
+        // sales_ticketing_officer (OIC) may only see escalated records (M2)
+        if ($role === 'sales_ticketing_officer' && ! $ormoc->escalated_to_head_office) {
             abort(403);
         }
 
@@ -311,7 +343,7 @@ class OrmocBranchController extends Controller
         $ormoc->update($data);
 
         return redirect()
-            ->route('ormoc.show', $ormoc)
+            ->route('ormoc.index')
             ->with('flash', ['type' => 'success', 'message' => 'Booking updated.']);
     }
 
@@ -367,7 +399,7 @@ class OrmocBranchController extends Controller
     {
         $role = $request->user()?->getRoleNames()->first();
 
-        if ($role !== 'ormoc_branch_officer' && $role !== 'general_manager') {
+        if (! in_array($role, ['branch_supervisor', 'branch_sales_officer', 'president'], true)) {
             abort(403);
         }
 
@@ -375,8 +407,8 @@ class OrmocBranchController extends Controller
             return back()->with('flash', ['type' => 'warning', 'message' => 'Booking already escalated to head office.']);
         }
 
-        // Queue escalation email to all RESA Officers at QC head office
-        $resaOfficers = User::role('resa_officer')
+        // Queue escalation email to Sales & Ticketing Officer (OIC) at QC head office
+        $resaOfficers = User::role('sales_ticketing_officer')
             ->where('is_active', true)
             ->whereHas('branch', function ($q) {
                 $q->where('code', '!=', 'ORMOC');
@@ -464,7 +496,7 @@ class OrmocBranchController extends Controller
     {
         $role = $request->user()?->getRoleNames()->first();
 
-        if (! in_array($role, ['resa_officer', 'general_manager'], true)) {
+        if (! in_array($role, ['sales_ticketing_officer', 'president'], true)) {
             abort(403);
         }
 
@@ -548,7 +580,7 @@ class OrmocBranchController extends Controller
     {
         return in_array(
             $request->user()?->getRoleNames()->first() ?? '',
-            ['resa_officer', 'general_manager'],
+            ['sales_ticketing_officer', 'president'],
             true
         );
     }

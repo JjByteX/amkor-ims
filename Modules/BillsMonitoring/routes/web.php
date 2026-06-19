@@ -3,6 +3,20 @@
 use Illuminate\Support\Facades\Route;
 use Modules\BillsMonitoring\Http\Controllers\BillsMonitoringController;
 
+/*
+|--------------------------------------------------------------------------
+| Bills & On-Ques Monitoring Routes
+|--------------------------------------------------------------------------
+|
+| Preparers  : accounting_assistant
+| Checkers   : administrative_assistant, finance_admin_supervisor
+| Approvers  : president (JRT only)
+| Executors  : liaison_officer_finance (marks paid after physical payment)
+| Viewers    : + chief_operating_officer
+|
+| Approval chain: Prepared → Checked (Admin Asst) → Approved (President) → Paid (Liaison)
+*/
+
 Route::middleware(['auth', 'verified'])->prefix('bills')->name('bills.')->group(function () {
 
     Route::get('/', [BillsMonitoringController::class, 'index'])->name('index');

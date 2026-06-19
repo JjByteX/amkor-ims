@@ -82,7 +82,7 @@ export default function APEdit({ payable, currencies, paymentModes, statuses, su
                         subtitle="Update payable details"
                         actions={
                             <>
-                                <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('ap.show', payable.id))}>Cancel</Button>
+                                <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('ap.index'))}>Cancel</Button>
                                 <Button type="submit" variant="primary" icon={Save} loading={processing}>Save Changes</Button>
                             </>
                         }
@@ -162,7 +162,7 @@ export default function APEdit({ payable, currencies, paymentModes, statuses, su
                     </FormCard>
 
                     <FormActions>
-                        <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('ap.show', payable.id))}>Cancel</Button>
+                        <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('ap.index'))}>Cancel</Button>
                         <Button type="submit" variant="primary" icon={Save} loading={processing}>Save Changes</Button>
                     </FormActions>
                 </FormLayout>

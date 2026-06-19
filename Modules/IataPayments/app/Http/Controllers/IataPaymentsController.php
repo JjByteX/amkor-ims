@@ -16,14 +16,22 @@ class IataPaymentsController extends Controller
 {
     // ─── Roles ──────────────────────────────────────────────────────────────
 
-    // Per Notes.md IATA workflow: Dalle (disbursement_officer) prepares, Auditor checks, JRT approves
-    private const PREPARER_ROLES = ['disbursement_officer', 'accounting_officer'];
+    // Per matrix Module 10: accounting_assistant prepares, administrative_assistant checks, president approves
+    private const PREPARER_ROLES = ['accounting_assistant'];
 
-    private const CHECKER_ROLES = ['admin_auditor', 'general_manager'];
+    private const CHECKER_ROLES = ['administrative_assistant', 'finance_admin_supervisor'];
 
-    private const APPROVER_ROLES = ['general_manager'];
+    private const APPROVER_ROLES = ['president'];
 
-    private const VIEW_ROLES = ['disbursement_officer', 'accounting_officer', 'admin_auditor', 'general_manager'];
+    private const VIEW_ROLES = [
+        'president',
+        'chief_operating_officer',
+        'finance_admin_supervisor',
+        'administrative_assistant',
+        'general_sales_manager',
+        'accounting_assistant',
+        'liaison_officer_finance',
+    ];
 
     // ─── Index ───────────────────────────────────────────────────────────────
 
@@ -121,7 +129,7 @@ class IataPaymentsController extends Controller
         $payment = IataPayment::create($data);
 
         return redirect()
-            ->route('iata.show', $payment)
+            ->route('iata.index')
             ->with('flash', ['type' => 'success', 'message' => "IATA payment {$payment->payment_no} recorded."]);
     }
 
@@ -163,7 +171,7 @@ class IataPaymentsController extends Controller
         $this->requirePreparer($request);
 
         if ($payment->isApproved()) {
-            return redirect()->route('iata.show', $payment)
+            return redirect()->route('iata.index')
                 ->with('flash', ['type' => 'warning', 'message' => 'Record is approved and locked.']);
         }
 
@@ -204,7 +212,7 @@ class IataPaymentsController extends Controller
         $payment->update($data);
 
         return redirect()
-            ->route('iata.show', $payment)
+            ->route('iata.index')
             ->with('flash', ['type' => 'success', 'message' => 'IATA payment updated.']);
     }
 
@@ -213,7 +221,7 @@ class IataPaymentsController extends Controller
     public function destroy(Request $request, IataPayment $payment): RedirectResponse
     {
         $role = $request->user()?->getRoleNames()->first();
-        if (! in_array($role, ['general_manager', 'disbursement_officer'], true)) {
+        if ($role !== 'president') {
             abort(403);
         }
         if ($payment->isApproved()) {
@@ -327,7 +335,7 @@ class IataPaymentsController extends Controller
         }
 
         app(NotificationDispatcher::class)->notifyRoles(
-            ['general_manager', 'admin_auditor', 'accounting_officer'],
+            ['president', 'finance_admin_supervisor', 'administrative_assistant', 'accounting_assistant'],
             'IATA operator notified',
             "{$payment->operator_name} notification recorded for {$payment->payment_no}.",
             "/iata/{$payment->id}",

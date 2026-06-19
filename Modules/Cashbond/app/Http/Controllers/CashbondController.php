@@ -15,13 +15,35 @@ class CashbondController extends Controller
 {
     // ─── Roles ──────────────────────────────────────────────────────────────
 
-    private const PREPARER_ROLES = ['disbursement_officer'];
+    private const PREPARER_ROLES = ['accounting_assistant'];
 
-    private const CHECKER_ROLES = ['admin_auditor', 'general_manager'];
+    private const CHECKER_ROLES = ['administrative_assistant', 'finance_admin_supervisor'];
 
-    private const APPROVER_ROLES = ['general_manager'];
+    private const APPROVER_ROLES = ['president'];
 
-    private const VIEW_ROLES = ['disbursement_officer', 'admin_auditor', 'general_manager'];
+    private const VIEW_ROLES = [
+        'president',
+        'chief_operating_officer',
+        'finance_admin_supervisor',
+        'administrative_assistant',
+        'general_sales_manager',
+        'accounting_assistant',
+        'liaison_officer_finance',
+        'sales_reservation_officer',
+        'sales_ticketing_officer',
+        'group_sales_officer',
+        'branch_supervisor',
+        'branch_sales_officer',
+    ];
+
+    // Roles that may only see portal balances — NOT the reload request workflow (M8)
+    private const BALANCE_ONLY_ROLES = [
+        'sales_reservation_officer',
+        'sales_ticketing_officer',
+        'group_sales_officer',
+        'branch_supervisor',
+        'branch_sales_officer',
+    ];
 
     // ════════════════════════════════════════════════════════════════════════
     // MAIN INDEX — stat cards + reload requests table
@@ -36,6 +58,9 @@ class CashbondController extends Controller
 
         // Portals — lightweight list for the filter dropdown only
         $portals = CashbondPortal::active()->get(['id', 'name', 'current_balance', 'maintaining_balance']);
+
+        // Sales and branch roles may only see portal balances — not the reload workflow (M8: 👁 balance only)
+        $balanceOnly = in_array($role, self::BALANCE_ONLY_ROLES, true);
 
         // ── Summary stat cards ─────────────────────────────────────────────
         $summary = [
@@ -71,7 +96,7 @@ class CashbondController extends Controller
             });
         }
 
-        $reloads = $query->paginate(25)->withQueryString();
+        $reloads = $balanceOnly ? null : $query->paginate(25)->withQueryString();
 
         return Inertia::render('Cashbond/Index', [
             'portals'          => $portals,
@@ -82,6 +107,7 @@ class CashbondController extends Controller
             'canWrite'         => $this->canPrepare($request),
             'canCheck'         => $this->canCheck($request),
             'canApprove'       => $this->canApprove($request),
+            'balanceOnly'      => $balanceOnly,
         ]);
     }
 
@@ -116,7 +142,7 @@ class CashbondController extends Controller
         $reload = CashbondReload::create($data);
 
         return redirect()
-            ->route('cashbond.reloads.show', $reload)
+            ->route('cashbond.index')
             ->with('flash', ['type' => 'success', 'message' => "Reload request {$reload->reload_no} created."]);
     }
 
@@ -124,6 +150,11 @@ class CashbondController extends Controller
     {
         $role = $request->user()?->getRoleNames()->first();
         if (! in_array($role, self::VIEW_ROLES, true)) {
+            abort(403);
+        }
+
+        // Sales and branch roles see portal balances only — reload detail is finance-internal (M8)
+        if (in_array($role, self::BALANCE_ONLY_ROLES, true)) {
             abort(403);
         }
 
@@ -225,7 +256,7 @@ class CashbondController extends Controller
         $reload->loadMissing('portal');
 
         app(NotificationDispatcher::class)->notifyRoles(
-            ['general_manager', 'admin_auditor', 'accounting_officer'],
+            ['president', 'finance_admin_supervisor', 'administrative_assistant', 'accounting_assistant'],
             'Cashbond supplier notification recorded',
             "{$reload->reload_no} for {$reload->portal?->name} has been marked as supplier-notified.",
             "/cashbond/reloads/{$reload->id}",

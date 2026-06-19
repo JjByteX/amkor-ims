@@ -64,7 +64,7 @@ export default function BirEdit({ transaction, documentTypes, sourceTypes, payme
                         subtitle={`${documentTypes[transaction.document_type] ?? transaction.document_type} · ${transaction.client_name}`}
                         actions={
                             <>
-                                <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('bir.show', transaction.id))}>Cancel</Button>
+                                <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('bir.index'))}>Cancel</Button>
                                 <Button type="submit" variant="primary" icon={Save} loading={processing}>Save Changes</Button>
                             </>
                         }
@@ -179,7 +179,7 @@ export default function BirEdit({ transaction, documentTypes, sourceTypes, payme
                     </FormCard>
 
                     <FormActions>
-                        <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('bir.show', transaction.id))}>Cancel</Button>
+                        <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('bir.index'))}>Cancel</Button>
                         <Button type="submit" variant="primary" icon={Save} loading={processing}>Save Changes</Button>
                     </FormActions>
                 </FormLayout>

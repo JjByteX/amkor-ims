@@ -17,31 +17,37 @@ use Modules\Contacts\Models\Contact;
 class AccountsPayableController extends Controller
 {
     // ─── Roles ─────────────────────────────────────────────────────────────
+    // Canonical slugs per Amkor_IMS___Roles___Permissions_Matrix_1.md
 
-    // Can create and update payables
+    // Can create and update payables (Module 5: accounting_assistant is primary owner)
     private const PREPARER_ROLES = [
-        'accounting_officer',
-        'disbursement_officer',
+        'accounting_assistant',
     ];
 
-    // Can check (Admin Auditor step)
+    // Can check / annotate payable (Module 5: administrative_assistant audit step;
+    // finance_admin_supervisor can annotate; president has full access)
     private const CHECKER_ROLES = [
-        'admin_auditor',
-        'general_manager',
+        'administrative_assistant',
+        'finance_admin_supervisor',
+        'president',
     ];
 
-    // Can give final approval (JRT)
+    // Can give final approval — president only (Module 5: "final approver (go-signal for settlement)")
     private const APPROVER_ROLES = [
-        'general_manager',
+        'president',
     ];
 
-    // Full view access
+    // Full view access (Module 5)
     private const VIEW_ROLES = [
-        'accounting_officer',
-        'disbursement_officer',
-        'admin_auditor',
-        'general_manager',
-        'resa_officer',       // can originate payment requests
+        'president',
+        'chief_operating_officer',
+        'finance_admin_supervisor',
+        'administrative_assistant',
+        'general_sales_manager',
+        'accounting_assistant',
+        'liaison_officer_finance',
+        'liaison_officer_visa',
+        'visa_documentation_supervisor',
     ];
 
     // ─── Index ──────────────────────────────────────────────────────────────
@@ -156,7 +162,7 @@ class AccountsPayableController extends Controller
         $payable = Payable::create($data);
 
         return redirect()
-            ->route('ap.show', $payable)
+            ->route('ap.index')
             ->with('flash', ['type' => 'success', 'message' => 'Payable recorded.']);
     }
 
@@ -203,7 +209,7 @@ class AccountsPayableController extends Controller
         $this->requirePreparer($request);
 
         if ($ap->isApproved()) {
-            return redirect()->route('ap.show', $ap)
+            return redirect()->route('ap.index')
                 ->with('flash', ['type' => 'warning', 'message' => 'Record is approved and locked.']);
         }
 
@@ -259,7 +265,7 @@ class AccountsPayableController extends Controller
         $ap->update($data);
 
         return redirect()
-            ->route('ap.show', $ap)
+            ->route('ap.index')
             ->with('flash', ['type' => 'success', 'message' => 'Payable updated.']);
     }
 
@@ -269,7 +275,7 @@ class AccountsPayableController extends Controller
     {
         $role = $request->user()?->getRoleNames()->first();
 
-        if (! in_array($role, ['general_manager', 'accounting_officer'], true)) {
+        if ($role !== 'president') {
             abort(403);
         }
 
@@ -287,7 +293,7 @@ class AccountsPayableController extends Controller
         $role = $request->user()?->getRoleNames()->first();
 
         if (! in_array($role, self::CHECKER_ROLES, true)) {
-            abort(403, 'Only the Admin Auditor or General Manager can check payables.');
+            abort(403, 'Only the Administrative Assistant, Finance & Admin Supervisor, or President can check payables.');
         }
 
         if ($ap->checked_at) {
@@ -312,7 +318,7 @@ class AccountsPayableController extends Controller
         $role = $request->user()?->getRoleNames()->first();
 
         if (! in_array($role, self::APPROVER_ROLES, true)) {
-            abort(403, 'Only the General Manager can approve payables.');
+            abort(403, 'Only the President can approve payables.');
         }
 
         if (! $ap->checked_at) {
@@ -337,7 +343,7 @@ class AccountsPayableController extends Controller
     {
         $role = $request->user()?->getRoleNames()->first();
 
-        if (! in_array($role, ['disbursement_officer', 'accounting_officer', 'general_manager'], true)) {
+        if (! in_array($role, ['accounting_assistant', 'liaison_officer_finance', 'president'], true)) {
             abort(403);
         }
 
@@ -384,7 +390,7 @@ class AccountsPayableController extends Controller
     {
         $role = $request->user()?->getRoleNames()->first();
 
-        if (! in_array($role, array_merge(self::PREPARER_ROLES, ['general_manager']), true)) {
+        if (! in_array($role, array_merge(self::PREPARER_ROLES, ['president']), true)) {
             abort(403);
         }
 
@@ -419,7 +425,7 @@ class AccountsPayableController extends Controller
     {
         $role = $request->user()?->getRoleNames()->first();
 
-        if (! in_array($role, array_merge(self::PREPARER_ROLES, ['general_manager']), true)) {
+        if (! in_array($role, array_merge(self::PREPARER_ROLES, ['president']), true)) {
             abort(403);
         }
 

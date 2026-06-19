@@ -1,9 +1,29 @@
 import { useState, useCallback } from 'react';
 import { usePage, Link } from '@inertiajs/react';
 import {
-    Shield, Clock, CheckCircle2, LogIn, LogOut, AlertTriangle,
+    Shield, Clock, CheckCircle2, LogIn, LogOut,
     History, MonitorSmartphone, ArrowRightLeft,
+    CalendarClock, Landmark, ReceiptText, Files, PlaneTakeoff,
+    FileCheck2, WalletCards, CreditCard, Building2, ShieldCheck,
+    MapPinned, Megaphone,
 } from 'lucide-react';
+
+/* ── Attention label → icon map ───────────────────────────────────────────── */
+const ATTENTION_ICONS = {
+    'Late records today'            : CalendarClock,
+    'Pending payables'              : Landmark,
+    'Open receivables'              : ReceiptText,
+    'Bills pending'                 : Files,
+    'Bills overdue'                 : Files,
+    'Bookings awaiting confirmation': PlaneTakeoff,
+    'Visa in process'               : FileCheck2,
+    'Vouchers pending'              : WalletCards,
+    'Card payments pending'         : CreditCard,
+    'IATA pending'                  : Building2,
+    'Cashbond reloads pending'      : ShieldCheck,
+    'Ormoc pending'                 : MapPinned,
+    'For approval'                  : Megaphone,
+};
 import Card from '../UI/Card';
 
 /**
@@ -55,14 +75,6 @@ function saveRecord(uid, r) {
     catch {}
 }
 
-/* Tone → badge colours */
-const ALERT_TONE = {
-    error  : { bg: 'color-mix(in srgb, var(--color-error) 12%, var(--color-card))',   text: 'var(--color-error)',   border: 'color-mix(in srgb, var(--color-error) 25%, transparent)'   },
-    warning: { bg: 'color-mix(in srgb, var(--color-warning) 12%, var(--color-card))', text: 'var(--color-warning)', border: 'color-mix(in srgb, var(--color-warning) 25%, transparent)' },
-    success: { bg: 'color-mix(in srgb, var(--color-success) 12%, var(--color-card))', text: 'var(--color-success)', border: 'color-mix(in srgb, var(--color-success) 25%, transparent)' },
-    default: { bg: 'var(--color-bg)',                                                   text: 'var(--color-text-muted)', border: 'var(--color-border)' },
-};
-
 /* Activity type config */
 const ACTIVITY_TYPE = {
     login   : { icon: LogIn,            color: 'var(--color-success)', label: 'Logged in'   },
@@ -99,9 +111,9 @@ export default function ProfileTimePanel({ attentionItems = [], loginActivity = 
             label: 'Clock In', Icon: LogIn,
         },
         in: {
-            bg: 'color-mix(in srgb, var(--color-warning) 10%, var(--color-card))',
-            color: 'var(--color-warning)',
-            border: '1.5px solid color-mix(in srgb, var(--color-warning) 40%, transparent)',
+            bg: 'var(--color-card)',
+            color: 'var(--color-success)',
+            border: '1.5px solid var(--color-border)',
             label: 'Clock Out', Icon: LogOut,
         },
     };
@@ -153,20 +165,14 @@ export default function ProfileTimePanel({ attentionItems = [], loginActivity = 
 
             {/* ── Attendance ──────────────────────────────────────────── */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <p style={{
-                    fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
-                    letterSpacing: '0.07em', color: 'var(--color-text-muted)',
-                }}>
-                    Attendance — Today
-                </p>
 
                 {state === 'done' ? (
                     <div style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
                         height: 'var(--dash-timebtn-h, 44px)', borderRadius: 'var(--radius-md)',
-                        background: 'color-mix(in srgb, var(--color-success) 10%, var(--color-card))',
-                        border: '1.5px solid color-mix(in srgb, var(--color-success) 30%, transparent)',
-                        fontSize: 13, fontWeight: 600, color: 'var(--color-success)',
+                        background: 'var(--color-primary)',
+                        border: 'none',
+                        fontSize: 13, fontWeight: 600, color: '#ffffff',
                     }}>
                         <CheckCircle2 size={16} strokeWidth={2.2} />
                         Attendance recorded
@@ -210,20 +216,13 @@ export default function ProfileTimePanel({ attentionItems = [], loginActivity = 
                 )}
             </div>
 
-            {/* ── Attention / alert badges — only rendered when items exist ── */}
             {attentionItems.length > 0 && (
                 <>
                     <div style={{ height: 1, background: 'var(--color-border-soft)' }} />
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        <p style={{
-                            fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
-                            letterSpacing: '0.07em', color: 'var(--color-text-muted)',
-                        }}>
-                            Needs attention
-                        </p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                             {attentionItems.slice(0, 6).map((item, i) => {
-                                const tone   = ALERT_TONE[item.tone] ?? ALERT_TONE.default;
+                                const ItemIcon = ATTENTION_ICONS[item.label] ?? Megaphone;
                                 const badge  = (
                                     <div
                                         key={i}
@@ -233,18 +232,16 @@ export default function ProfileTimePanel({ attentionItems = [], loginActivity = 
                                             justifyContent : 'space-between',
                                             padding        : 'var(--badge-py, 4px) var(--space-1, 8px)',
                                             borderRadius   : 'var(--radius-md)',
-                                            background     : tone.bg,
-                                            border         : `1px solid ${tone.border}`,
-                                            fontSize       : 'var(--font-size-small, 13px)',
+                                            fontSize       : 13,
                                         }}
                                     >
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: tone.text, fontWeight: 600 }}>
-                                            <AlertTriangle size={12} strokeWidth={2} />
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-text-muted)', fontWeight: 400 }}>
+                                            <ItemIcon size={15} strokeWidth={1.75} />
                                             {item.label}
                                         </span>
                                         <span style={{
-                                            background  : tone.text,
-                                            color       : 'var(--color-card)',
+                                            background  : 'var(--color-border)',
+                                            color       : 'var(--color-text)',
                                             borderRadius: 99,
                                             fontSize    : 'var(--badge-font-size, 11px)',
                                             fontWeight  : 700,
@@ -266,7 +263,7 @@ export default function ProfileTimePanel({ attentionItems = [], loginActivity = 
 
             {/* ── Login history ──────────────────────────────────────── */}
             <>
-                <div style={{ height: 1, background: 'var(--color-border-soft)' }} />
+                <div style={{ height: 1, background: 'var(--color-border-soft)', marginTop: 'auto' }} />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <p style={{
                         fontSize: 10, fontWeight: 700, textTransform: 'uppercase',

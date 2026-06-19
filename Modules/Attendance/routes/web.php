@@ -8,12 +8,15 @@ use Modules\Attendance\Http\Controllers\AttendanceController;
 | Attendance Module Routes
 |--------------------------------------------------------------------------
 |
-| View all:    hr_admin_officer, general_manager, admin_auditor
-| Manage/edit: hr_admin_officer, general_manager
+| View all:    finance_admin_supervisor, president, administrative_assistant,
+|              chief_operating_officer
+| View team:   general_sales_manager, branch_supervisor,
+|              visa_documentation_supervisor, business_development_manager
+| Manage/edit: finance_admin_supervisor, president, chief_operating_officer
 | Self clock:  all authenticated users (any role)
 |
 | Employees self-service: /hr/attendance            → own records only
-| HR management:          /hr/attendance            → full table (HR roles)
+| HR management:          /hr/attendance            → full table (supervisor roles)
 | Report:                 /hr/attendance/report     → monthly summary
 */
 
@@ -34,10 +37,10 @@ Route::middleware(['auth'])->prefix('hr/attendance')->name('attendance.')->group
     Route::post('/clock-in', [AttendanceController::class, 'clockIn'])->name('clock-in');
     Route::post('/clock-out', [AttendanceController::class, 'clockOut'])->name('clock-out');
 
-    // ── Monthly report (HR + Auditor + JRT) ──────────────────────────────
+    // ── Monthly report (finance_admin_supervisor + administrative_assistant + president) ──
     Route::get('/report', [AttendanceController::class, 'report'])->name('report');
 
-    // ── HR override — create/edit any record ──────────────────────────────
+    // ── Supervisor override — create/edit any record ──────────────────────
     Route::get('/create', [AttendanceController::class, 'create'])->name('create');
     Route::post('/', [AttendanceController::class, 'store'])->name('store');
     Route::get('/{attendance}', [AttendanceController::class, 'show'])->name('show');

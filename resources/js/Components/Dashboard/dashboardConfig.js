@@ -21,19 +21,24 @@
  *   people     → Employees, Active employees, Contacts
  *   today      → Present today, Unread notices
  *
- * ROLE → SECTIONS THEY RECEIVE (from listener ->can() guards):
- *   general_manager      → all sections
- *   chief_operations_officer → finance(AR), sales, marketing, operations
- *   general_sales_manager    → finance(AR), sales, operations
- *   accounting_officer       → finance, sales, operations, visa, today
- *   disbursement_officer     → finance, visa, today
- *   admin_auditor            → finance, sales, operations, visa, today
- *   hr_admin_officer         → people, today, finance(bills/cc)
- *   resa_officer             → sales, operations, finance(AR), today
- *   ormoc_branch_officer     → sales, operations, finance(AR)
- *   visa_documentation_officer → visa, finance(AR), today
- *   liaison_officer          → visa, today
- *   marketing_officer        → marketing, today
+ * ROLE → SECTIONS (sourced from Roles & Permissions Matrix):
+ *   president                    → all sections
+ *   chief_operating_officer      → finance(AR), sales, marketing, operations, people, today
+ *   finance_admin_supervisor     → finance, sales, operations, visa, people, today
+ *   administrative_assistant     → finance, sales, operations, visa, today
+ *   accounting_assistant         → finance, sales, operations, visa, today
+ *   liaison_officer_finance      → finance(payables/bills/cashbond/iata), today
+ *   general_sales_manager        → finance(AR), sales, operations, today
+ *   sales_reservation_officer    → sales(own), operations(own), finance(AR own), today
+ *   sales_ticketing_officer      → sales(own), operations(own+ormoc escalated), finance(AR own), today
+ *   group_sales_officer          → sales(own), operations(own), finance(AR own), today
+ *   business_development_manager → sales(dept), marketing, today
+ *   sales_marketing_officer      → marketing(own), today
+ *   visa_documentation_supervisor→ visa, finance(AR dept), sales(dept), today
+ *   liaison_officer_visa         → visa(payment tasks), today
+ *   visa_documentation_officer   → visa(own), sales(own), today
+ *   branch_supervisor            → operations(ormoc), finance(AR ormoc), sales(branch), today
+ *   branch_sales_officer         → operations(ormoc own), sales(own), today
  *
  * Widget counts per role use clean grid divisors (4 or 6) so auto-fill
  * never leaves trailing whitespace.
@@ -42,9 +47,9 @@
 
 export const ROLE_CONFIG = {
 
-    /* ── General Manager — 8 widgets (4 cols × 2 rows) ──────────────────── */
-    general_manager: {
-        label    : 'General Manager',
+    /* ── 1. President — 8 widgets (4 cols × 2 rows) ─────────────────────── */
+    president: {
+        label    : 'President',
         attention: ['finance', 'operations'],
         widgets  : [
             // Row 1 — money first
@@ -90,9 +95,9 @@ export const ROLE_CONFIG = {
         ],
     },
 
-    /* ── Chief Operations Officer — 6 widgets (3 cols × 2 rows) ─────────── */
-    chief_operations_officer: {
-        label    : 'Chief Operations Officer',
+    /* ── 2. Chief Operating Officer — 6 widgets (3 cols × 2 rows) ───────── */
+    chief_operating_officer: {
+        label    : 'Chief Operating Officer',
         attention: ['finance', 'operations'],
         widgets  : [
             { section: 'sales',      label: 'Sales MTD',          icon: 'ChartSpline',       href: '/sales' },
@@ -120,7 +125,102 @@ export const ROLE_CONFIG = {
         ],
     },
 
-    /* ── General Sales Manager — 6 widgets (3 cols × 2 rows) ────────────── */
+    /* ── 3. Finance & Admin Supervisor — 8 widgets (4 cols × 2 rows) ─────── */
+    finance_admin_supervisor: {
+        label    : 'Finance & Admin Supervisor',
+        attention: ['finance', 'people'],
+        widgets  : [
+            { section: 'finance',    label: 'Payable balance',    icon: 'BanknoteArrowDown', href: '/payables' },
+            { section: 'finance',    label: 'Receivable balance',  icon: 'ReceiptText',       href: '/ar' },
+            { section: 'sales',      label: 'Sales MTD',           icon: 'ChartSpline',       href: '/sales' },
+            { section: 'people',     label: 'Active employees',    icon: 'UsersRound',        href: '/hr' },
+            { section: 'finance',    label: 'BIR records',         icon: 'ClipboardCheck',    href: '/bir' },
+            { section: 'finance',    label: 'Payables',            icon: 'Landmark',          href: '/payables' },
+            { section: 'today',      label: 'Present today',       icon: 'CalendarClock',     href: '/attendance' },
+            { section: 'today',      label: 'Unread notices',      icon: 'BellDot',           href: '/notifications' },
+        ],
+        charts: [
+            {
+                type   : 'bar',
+                section: 'sales',
+                dataKey: 'monthly_by_department',
+                title  : 'Monthly sales by department',
+                span   : 'full',
+            },
+            {
+                type   : 'donut',
+                section: 'visa',
+                dataKey: 'status_breakdown',
+                title  : 'Visa application status',
+                span   : 'half',
+            },
+        ],
+    },
+
+    /* ── 4. Administrative Assistant — 8 widgets (4 cols × 2 rows) ──────── */
+    administrative_assistant: {
+        label    : 'Administrative Assistant',
+        attention: ['finance', 'operations'],
+        widgets  : [
+            { section: 'finance',    label: 'Payable balance',    icon: 'BanknoteArrowDown', href: '/payables' },
+            { section: 'finance',    label: 'Receivable balance',  icon: 'ReceiptText',       href: '/ar' },
+            { section: 'sales',      label: 'Sales MTD',           icon: 'ChartSpline',       href: '/sales' },
+            { section: 'operations', label: 'Bookings',            icon: 'PlaneTakeoff',      href: '/reservation' },
+            { section: 'finance',    label: 'Payables',            icon: 'Landmark',          href: '/payables' },
+            { section: 'visa',       label: 'Open applications',   icon: 'FileCheck2',        href: '/visa' },
+            { section: 'today',      label: 'Present today',       icon: 'CalendarClock',     href: '/attendance' },
+            { section: 'finance',    label: 'BIR records',         icon: 'ClipboardCheck',    href: '/bir' },
+        ],
+        charts: [
+            {
+                type   : 'bar',
+                section: 'sales',
+                dataKey: 'monthly_by_department',
+                title  : 'Monthly sales by department',
+                span   : 'full',
+            },
+        ],
+    },
+
+    /* ── 5. Accounting Assistant — 6 widgets (3 cols × 2 rows) ──────────── */
+    accounting_assistant: {
+        label    : 'Accounting Assistant',
+        attention: ['finance', 'operations'],
+        widgets  : [
+            { section: 'finance',    label: 'Payable balance',    icon: 'BanknoteArrowDown', href: '/payables' },
+            { section: 'finance',    label: 'Receivable balance',  icon: 'ReceiptText',       href: '/ar' },
+            { section: 'finance',    label: 'Payables',            icon: 'Landmark',          href: '/payables' },
+            { section: 'sales',      label: 'Sales MTD',           icon: 'ChartSpline',       href: '/sales' },
+            { section: 'finance',    label: 'BIR records',         icon: 'ClipboardCheck',    href: '/bir' },
+            { section: 'today',      label: 'Present today',       icon: 'CalendarClock',     href: '/attendance' },
+        ],
+        charts: [
+            {
+                type   : 'bar',
+                section: 'sales',
+                dataKey: 'monthly_by_department',
+                title  : 'Monthly sales by department',
+                span   : 'full',
+            },
+        ],
+    },
+
+    /* ── 6. Liaison Officer (Finance) — 6 widgets (3 cols × 2 rows) ─────── */
+    liaison_officer_finance: {
+        label    : 'Liaison Officer (Finance)',
+        attention: ['finance'],
+        widgets  : [
+            { section: 'finance', label: 'Payable balance',  icon: 'BanknoteArrowDown', href: '/payables' },
+            { section: 'finance', label: 'Payables',         icon: 'Landmark',          href: '/payables' },
+            { section: 'finance', label: 'Bills',            icon: 'Files',             href: '/bills' },
+            { section: 'finance', label: 'IATA payments',    icon: 'PlaneTakeoff',      href: '/iata' },
+            { section: 'finance', label: 'Credit cards',     icon: 'CreditCard',        href: '/credit-cards' },
+            { section: 'finance', label: 'Cashbond portals', icon: 'WalletCards',       href: '/cashbond' },
+        ],
+        charts: [],
+    },
+
+    /* ── 7. General Sales Manager — 6 widgets (3 cols × 2 rows) ─────────── */
     general_sales_manager: {
         label    : 'General Sales Manager',
         attention: ['finance', 'operations'],
@@ -157,102 +257,9 @@ export const ROLE_CONFIG = {
         ],
     },
 
-    /* ── Accounting Officer — 6 widgets (3 cols × 2 rows) ───────────────── */
-    accounting_officer: {
-        label    : 'Accounting Officer',
-        attention: ['finance', 'operations'],
-        widgets  : [
-            { section: 'finance',    label: 'Payable balance',    icon: 'BanknoteArrowDown', href: '/payables' },
-            { section: 'finance',    label: 'Receivable balance',  icon: 'ReceiptText',       href: '/ar' },
-            { section: 'finance',    label: 'Payables',            icon: 'Landmark',          href: '/payables' },
-            { section: 'sales',      label: 'Sales MTD',           icon: 'ChartSpline',       href: '/sales' },
-            { section: 'finance',    label: 'BIR records',         icon: 'ClipboardCheck',    href: '/bir' },
-            { section: 'today',      label: 'Present today',       icon: 'CalendarClock',     href: '/attendance' },
-        ],
-        charts: [
-            {
-                type   : 'bar',
-                section: 'sales',
-                dataKey: 'monthly_by_department',
-                title  : 'Monthly sales by department',
-                span   : 'full',
-            },
-        ],
-    },
-
-    /* ── Disbursement Officer — 6 widgets (3 cols × 2 rows) ─────────────── */
-    disbursement_officer: {
-        label    : 'Disbursement Officer',
-        attention: ['finance'],
-        widgets  : [
-            { section: 'finance', label: 'Payable balance',  icon: 'BanknoteArrowDown', href: '/payables' },
-            { section: 'finance', label: 'Payables',         icon: 'Landmark',          href: '/payables' },
-            { section: 'finance', label: 'Bills',            icon: 'Files',             href: '/bills' },
-            { section: 'finance', label: 'IATA payments',    icon: 'PlaneTakeoff',      href: '/iata' },
-            { section: 'finance', label: 'Credit cards',     icon: 'CreditCard',        href: '/credit-cards' },
-            { section: 'finance', label: 'Cashbond portals', icon: 'WalletCards',       href: '/cashbond' },
-        ],
-        charts: [
-            {
-                type   : 'donut',
-                section: 'visa',
-                dataKey: 'status_breakdown',
-                title  : 'Visa application status',
-                span   : 'half',
-            },
-            {
-                type   : 'bar',
-                section: 'visa',
-                dataKey: 'individual_income',
-                title  : 'Visa income by agent YTD',
-                span   : 'half',
-            },
-        ],
-    },
-
-    /* ── Admin Auditor — 8 widgets (4 cols × 2 rows) ─────────────────────── */
-    admin_auditor: {
-        label    : 'Admin Auditor',
-        attention: ['finance', 'operations'],
-        widgets  : [
-            { section: 'finance',    label: 'Payable balance',    icon: 'BanknoteArrowDown', href: '/payables' },
-            { section: 'finance',    label: 'Receivable balance',  icon: 'ReceiptText',       href: '/ar' },
-            { section: 'sales',      label: 'Sales MTD',           icon: 'ChartSpline',       href: '/sales' },
-            { section: 'operations', label: 'Bookings',            icon: 'PlaneTakeoff',      href: '/reservation' },
-            { section: 'finance',    label: 'Payables',            icon: 'Landmark',          href: '/payables' },
-            { section: 'visa',       label: 'Open applications',   icon: 'FileCheck2',        href: '/visa' },
-            { section: 'today',      label: 'Present today',       icon: 'CalendarClock',     href: '/attendance' },
-            { section: 'finance',    label: 'BIR records',         icon: 'ClipboardCheck',    href: '/bir' },
-        ],
-        charts: [
-            {
-                type   : 'bar',
-                section: 'sales',
-                dataKey: 'monthly_by_department',
-                title  : 'Monthly sales by department',
-                span   : 'full',
-            },
-        ],
-    },
-
-    /* ── HR & Admin Officer — 6 widgets (3 cols × 2 rows) ───────────────── */
-    hr_admin_officer: {
-        label    : 'HR & Admin Officer',
-        attention: ['today', 'people'],
-        widgets  : [
-            { section: 'today',   label: 'Present today',    icon: 'CalendarClock',  href: '/attendance' },
-            { section: 'people',  label: 'Active employees', icon: 'UsersRound',     href: '/hr' },
-            { section: 'people',  label: 'Employees',        icon: 'UserRoundCheck', href: '/hr' },
-            { section: 'finance', label: 'Bills',            icon: 'Files',          href: '/bills' },
-            { section: 'finance', label: 'Credit cards',     icon: 'CreditCard',     href: '/credit-cards' },
-            { section: 'today',   label: 'Unread notices',   icon: 'BellDot',        href: '/notifications' },
-        ],
-        charts: [],
-    },
-
-    /* ── RESA Officer — 6 widgets (3 cols × 2 rows) ──────────────────────── */
-    resa_officer: {
-        label    : 'RESA Officer',
+    /* ── 8. Sales & Reservation Officer — 6 widgets (3 cols × 2 rows) ───── */
+    sales_reservation_officer: {
+        label    : 'Sales & Reservation Officer',
         attention: ['operations'],
         widgets  : [
             { section: 'sales',      label: 'Sales MTD',          icon: 'ChartSpline',    href: '/sales' },
@@ -280,16 +287,16 @@ export const ROLE_CONFIG = {
         ],
     },
 
-    /* ── Ormoc Branch Officer — 6 widgets (3 cols × 2 rows) ─────────────── */
-    ormoc_branch_officer: {
-        label    : 'Ormoc Branch Officer',
+    /* ── 9. Sales & Ticketing Officer (OIC) — 6 widgets (3 cols × 2 rows) ─ */
+    sales_ticketing_officer: {
+        label    : 'Sales & Ticketing Officer',
         attention: ['operations'],
         widgets  : [
             { section: 'sales',      label: 'Sales MTD',          icon: 'ChartSpline',    href: '/sales' },
             { section: 'sales',      label: 'Sales YTD',          icon: 'Target',         href: '/sales' },
-            { section: 'operations', label: 'Ormoc bookings',     icon: 'MapPinned',      href: '/ormoc' },
-            { section: 'operations', label: 'Ormoc sales',        icon: 'BanknoteArrowUp', href: '/ormoc' },
             { section: 'operations', label: 'Bookings',           icon: 'PlaneTakeoff',   href: '/reservation' },
+            { section: 'operations', label: 'Ormoc bookings',     icon: 'MapPinned',      href: '/ormoc' },
+            { section: 'operations', label: 'RESA income',        icon: 'ChartSpline',    href: '/reservation/sales-report' },
             { section: 'finance',    label: 'Receivable balance', icon: 'ReceiptText',    href: '/ar' },
         ],
         charts: [
@@ -300,19 +307,95 @@ export const ROLE_CONFIG = {
                 title  : 'Progress curve — target vs achieved',
                 span   : 'full',
             },
+        ],
+    },
+
+    /* ── 10. Group Sales Officer — 6 widgets (3 cols × 2 rows) ──────────── */
+    group_sales_officer: {
+        label    : 'Group Sales Officer',
+        attention: ['operations'],
+        widgets  : [
+            { section: 'sales',      label: 'Sales MTD',          icon: 'ChartSpline',    href: '/sales' },
+            { section: 'sales',      label: 'Sales YTD',          icon: 'Target',         href: '/sales' },
+            { section: 'operations', label: 'Bookings',           icon: 'PlaneTakeoff',   href: '/reservation' },
+            { section: 'operations', label: 'Confirmed',          icon: 'CircleCheckBig', href: '/reservation' },
+            { section: 'operations', label: 'RESA income',        icon: 'ChartSpline',    href: '/reservation/sales-report' },
+            { section: 'finance',    label: 'Receivable balance', icon: 'ReceiptText',    href: '/ar' },
+        ],
+        charts: [
             {
-                type   : 'bar',
+                type   : 'line',
                 section: 'sales',
-                dataKey: 'monthly_by_department',
-                title  : 'Monthly sales by department',
+                dataKey: 'progress_curve',
+                title  : 'Progress curve — target vs achieved',
                 span   : 'full',
             },
         ],
     },
 
-    /* ── Visa & Documentation Officer — 6 widgets (3 cols × 2 rows) ─────── */
-    visa_documentation_officer: {
-        label    : 'Visa & Documentation Officer',
+    /* ── 11. Business Development Manager — 6 widgets (3 cols × 2 rows) ─── */
+    business_development_manager: {
+        label    : 'Business Development Manager',
+        attention: ['marketing'],
+        widgets  : [
+            { section: 'marketing', label: 'Total spend',       icon: 'BanknoteArrowDown', href: '/marketing' },
+            { section: 'marketing', label: 'Active campaigns',  icon: 'Megaphone',         href: '/marketing' },
+            { section: 'marketing', label: 'Pending approvals', icon: 'CircleCheckBig',    href: '/marketing' },
+            { section: 'marketing', label: 'Scheduled blasts',  icon: 'Send',              href: '/marketing' },
+            { section: 'marketing', label: 'Total budget',      icon: 'Landmark',          href: '/marketing' },
+            { section: 'marketing', label: 'Budget variance',   icon: 'Target',            href: '/marketing' },
+        ],
+        charts: [
+            {
+                type   : 'bar',
+                section: 'marketing',
+                dataKey: 'budget_vs_spend',
+                title  : 'Spend by category',
+                span   : 'full',
+            },
+            {
+                type   : 'bar',
+                section: 'marketing',
+                dataKey: 'pre_post_revenue',
+                title  : 'Monthly spend',
+                span   : 'half',
+            },
+            {
+                type   : 'line',
+                section: 'sales',
+                dataKey: 'progress_curve',
+                title  : 'Sales progress (BD + Visa departments)',
+                span   : 'half',
+            },
+        ],
+    },
+
+    /* ── 12. Sales & Marketing Officer — 6 widgets (3 cols × 2 rows) ─────── */
+    sales_marketing_officer: {
+        label    : 'Sales & Marketing Officer',
+        attention: ['marketing'],
+        widgets  : [
+            { section: 'marketing', label: 'Total spend',       icon: 'BanknoteArrowDown', href: '/marketing' },
+            { section: 'marketing', label: 'Active campaigns',  icon: 'Megaphone',         href: '/marketing' },
+            { section: 'marketing', label: 'Pending approvals', icon: 'CircleCheckBig',    href: '/marketing' },
+            { section: 'marketing', label: 'Scheduled blasts',  icon: 'Send',              href: '/marketing' },
+            { section: 'marketing', label: 'Total budget',      icon: 'Landmark',          href: '/marketing' },
+            { section: 'today',     label: 'Unread notices',    icon: 'BellDot',           href: '/notifications' },
+        ],
+        charts: [
+            {
+                type   : 'bar',
+                section: 'marketing',
+                dataKey: 'budget_vs_spend',
+                title  : 'Spend by category',
+                span   : 'full',
+            },
+        ],
+    },
+
+    /* ── 13. Visa & Documentation Supervisor — 6 widgets (3 cols × 2 rows) ─ */
+    visa_documentation_supervisor: {
+        label    : 'Visa & Documentation Supervisor',
         attention: ['visa'],
         widgets  : [
             { section: 'visa',    label: 'Open applications', icon: 'FileCheck2',      href: '/visa' },
@@ -347,9 +430,9 @@ export const ROLE_CONFIG = {
         ],
     },
 
-    /* ── Liaison Officer — 4 widgets (4 cols × 1 row) ────────────────────── */
-    liaison_officer: {
-        label    : 'Liaison Officer',
+    /* ── 14. Liaison Officer (Visa) — 4 widgets (4 cols × 1 row) ─────────── */
+    liaison_officer_visa: {
+        label    : 'Liaison Officer (Visa)',
         attention: ['visa'],
         widgets  : [
             { section: 'visa',  label: 'Open applications', icon: 'FileCheck2',    href: '/visa' },
@@ -360,32 +443,85 @@ export const ROLE_CONFIG = {
         charts: [],
     },
 
-    /* ── Marketing Officer — 6 widgets (3 cols × 2 rows) ────────────────── */
-    marketing_officer: {
-        label    : 'Marketing Officer',
-        attention: ['marketing'],
+    /* ── 15. Visa & Documentation Officer — 6 widgets (3 cols × 2 rows) ──── */
+    visa_documentation_officer: {
+        label    : 'Visa & Documentation Officer',
+        attention: ['visa'],
         widgets  : [
-            { section: 'marketing', label: 'Total spend',       icon: 'BanknoteArrowDown', href: '/marketing' },
-            { section: 'marketing', label: 'Active campaigns',  icon: 'Megaphone',         href: '/marketing' },
-            { section: 'marketing', label: 'Pending approvals', icon: 'CircleCheckBig',    href: '/marketing' },
-            { section: 'marketing', label: 'Scheduled blasts',  icon: 'Send',              href: '/marketing' },
-            { section: 'marketing', label: 'Total budget',      icon: 'Landmark',          href: '/marketing' },
-            { section: 'marketing', label: 'Budget variance',   icon: 'Target',            href: '/marketing' },
+            { section: 'visa',    label: 'Open applications', icon: 'FileCheck2',      href: '/visa' },
+            { section: 'visa',    label: 'Pending',           icon: 'FileClock',       href: '/visa' },
+            { section: 'visa',    label: 'On process',        icon: 'ClipboardList',   href: '/visa' },
+            { section: 'visa',    label: 'Embassy payments',  icon: 'BanknoteArrowUp', href: '/visa' },
+            { section: 'visa',    label: 'Completed',         icon: 'CircleCheckBig',  href: '/visa' },
+            { section: 'finance', label: 'Receivable balance', icon: 'ReceiptText',    href: '/ar' },
         ],
         charts: [
             {
                 type   : 'bar',
-                section: 'marketing',
-                dataKey: 'budget_vs_spend',
-                title  : 'Spend by category',
+                section: 'visa',
+                dataKey: 'status_by_month',
+                title  : 'Applications by status — monthly',
+                span   : 'full',
+            },
+            {
+                type   : 'donut',
+                section: 'visa',
+                dataKey: 'status_breakdown',
+                title  : 'Current application breakdown',
+                span   : 'half',
+            },
+        ],
+    },
+
+    /* ── 16. Branch Supervisor — 6 widgets (3 cols × 2 rows) ─────────────── */
+    branch_supervisor: {
+        label    : 'Branch Supervisor',
+        attention: ['operations'],
+        widgets  : [
+            { section: 'sales',      label: 'Sales MTD',          icon: 'ChartSpline',     href: '/sales' },
+            { section: 'sales',      label: 'Sales YTD',          icon: 'Target',          href: '/sales' },
+            { section: 'operations', label: 'Ormoc bookings',     icon: 'MapPinned',       href: '/ormoc' },
+            { section: 'operations', label: 'Ormoc sales',        icon: 'BanknoteArrowUp', href: '/ormoc' },
+            { section: 'operations', label: 'Bookings',           icon: 'PlaneTakeoff',    href: '/ormoc' },
+            { section: 'finance',    label: 'Receivable balance', icon: 'ReceiptText',     href: '/ar' },
+        ],
+        charts: [
+            {
+                type   : 'line',
+                section: 'sales',
+                dataKey: 'progress_curve',
+                title  : 'Progress curve — target vs achieved (Ormoc branch)',
                 span   : 'full',
             },
             {
                 type   : 'bar',
-                section: 'marketing',
-                dataKey: 'pre_post_revenue',
-                title  : 'Monthly spend',
-                span   : 'half',
+                section: 'sales',
+                dataKey: 'monthly_by_department',
+                title  : 'Monthly sales — Ormoc branch',
+                span   : 'full',
+            },
+        ],
+    },
+
+    /* ── 17. Branch Sales Officer — 6 widgets (3 cols × 2 rows) ─────────── */
+    branch_sales_officer: {
+        label    : 'Branch Sales Officer',
+        attention: ['operations'],
+        widgets  : [
+            { section: 'sales',      label: 'Sales MTD',      icon: 'ChartSpline',     href: '/sales' },
+            { section: 'sales',      label: 'Sales YTD',      icon: 'Target',          href: '/sales' },
+            { section: 'operations', label: 'Ormoc bookings', icon: 'MapPinned',       href: '/ormoc' },
+            { section: 'operations', label: 'Ormoc sales',    icon: 'BanknoteArrowUp', href: '/ormoc' },
+            { section: 'operations', label: 'Bookings',       icon: 'PlaneTakeoff',    href: '/ormoc' },
+            { section: 'today',      label: 'Unread notices', icon: 'BellDot',         href: '/notifications' },
+        ],
+        charts: [
+            {
+                type   : 'line',
+                section: 'sales',
+                dataKey: 'progress_curve',
+                title  : 'Progress curve — target vs achieved',
+                span   : 'full',
             },
         ],
     },

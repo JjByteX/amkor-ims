@@ -365,13 +365,20 @@ class DocumentGenerationController extends Controller
     {
         $role    = $request->user()?->getRoleNames()->first();
         $allowed = [
-            'disbursement_officer',
-            'accounting_officer',
-            'admin_auditor',
-            'general_manager',
-            'resa_officer',
+            'president',
+            'chief_operating_officer',
+            'finance_admin_supervisor',
+            'administrative_assistant',
+            'accounting_assistant',
+            'liaison_officer_finance',
+            'general_sales_manager',
+            'sales_reservation_officer',
+            'sales_ticketing_officer',
+            'group_sales_officer',
+            'visa_documentation_supervisor',
             'visa_documentation_officer',
-            'ormoc_branch_officer',
+            'branch_supervisor',
+            'branch_sales_officer',
         ];
         if (! in_array($role, $allowed, true)) {
             abort(403, 'You do not have permission to generate documents.');
@@ -382,10 +389,12 @@ class DocumentGenerationController extends Controller
     {
         $role    = $request->user()?->getRoleNames()->first();
         $allowed = [
-            'disbursement_officer',
-            'accounting_officer',
-            'admin_auditor',
-            'general_manager',
+            'president',
+            'chief_operating_officer',
+            'finance_admin_supervisor',
+            'administrative_assistant',
+            'accounting_assistant',
+            'liaison_officer_finance',
         ];
         if (! in_array($role, $allowed, true)) {
             abort(403, 'You do not have permission to generate voucher PDFs.');
@@ -397,12 +406,18 @@ class DocumentGenerationController extends Controller
         // Same roles that can create/view reservations may generate quotations
         $role    = $request->user()?->getRoleNames()->first();
         $allowed = [
-            'resa_officer',
-            'ormoc_branch_officer',
+            'president',
+            'chief_operating_officer',
+            'general_sales_manager',
+            'accounting_assistant',
+            'administrative_assistant',
+            'sales_reservation_officer',
+            'sales_ticketing_officer',
+            'group_sales_officer',
+            'visa_documentation_supervisor',
             'visa_documentation_officer',
-            'accounting_officer',
-            'admin_auditor',
-            'general_manager',
+            'branch_supervisor',
+            'branch_sales_officer',
         ];
         if (! in_array($role, $allowed, true)) {
             abort(403, 'You do not have permission to generate quotation PDFs.');

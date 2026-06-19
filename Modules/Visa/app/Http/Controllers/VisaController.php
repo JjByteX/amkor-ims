@@ -23,19 +23,35 @@ use Modules\OrmocBranch\Models\OrmocBooking;
 
 class VisaController extends Controller
 {
-    // ─── Roles with full write access ─────────────────────────────────────────
+    // ─── Roles ─────────────────────────────────────────────────────────────────
+    // Canonical slugs per Amkor_IMS___Roles___Permissions_Matrix_1.md (Module 3)
+
+    // Full CRU access — create, read, update own; supervisor overrides any record
     private const WRITE_ROLES = [
-        'general_manager',
-        'visa_documentation_officer',
+        'president',
+        'visa_documentation_supervisor', // full Visa access; can override any officer's record
+        'visa_documentation_officer',    // 🔒 own applications only
     ];
 
-    // Roles that can view
+    // Roles that can annotate (audit remarks, OR recording, payment matching)
+    private const ANNOTATE_ROLES = [
+        'administrative_assistant', // audit remarks; receives endorsed documents
+        'accounting_assistant',     // records OR; payment matching; prepares cash/voucher
+        'liaison_officer_visa',     // reads embassy payment details; updates OR after payment
+    ];
+
+    // All roles with any read access (Module 3)
     private const VIEW_ROLES = [
-        'general_manager',
-        'visa_documentation_officer',
-        'disbursement_officer',
-        'admin_auditor',
-        'accounting_officer',
+        'president',
+        'chief_operating_officer',      // view only
+        'finance_admin_supervisor',     // view only for oversight
+        'administrative_assistant',     // audit remarks; receives endorsed documents
+        'general_sales_manager',        // view only
+        'business_development_manager', // view only
+        'accounting_assistant',         // records OR; payment matching
+        'liaison_officer_visa',         // reads embassy payment details; updates OR
+        'visa_documentation_supervisor', // full access
+        'visa_documentation_officer',   // 🔒 own applications only
     ];
 
     // ─── Index ────────────────────────────────────────────────────────────────
@@ -53,9 +69,9 @@ class VisaController extends Controller
         $query = VisaApplication::with(['branch', 'createdBy'])
             ->latest('date');
 
-        // Visa officers see only their branch
+        // Visa officers see only their own records (own branch); supervisor sees all
         if ($role === 'visa_documentation_officer') {
-            $query->forBranch($user->branch_id);
+            $query->where('created_by', $user->id);
         }
 
         $query->search($search);
@@ -121,7 +137,7 @@ class VisaController extends Controller
         $application = VisaApplication::create($data);
 
         return redirect()
-            ->route('visa.show', $application)
+            ->route('visa.index')
             ->with('flash', ['type' => 'success', 'message' => 'Application recorded.']);
     }
 
@@ -216,7 +232,7 @@ class VisaController extends Controller
             'statuses' => VisaApplication::STATUSES,
             'paymentModes' => VisaApplication::PAYMENT_MODES,
             'canWrite' => $this->canWrite($request),
-            'canEndorse' => $role === 'visa_documentation_officer' && $visa->or_number && ! $visa->isEndorsed(),
+            'canEndorse' => in_array($role, ['visa_documentation_supervisor', 'visa_documentation_officer'], true) && $visa->or_number && ! $visa->isEndorsed(),
             'contactsSearchUrl' => route('contacts.search'),
             'relatedTransactions' => $relatedTransactions,
         ]);
@@ -226,7 +242,7 @@ class VisaController extends Controller
             'statuses' => VisaApplication::STATUSES,
             'paymentModes' => VisaApplication::PAYMENT_MODES,
             'canWrite' => $this->canWrite($request),
-            'canEndorse' => $role === 'visa_documentation_officer' && $visa->or_number && ! $visa->isEndorsed(),
+            'canEndorse' => in_array($role, ['visa_documentation_supervisor', 'visa_documentation_officer'], true) && $visa->or_number && ! $visa->isEndorsed(),
             'contactsSearchUrl' => route('contacts.search'),
             'relatedTransactions' => $relatedTransactions,
         ]);
@@ -269,7 +285,7 @@ class VisaController extends Controller
         $visa->update($data);
 
         return redirect()
-            ->route('visa.show', $visa)
+            ->route('visa.index')
             ->with('flash', ['type' => 'success', 'message' => 'Application updated.']);
     }
 
@@ -329,7 +345,7 @@ class VisaController extends Controller
     {
         $role = $request->user()?->getRoleNames()->first();
 
-        if ($role !== 'visa_documentation_officer' && $role !== 'general_manager') {
+        if (! in_array($role, ['president', 'visa_documentation_supervisor', 'visa_documentation_officer'], true)) {
             abort(403);
         }
 
@@ -342,7 +358,8 @@ class VisaController extends Controller
         }
 
         // Find all active Disbursement Officers
-        $disbursementOfficers = User::role('disbursement_officer')->where('is_active', true)->get();
+        // Per matrix Module 3: accounting_assistant prepares payment; liaison_officer_visa executes embassy payment
+        $disbursementOfficers = User::role('accounting_assistant')->where('is_active', true)->get();
 
         foreach ($disbursementOfficers as $officer) {
             if ($officer->email) {
@@ -396,7 +413,7 @@ class VisaController extends Controller
     {
         $role = $request->user()?->getRoleNames()->first();
 
-        if ($role !== 'visa_documentation_officer' && $role !== 'general_manager') {
+        if (! in_array($role, ['president', 'visa_documentation_supervisor', 'visa_documentation_officer'], true)) {
             abort(403);
         }
 

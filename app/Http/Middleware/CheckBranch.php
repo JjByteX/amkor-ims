@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response;
 
 class CheckBranch
@@ -11,34 +12,46 @@ class CheckBranch
     /**
      * Enforce branch-scoped data access.
      *
-     * Usage in routes: ->middleware('branch:ormoc')
-     * Accepted branch codes: QC_MAIN, VISA_CENTRE, ORMOC
+     * Amkor Travel & Tours has exactly two physical branches:
+     *   QC_MAIN — Head Office, Quezon City
+     *             (Reservation + Visa & Documentation + Finance & Admin + Marketing)
+     *   ORMOC   — Provincial branch, Ormoc City, Leyte
      *
-     * Roles that bypass branch filtering (they see all branches):
-     *   general_manager, chief_operations_officer, general_sales_manager,
-     *   accounting_officer, disbursement_officer, admin_auditor, hr_admin_officer
+     * Usage in routes: ->middleware('branch:ORMOC') or ->middleware('branch:QC_MAIN')
      *
-     * Roles that are branch-scoped:
-     *   ormoc_branch_officer  → must be on branch ORMOC
-     *   visa_documentation_officer → must be on branch VISA_CENTRE
-     *   resa_officer          → must be on branch QC_MAIN
+     * ── All-branch roles (bypass branch filtering — see all branches) ──────
+     *   president
+     *   chief_operating_officer
+     *   finance_admin_supervisor
+     *   administrative_assistant
+     *   general_sales_manager
+     *   accounting_assistant
+     *   business_development_manager
      *
-     * The middleware checks that the authenticated user's branch_code matches
-     * the required branch code(s) passed as arguments, unless the user has
-     * an all-branch role.
+     * ── Branch-scoped roles ───────────────────────────────────────────────
+     *   sales_reservation_officer      → QC_MAIN
+     *   sales_ticketing_officer        → QC_MAIN (+ escalated Ormoc records via controller)
+     *   group_sales_officer            → QC_MAIN
+     *   sales_marketing_officer        → QC_MAIN
+     *   liaison_officer_finance        → QC_MAIN
+     *   liaison_officer_visa           → QC_MAIN
+     *   visa_documentation_supervisor  → QC_MAIN
+     *   visa_documentation_officer     → QC_MAIN
+     *   branch_supervisor              → ORMOC
+     *   branch_sales_officer           → ORMOC
      */
 
     /**
-     * All-branch roles — bypass branch restriction entirely.
+     * Roles that bypass branch restriction entirely — they see all branches.
      */
     protected array $allBranchRoles = [
-        'general_manager',
-        'chief_operations_officer',
+        'president',
+        'chief_operating_officer',
+        'finance_admin_supervisor',
+        'administrative_assistant',
         'general_sales_manager',
-        'accounting_officer',
-        'disbursement_officer',
-        'admin_auditor',
-        'hr_admin_officer',
+        'accounting_assistant',
+        'business_development_manager',
     ];
 
     /**

@@ -24,19 +24,27 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('collectibles', function (Blueprint $table) {
-            $table->dropColumn('days_outstanding');
+            if (Schema::hasColumn('collectibles', 'days_outstanding')) {
+                $table->dropColumn('days_outstanding');
+            }
         });
 
         Schema::table('payables', function (Blueprint $table) {
-            $table->dropColumn('days_outstanding');
+            if (Schema::hasColumn('payables', 'days_outstanding')) {
+                $table->dropColumn('days_outstanding');
+            }
         });
 
         Schema::table('bills', function (Blueprint $table) {
-            $table->dropColumn('days_outstanding');
+            if (Schema::hasColumn('bills', 'days_outstanding')) {
+                $table->dropColumn('days_outstanding');
+            }
         });
 
         Schema::table('iata_payments', function (Blueprint $table) {
-            $table->dropColumn('days_outstanding');
+            if (Schema::hasColumn('iata_payments', 'days_outstanding')) {
+                $table->dropColumn('days_outstanding');
+            }
         });
     }
 

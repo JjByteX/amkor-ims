@@ -16,18 +16,28 @@ use Modules\BirCompliance\Models\BirTransaction;
 
 class BirComplianceController extends Controller
 {
-    // From Roles.md: view = disbursement_officer, accounting_officer, admin_auditor, general_manager
-    // Generate = disbursement_officer, accounting_officer
+    // From Roles.md Module 11: view = president, coo, finance_admin_supervisor, administrative_assistant, general_sales_manager, accounting_assistant
+    // Generate/manage = president + accounting_assistant only; audit remarks (update only) = administrative_assistant
     private const VIEW_ROLES = [
-        'disbursement_officer',
-        'accounting_officer',
-        'admin_auditor',
-        'general_manager',
+        'president',
+        'chief_operating_officer',
+        'finance_admin_supervisor',
+        'administrative_assistant',
+        'general_sales_manager',
+        'accounting_assistant',
     ];
 
+    // Can create, store, export — full generate access (M11: Create ✅ = president + accounting_assistant)
     private const GENERATE_ROLES = [
-        'disbursement_officer',
-        'accounting_officer',
+        'president',
+        'accounting_assistant',
+    ];
+
+    // Can update existing records — includes admin assistant for audit remarks (M11: Update ✏️)
+    private const AUDIT_ROLES = [
+        'president',
+        'accounting_assistant',
+        'administrative_assistant',
     ];
 
     // ════════════════════════════════════════════════════════════════════════
@@ -53,7 +63,7 @@ class BirComplianceController extends Controller
             ->search($search)
             ->latest('transaction_date');
 
-        if (! in_array($role, ['general_manager', 'admin_auditor'], true)) {
+        if (! in_array($role, ['president', 'chief_operating_officer', 'finance_admin_supervisor', 'administrative_assistant', 'general_sales_manager', 'accounting_assistant'], true)) {
             $query->forBranch($request->user()->branch_id);
         } elseif ($branch) {
             $query->forBranch((int) $branch);
@@ -62,7 +72,7 @@ class BirComplianceController extends Controller
         $transactions = $query->paginate(25)->withQueryString();
 
         $monthlySummary = BirTransaction::forYear($year)
-            ->when(! in_array($role, ['general_manager', 'admin_auditor'], true), function ($q) use ($request) {
+            ->when(! in_array($role, ['president', 'chief_operating_officer', 'finance_admin_supervisor', 'administrative_assistant', 'general_sales_manager', 'accounting_assistant'], true), function ($q) use ($request) {
                 $q->forBranch($request->user()->branch_id);
             })
             ->selectRaw('month, document_type, COUNT(*) as count,
@@ -75,7 +85,7 @@ class BirComplianceController extends Controller
         $totals = BirTransaction::forYear($year)
             ->forMonth($month ? (int) $month : null)
             ->forDocumentType($type)
-            ->when(! in_array($role, ['general_manager', 'admin_auditor'], true), function ($q) use ($request) {
+            ->when(! in_array($role, ['president', 'chief_operating_officer', 'finance_admin_supervisor', 'administrative_assistant', 'general_sales_manager', 'accounting_assistant'], true), function ($q) use ($request) {
                 $q->forBranch($request->user()->branch_id);
             })
             ->selectRaw('COUNT(*) as total_count,
@@ -171,13 +181,13 @@ class BirComplianceController extends Controller
         $tx = BirTransaction::create($data);
 
         return redirect()
-            ->route('bir.show', $tx)
+            ->route('bir.index')
             ->with('flash', ['type' => 'success', 'message' => "BIR transaction {$tx->document_number} created."]);
     }
 
     public function edit(Request $request, BirTransaction $birTransaction): Response
     {
-        $this->requireGenerateAccess($request);
+        $this->requireAuditAccess($request);
 
         return Inertia::render('BirCompliance/Edit', [
             'transaction' => $birTransaction,
@@ -193,7 +203,7 @@ class BirComplianceController extends Controller
 
     public function update(StoreBirTransactionRequest $request, BirTransaction $birTransaction): RedirectResponse
     {
-        $this->requireGenerateAccess($request);
+        $this->requireAuditAccess($request);
 
         $data = $request->validated();
 
@@ -220,14 +230,14 @@ class BirComplianceController extends Controller
         $birTransaction->update($data);
 
         return redirect()
-            ->route('bir.show', $birTransaction)
+            ->route('bir.index')
             ->with('flash', ['type' => 'success', 'message' => 'Transaction updated.']);
     }
 
     public function destroy(Request $request, BirTransaction $birTransaction): RedirectResponse
     {
         $role = $request->user()?->getRoleNames()->first();
-        if (! in_array($role, ['general_manager', 'disbursement_officer'], true)) {
+        if ($role !== 'president') {
             abort(403);
         }
 
@@ -274,9 +284,9 @@ class BirComplianceController extends Controller
             ->orderBy('transaction_date')
             ->orderBy('document_number');
 
-        // Branch scoping: general_manager and admin_auditor can pass branch_id;
+        // Branch scoping: president, finance_admin_supervisor, administrative_assistant, etc. can pass branch_id;
         // everyone else is always scoped to their own branch.
-        if (! in_array($role, ['general_manager', 'admin_auditor'], true)) {
+        if (! in_array($role, ['president', 'chief_operating_officer', 'finance_admin_supervisor', 'administrative_assistant', 'general_sales_manager', 'accounting_assistant'], true)) {
             $query->forBranch($request->user()->branch_id);
             $branchName = $request->user()->branch?->name ?? 'Branch';
         } elseif ($branchId) {
@@ -331,7 +341,15 @@ class BirComplianceController extends Controller
     private function requireGenerateAccess(Request $request): void
     {
         if (! in_array($request->user()?->getRoleNames()->first(), self::GENERATE_ROLES, true)) {
-            abort(403, 'Only the Disbursement Officer or Accounting Officer can generate BIR documents.');
+            abort(403, 'Only Accounting can create or export BIR documents.');
+        }
+    }
+
+    // Audit access = generate roles + administrative_assistant (audit remarks only)
+    private function requireAuditAccess(Request $request): void
+    {
+        if (! in_array($request->user()?->getRoleNames()->first(), self::AUDIT_ROLES, true)) {
+            abort(403, 'You do not have permission to update BIR records.');
         }
     }
 

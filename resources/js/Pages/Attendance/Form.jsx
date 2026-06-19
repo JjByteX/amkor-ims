@@ -121,7 +121,7 @@ export default function AttendanceForm({ record, employees, branches, statuses, 
                                     variant="ghost"
                                     icon={ArrowLeft}
                                     onClick={() => isEdit
-                                        ? router.get(route('attendance.show', record.id))
+                                        ? router.get(route('attendance.index'))
                                         : router.get(route('attendance.index'))
                                     }
                                 >
@@ -377,7 +377,7 @@ export default function AttendanceForm({ record, employees, branches, statuses, 
                             type="button"
                             variant="ghost"
                             onClick={() => isEdit
-                                ? router.get(route('attendance.show', record.id))
+                                ? router.get(route('attendance.index'))
                                 : router.get(route('attendance.index'))
                             }
                         >

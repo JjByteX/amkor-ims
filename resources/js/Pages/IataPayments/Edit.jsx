@@ -52,7 +52,7 @@ export default function IataPaymentsEdit({ payment, operators }) {
                         subtitle={payment.payment_no}
                         actions={
                             <>
-                                <Button type="button" variant="ghost" icon={X} onClick={() => router.visit(route('iata.show', payment.id))}>Cancel</Button>
+                                <Button type="button" variant="ghost" icon={X} onClick={() => router.visit(route('iata.index'))}>Cancel</Button>
                                 <Button type="submit" variant="primary" icon={Save} loading={form.processing}>Save Changes</Button>
                             </>
                         }
@@ -73,7 +73,7 @@ export default function IataPaymentsEdit({ payment, operators }) {
                     </FormCard>
 
                     <FormActions>
-                        <Button type="button" variant="ghost" icon={X} onClick={() => router.visit(route('iata.show', payment.id))}>Cancel</Button>
+                        <Button type="button" variant="ghost" icon={X} onClick={() => router.visit(route('iata.index'))}>Cancel</Button>
                         <Button type="submit" variant="primary" icon={Save} loading={form.processing}>Save Changes</Button>
                     </FormActions>
                 </FormLayout>

@@ -3,6 +3,7 @@ import { router, usePage, useForm } from '@inertiajs/react';
 import { ArrowLeft, Pencil, Trash2, CheckCircle2, ThumbsUp, Send } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
+import ApprovalStepper from '../../Components/Shared/ApprovalStepper';
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
 import Modal from '../../Components/UI/Modal';
@@ -59,6 +60,42 @@ export default function BillsShow({ bill, billTypes, statuses, approvalStatuses,
     const fmtDt = (d) => d ? new Date(d).toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 
     const isApproved = ['approved', 'released'].includes(bill.approval_status);
+
+    const steps = [
+        {
+            label  : 'Prepared',
+            done   : true,
+            person : bill.created_by?.name,
+            at     : bill.created_at,
+        },
+        {
+            label  : 'Checked',
+            done   : !!bill.checked_at,
+            person : bill.checker?.name,
+            at     : bill.checked_at,
+            action : canCheck && !bill.checked_at
+                ? <Button variant="secondary" size="sm" icon={CheckCircle2} onClick={() => setCheckModal(true)} style={{ width: '100%' }}>Mark Checked</Button>
+                : null,
+        },
+        {
+            label  : 'Approved',
+            done   : !!bill.approved_at,
+            person : bill.approver?.name,
+            at     : bill.approved_at,
+            action : canApprove && !bill.approved_at && bill.checked_at
+                ? <Button variant="primary" size="sm" icon={ThumbsUp} onClick={submitApprove} style={{ width: '100%' }}>Approve</Button>
+                : null,
+        },
+        {
+            label  : 'Paid / Released',
+            done   : !!bill.released_at,
+            person : bill.releaser?.name,
+            at     : bill.released_at,
+            action : canWrite && !bill.released_at && bill.approved_at
+                ? <Button variant="secondary" size="sm" icon={Send} onClick={() => setReleaseModal(true)} style={{ width: '100%' }}>Mark as Paid</Button>
+                : null,
+        },
+    ];
 
     return (
         <AppShell>
@@ -123,50 +160,10 @@ export default function BillsShow({ bill, billTypes, statuses, approvalStatuses,
                         </div>
                     </div>
 
-                    {/* Approval chain */}
+                    {/* Approval stepper */}
                     <div style={{ background: 'var(--color-card)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-3)', boxShadow: 'var(--shadow-card)' }}>
                         <div className="font-heading font-semibold text-[var(--color-text)] mb-[var(--space-2)]" style={{ fontSize: 'var(--font-size-small)' }}>Approval Chain</div>
-                        <div className="flex flex-col" style={{ gap: 'var(--space-2)' }}>
-
-                            {/* Check */}
-                            <div className="flex flex-col gap-1">
-                                <Badge variant={bill.checked_at ? 'info' : 'warning'}>{bill.checked_at ? 'Checked' : 'Awaiting Check'}</Badge>
-                                {bill.checked_at && (
-                                    <span className="font-body text-gray-400" style={{ fontSize: 'var(--font-size-small)' }}>
-                                        {bill.checker?.name ?? '—'} · {fmtDt(bill.checked_at)}
-                                    </span>
-                                )}
-                                {canCheck && !bill.checked_at && (
-                                    <Button variant="secondary" size="sm" icon={CheckCircle2} onClick={() => setCheckModal(true)}>Mark Checked</Button>
-                                )}
-                            </div>
-
-                            {/* Approve */}
-                            <div className="flex flex-col gap-1">
-                                <Badge variant={bill.approved_at ? 'success' : 'warning'}>{bill.approved_at ? 'Approved' : 'Awaiting Approval'}</Badge>
-                                {bill.approved_at && (
-                                    <span className="font-body text-gray-400" style={{ fontSize: 'var(--font-size-small)' }}>
-                                        {bill.approver?.name ?? '—'} · {fmtDt(bill.approved_at)}
-                                    </span>
-                                )}
-                                {canApprove && !bill.approved_at && bill.checked_at && (
-                                    <Button variant="primary" size="sm" icon={ThumbsUp} onClick={submitApprove}>Approve</Button>
-                                )}
-                            </div>
-
-                            {/* Release */}
-                            <div className="flex flex-col gap-1">
-                                <Badge variant={bill.released_at ? 'neutral' : 'warning'}>{bill.released_at ? 'Paid / Released' : 'Awaiting Payment'}</Badge>
-                                {bill.released_at && (
-                                    <span className="font-body text-gray-400" style={{ fontSize: 'var(--font-size-small)' }}>
-                                        {bill.releaser?.name ?? '—'} · {fmtDt(bill.released_at)}
-                                    </span>
-                                )}
-                                {canWrite && !bill.released_at && bill.approved_at && (
-                                    <Button variant="secondary" size="sm" icon={Send} onClick={() => setReleaseModal(true)}>Mark as Paid</Button>
-                                )}
-                            </div>
-                        </div>
+                        <ApprovalStepper steps={steps} fmtDt={fmtDt} />
                     </div>
                 </div>
 

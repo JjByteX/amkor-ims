@@ -87,23 +87,25 @@ export default function NavItem({ href, icon, label, activeOn = [], inactiveOn =
 
     /* ── Collapsed: icon only + portal tooltip ──────────────────────────────── */
     if (collapsed) {
+        const isHighlighted = isActive || childActive;
         return (
             <li>
                 <Link
                     prefetch
                     ref={anchorRef}
                     href={href ?? '#'}
-                    className="flex items-center w-full"
+                    className={['flex items-center w-full nav-item-hoverable', isHighlighted ? 'nav-item-active' : ''].join(' ')}
                     style={{
                         ...baseItemStyle,
-                        paddingRight: '14px',
-                        background: isActive || childActive ? 'var(--color-primary)' : 'transparent',
-                        color     : isActive || childActive ? '#ffffff' : 'var(--color-text-muted)',
+                        paddingRight  : '14px',
+                        background    : isHighlighted ? 'var(--color-primary)' : 'transparent',
+                        color         : isHighlighted ? '#ffffff' : 'var(--color-text-muted)',
+                        textDecoration: 'none',
                     }}
                     onMouseEnter={() => setTipVisible(true)}
                     onMouseLeave={() => setTipVisible(false)}
                 >
-                    {iconSpan(isActive || childActive ? '#ffffff' : 'var(--color-text-muted)')}
+                    {iconSpan(isHighlighted ? '#ffffff' : 'var(--color-text-muted)')}
                 </Link>
                 {tipVisible && <Tooltip label={label} anchorRef={anchorRef} />}
             </li>
@@ -117,7 +119,7 @@ export default function NavItem({ href, icon, label, activeOn = [], inactiveOn =
                 <Link
                     prefetch
                     href={href}
-                    className="flex items-center w-full"
+                    className={['flex items-center w-full nav-item-hoverable', isActive ? 'nav-item-active' : ''].join(' ')}
                     style={{
                         ...baseItemStyle,
                         gap       : '10px',
@@ -127,12 +129,6 @@ export default function NavItem({ href, icon, label, activeOn = [], inactiveOn =
                         background: isActive ? 'var(--color-primary)' : 'transparent',
                         color     : isActive ? '#ffffff' : 'var(--color-text)',
                         textDecoration: 'none',
-                    }}
-                    onMouseEnter={(e) => {
-                        if (!isActive) e.currentTarget.style.background = 'var(--color-hover)';
-                    }}
-                    onMouseLeave={(e) => {
-                        if (!isActive) e.currentTarget.style.background = 'transparent';
                     }}
                 >
                     {iconSpan(isActive ? '#ffffff' : 'var(--color-text-muted)')}
@@ -158,7 +154,7 @@ export default function NavItem({ href, icon, label, activeOn = [], inactiveOn =
         <li>
             <button
                 onClick={() => setOpen((v) => !v)}
-                className="w-full flex items-center"
+                className={['w-full flex items-center nav-item-hoverable', childActive ? 'nav-item-active' : ''].join(' ')}
                 style={{
                     ...baseItemStyle,
                     gap       : '10px',
@@ -170,13 +166,6 @@ export default function NavItem({ href, icon, label, activeOn = [], inactiveOn =
                     border    : 'none',
                     cursor    : 'pointer',
                     textAlign : 'left',
-                }}
-                onMouseEnter={(e) => {
-                    if (!childActive) e.currentTarget.style.background = 'var(--color-hover)';
-                }}
-                onMouseLeave={(e) => {
-                    if (!childActive) e.currentTarget.style.background =
-                        childActive ? 'color-mix(in srgb, var(--color-primary) 12%, transparent)' : 'transparent';
                 }}
             >
                 {iconSpan(childActive ? 'var(--color-primary)' : 'var(--color-text-muted)')}

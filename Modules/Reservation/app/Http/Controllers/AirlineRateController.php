@@ -22,24 +22,37 @@ use Modules\Reservation\Models\AirlineRate;
  */
 class AirlineRateController extends Controller
 {
+    // ─── Roles ─────────────────────────────────────────────────────────────────
+    // Canonical slugs per Amkor_IMS___Roles___Permissions_Matrix_1.md
+    // Airline Rates is a reference table used by all booking/sales staff.
+    // The matrix does not have a dedicated module for it; access mirrors Reservation (Module 1).
+
     private const VIEW_ROLES = [
-        'general_manager',
-        'chief_operations_officer',
+        'president',
+        'chief_operating_officer',
+        'finance_admin_supervisor',
         'general_sales_manager',
-        'accounting_officer',
-        'resa_officer',
-        'ormoc_branch_officer',
-        'admin_auditor',
+        'business_development_manager',
+        'accounting_assistant',
+        'administrative_assistant',
+        'sales_reservation_officer',
+        'sales_ticketing_officer',
+        'group_sales_officer',
+        'visa_documentation_supervisor',
         'visa_documentation_officer',
+        'branch_supervisor',
+        'branch_sales_officer',
     ];
 
     private const WRITE_ROLES = [
-        'general_manager',
-        'chief_operations_officer',
+        'president',
+        'chief_operating_officer',
         'general_sales_manager',
-        'accounting_officer',
-        'resa_officer',
-        'ormoc_branch_officer',
+        'accounting_assistant',
+        'sales_reservation_officer',
+        'sales_ticketing_officer',
+        'group_sales_officer',
+        'branch_supervisor',
     ];
 
     public function index(Request $request): Response
@@ -73,6 +86,8 @@ class AirlineRateController extends Controller
 
     public function store(StoreAirlineRateRequest $request): RedirectResponse
     {
+        $this->requireWriteAccess($request);
+
         AirlineRate::create([
             ...$request->validated(),
             'created_by' => $request->user()->id,

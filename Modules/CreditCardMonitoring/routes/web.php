@@ -3,6 +3,20 @@
 use Illuminate\Support\Facades\Route;
 use Modules\CreditCardMonitoring\Http\Controllers\CreditCardMonitoringController;
 
+/*
+|--------------------------------------------------------------------------
+| Credit Card Monitoring Routes
+|--------------------------------------------------------------------------
+|
+| Preparers  : accounting_assistant
+| Checkers   : administrative_assistant, finance_admin_supervisor
+| Approvers  : president (JRT only)
+| Executors  : liaison_officer_finance (releases / marks payment executed)
+| Viewers    : + chief_operating_officer
+|
+| Approval chain: Prepared → Checked (Admin Asst) → Approved (President) → Released (Liaison)
+*/
+
 Route::middleware(['auth', 'verified'])->prefix('credit-cards')->name('credit-cards.')->group(function () {
 
     // Cards master list
