@@ -16,7 +16,6 @@ use Modules\Disbursement\Database\Seeders\DisbursementDatabaseSeeder;
 use Modules\EmployeeRecords\Database\Seeders\EmployeeRecordsDatabaseSeeder;
 use Modules\IataPayments\Database\Seeders\IataPaymentsDatabaseSeeder;
 use Modules\Marketing\Database\Seeders\MarketingDatabaseSeeder;
-use Modules\OrmocBranch\Database\Seeders\OrmocBranchDatabaseSeeder;
 use Modules\Reservation\Database\Seeders\ReservationDatabaseSeeder;
 use Modules\SalesSummary\Database\Seeders\SalesSummaryDatabaseSeeder;
 use Modules\Visa\Database\Seeders\VisaDatabaseSeeder;
@@ -32,18 +31,20 @@ class DatabaseSeeder extends Seeder
      *   3.  Cashbond          — 5 portals + 8 cashbond reloads
      *   4.  EmployeeRecords   — 12 employees (one per user)
      *   5.  Disbursement      — 8 vouchers + 12 entries (hub — referenced by 5 modules)
-     *   6.  Reservation       — 10 bookings
+     *   6.  Reservation       — 10 bookings (covers both QC and Ormoc, unified table)
      *   7.  Visa              — 10 applications
-     *   8.  OrmocBranch       — 8 bookings
-     *   9.  AccountsReceivable — 10 collectibles
-     *  10.  AccountsPayable    — 8 payables (FK → vouchers)
-     *  11.  BillsMonitoring    — 8 bills
-     *  12.  CreditCardMonitoring — 3 cards + 6 payments
-     *  13.  IataPayments       — 6 payments
-     *  14.  BirCompliance      — 10 transactions
-     *  15.  Attendance         — 30 records
-     *  16.  Marketing          — 6 materials + 8 expenses + 12 analytics
-     *  17.  SalesSummary       — 24 targets
+     *   8.  AccountsReceivable — 10 collectibles
+     *   9.  AccountsPayable    — 8 payables (FK → vouchers)
+     *  10.  BillsMonitoring    — 8 bills
+     *  11.  CreditCardMonitoring — 3 cards + 6 payments
+     *  12.  IataPayments       — 6 payments
+     *  13.  BirCompliance      — 10 transactions
+     *  14.  Attendance         — 30 records
+     *  15.  Marketing          — 6 materials + 8 expenses + 12 analytics
+     *  16.  SalesSummary       — 24 targets
+     *
+     * Note: OrmocBranchDatabaseSeeder removed — OrmocBranch module is disabled.
+     * Ormoc bookings are now seeded via ReservationDatabaseSeeder (unified table).
      */
     public function run(): void
     {
@@ -55,7 +56,6 @@ class DatabaseSeeder extends Seeder
             DisbursementDatabaseSeeder::class,
             ReservationDatabaseSeeder::class,
             VisaDatabaseSeeder::class,
-            OrmocBranchDatabaseSeeder::class,
             AccountsReceivableDatabaseSeeder::class,
             AccountsPayableDatabaseSeeder::class,
             BillsMonitoringDatabaseSeeder::class,

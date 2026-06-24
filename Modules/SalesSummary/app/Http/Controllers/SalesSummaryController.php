@@ -19,10 +19,8 @@ class SalesSummaryController extends Controller
 {
     // ─── Roles ─────────────────────────────────────────────────────────────────
     // Canonical slugs per Amkor_IMS___Roles___Permissions_Matrix_1.md (Module 12)
-    // Each role sees their own slice; scoping applied per-query below.
 
-    // Roles that see only their own agent code rows (🔒) — enforced by auto-injecting
-    // $user->agent_code into the filters so it cannot be bypassed via URL param.
+    // Roles that see only their own agent code rows (🔒)
     private const OWN_AGENT_ROLES = [
         'sales_reservation_officer',
         'sales_ticketing_officer',
@@ -51,22 +49,22 @@ class SalesSummaryController extends Controller
     {
         $this->requireViewer($request);
 
-        $filters = $this->filters($request);
-        $rows = $this->salesRows($filters, $request);
-        $totals = $this->totals($rows);
+        $filters     = $this->filters($request);
+        $rows        = $this->salesRows($filters, $request);
+        $totals      = $this->totals($rows);
         $departments = $this->departmentSummary($rows);
-        $targets = $this->targets($filters, $request);
+        $targets     = $this->targets($filters, $request);
 
         return Inertia::render('SalesSummary/Index', [
-            'rows' => $rows->values(),
-            'totals' => $totals,
-            'departments' => $departments,
-            'targets' => $targets,
-            'filters' => $filters,
+            'rows'              => $rows->values(),
+            'totals'            => $totals,
+            'departments'       => $departments,
+            'targets'           => $targets,
+            'filters'           => $filters,
             'departmentOptions' => SalesTarget::DEPARTMENTS,
-            'branches' => Branch::active()->orderBy('name')->get(['id', 'name']),
-            'canSetTargets' => $request->user()?->can('sales.set_monthly_target') ?? false,
-            'canExport' => $request->user()?->can('sales.export') ?? false,
+            'branches'          => Branch::active()->orderBy('name')->get(['id', 'name']),
+            'canSetTargets'     => $request->user()?->can('sales.set_monthly_target') ?? false,
+            'canExport'         => $request->user()?->can('sales.export') ?? false,
         ]);
     }
 
@@ -77,28 +75,28 @@ class SalesSummaryController extends Controller
         }
 
         $data = $request->validate([
-            'department' => ['required', 'in:'.implode(',', array_keys(SalesTarget::DEPARTMENTS))],
-            'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
-            'agent_code' => ['nullable', 'string', 'max:20'],
-            'year' => ['required', 'integer', 'min:2020', 'max:2100'],
-            'month' => ['required', 'integer', 'min:1', 'max:12'],
+            'department'    => ['required', 'in:'.implode(',', array_keys(SalesTarget::DEPARTMENTS))],
+            'branch_id'     => ['nullable', 'integer', 'exists:branches,id'],
+            'agent_code'    => ['nullable', 'string', 'max:20'],
+            'year'          => ['required', 'integer', 'min:2020', 'max:2100'],
+            'month'         => ['required', 'integer', 'min:1', 'max:12'],
             'target_amount' => ['required', 'numeric', 'min:0'],
-            'remarks' => ['nullable', 'string'],
+            'remarks'       => ['nullable', 'string'],
         ]);
 
         SalesTarget::updateOrCreate(
             [
                 'department' => $data['department'],
-                'branch_id' => $data['branch_id'] ?? null,
+                'branch_id'  => $data['branch_id'] ?? null,
                 'agent_code' => $data['agent_code'] ?? null,
-                'year' => $data['year'],
-                'month' => $data['month'],
+                'year'       => $data['year'],
+                'month'      => $data['month'],
             ],
             [
                 'target_amount' => $data['target_amount'],
-                'remarks' => $data['remarks'] ?? null,
-                'created_by' => $request->user()->id,
-                'updated_by' => $request->user()->id,
+                'remarks'       => $data['remarks'] ?? null,
+                'created_by'    => $request->user()->id,
+                'updated_by'    => $request->user()->id,
             ],
         );
 
@@ -111,8 +109,8 @@ class SalesSummaryController extends Controller
             abort(403);
         }
 
-        $filters = $this->filters($request);
-        $rows = $this->salesRows($filters, $request);
+        $filters  = $this->filters($request);
+        $rows     = $this->salesRows($filters, $request);
         $filename = sprintf('sales-summary-%s-%02d.xlsx', $filters['year'], $filters['month']);
 
         return Excel::download(new SalesSummaryExport($rows), $filename);
@@ -144,19 +142,32 @@ class SalesSummaryController extends Controller
     {
         return collect()
             ->merge($this->reservationRows($filters))
-            ->merge($this->ormocRows($filters))
             ->merge($this->visaRows($filters))
             ->merge($this->receivableRows($filters))
-            ->when($request->user()?->getRoleNames()->first() === 'branch_supervisor', function (Collection $rows) use ($request) {
-                return $rows->where('branch_id', $request->user()->branch_id);
-            })
+            ->when(
+                $request->user()?->getRoleNames()->first() === 'branch_supervisor',
+                fn (Collection $rows) => $rows->where('branch_id', $request->user()->branch_id)
+            )
             ->when($filters['department'], fn (Collection $rows) => $rows->where('department', $filters['department']))
-            ->when($filters['branch_id'], fn (Collection $rows) => $rows->where('branch_id', $filters['branch_id']))
+            ->when($filters['branch_id'],  fn (Collection $rows) => $rows->where('branch_id', $filters['branch_id']))
             ->when($filters['agent_code'], fn (Collection $rows) => $rows->where('agent_code', $filters['agent_code']))
             ->sortByDesc('date')
             ->values();
     }
 
+    /**
+     * Reservation rows — covers ALL branches (QC and Ormoc) from the unified
+     * reservation_bookings table.
+     *
+     * Phase 3.7 — department label now derived from branch AND agent sub_group:
+     *   - Ormoc-origin bookings            → department = 'ormoc'
+     *   - QC bookings, sub_group = 'groups' → department = 'groups'
+     *   - QC bookings, all others           → department = 'reservation'
+     *
+     * This matches the client's Excel layout: four rows — Resa, Groups, Visa, Ormoc.
+     * The agent_codes join is a LEFT JOIN so bookings with no matching agent code
+     * (or a null agent_code) still appear, defaulting to 'reservation'.
+     */
     private function reservationRows(array $filters): Collection
     {
         if (! Schema::hasTable('reservation_bookings')) {
@@ -165,6 +176,12 @@ class SalesSummaryController extends Controller
 
         return DB::table('reservation_bookings')
             ->leftJoin('branches', 'branches.id', '=', 'reservation_bookings.branch_id')
+            ->leftJoin('agent_codes', function ($join) {
+                // Match on code AND non-ormoc department so Ormoc agent codes
+                // don't accidentally pull a QC sub_group label.
+                $join->on('agent_codes.code', '=', 'reservation_bookings.agent_code')
+                     ->where('agent_codes.department', '!=', 'ormoc');
+            })
             ->whereNull('reservation_bookings.deleted_at')
             ->whereYear('reservation_bookings.date', $filters['year'])
             ->whereMonth('reservation_bookings.date', $filters['month'])
@@ -177,42 +194,25 @@ class SalesSummaryController extends Controller
                 'reservation_bookings.agent_code',
                 'reservation_bookings.branch_id',
                 'branches.name as branch_name',
+                'branches.code as branch_code',
+                'agent_codes.sub_group',
                 'reservation_bookings.selling_price as gross_sales',
                 'reservation_bookings.net_payable',
                 'reservation_bookings.income',
-                DB::raw("'reservation' as department"),
-                DB::raw("'Reservation' as department_label"),
                 'reservation_bookings.status as collection_status',
-            ]);
-    }
-
-    private function ormocRows(array $filters): Collection
-    {
-        if (! Schema::hasTable('ormoc_bookings')) {
-            return collect();
-        }
-
-        return DB::table('ormoc_bookings')
-            ->leftJoin('branches', 'branches.id', '=', 'ormoc_bookings.branch_id')
-            ->whereNull('ormoc_bookings.deleted_at')
-            ->whereYear('ormoc_bookings.date', $filters['year'])
-            ->whereMonth('ormoc_bookings.date', $filters['month'])
-            ->whereIn('ormoc_bookings.status', ['confirmed'])
-            ->get([
-                'ormoc_bookings.id',
-                'ormoc_bookings.po_number as reference',
-                'ormoc_bookings.date',
-                'ormoc_bookings.client_name as customer',
-                'ormoc_bookings.agent_code',
-                'ormoc_bookings.branch_id',
-                'branches.name as branch_name',
-                'ormoc_bookings.selling_price as gross_sales',
-                'ormoc_bookings.net_payable',
-                'ormoc_bookings.income',
-                DB::raw("'ormoc' as department"),
-                DB::raw("'Ormoc Branch' as department_label"),
-                'ormoc_bookings.status as collection_status',
-            ]);
+            ])
+            ->map(fn ($row) => (object) array_merge((array) $row, [
+                'department' => match (true) {
+                    $row->branch_code === 'ORMOC'       => 'ormoc',
+                    $row->sub_group   === 'groups'      => 'groups',
+                    default                             => 'reservation',
+                },
+                'department_label' => match (true) {
+                    $row->branch_code === 'ORMOC'       => 'Ormoc Branch',
+                    $row->sub_group   === 'groups'      => 'Groups',
+                    default                             => 'Reservation',
+                },
+            ]));
     }
 
     private function visaRows(array $filters): Collection
@@ -275,10 +275,10 @@ class SalesSummaryController extends Controller
     private function totals(Collection $rows): array
     {
         return [
-            'records' => $rows->count(),
+            'records'     => $rows->count(),
             'gross_sales' => round((float) $rows->sum('gross_sales'), 2),
             'net_payable' => round((float) $rows->sum('net_payable'), 2),
-            'income' => round((float) $rows->sum('income'), 2),
+            'income'      => round((float) $rows->sum('income'), 2),
         ];
     }
 
@@ -286,12 +286,12 @@ class SalesSummaryController extends Controller
     {
         return $rows->groupBy('department')->map(function (Collection $items) {
             return [
-                'department' => $items->first()->department,
-                'label' => $items->first()->department_label,
-                'records' => $items->count(),
+                'department'  => $items->first()->department,
+                'label'       => $items->first()->department_label,
+                'records'     => $items->count(),
                 'gross_sales' => round((float) $items->sum('gross_sales'), 2),
                 'net_payable' => round((float) $items->sum('net_payable'), 2),
-                'income' => round((float) $items->sum('income'), 2),
+                'income'      => round((float) $items->sum('income'), 2),
             ];
         })->values();
     }
@@ -302,7 +302,7 @@ class SalesSummaryController extends Controller
             ->where('year', $filters['year'])
             ->where('month', $filters['month'])
             ->when($filters['department'], fn ($q) => $q->where('department', $filters['department']))
-            ->when($filters['branch_id'], fn ($q) => $q->where('branch_id', $filters['branch_id']))
+            ->when($filters['branch_id'],  fn ($q) => $q->where('branch_id', $filters['branch_id']))
             ->when($filters['agent_code'], fn ($q) => $q->where('agent_code', $filters['agent_code']));
 
         if ($request->user()?->getRoleNames()->first() === 'branch_supervisor') {
@@ -310,12 +310,12 @@ class SalesSummaryController extends Controller
         }
 
         return $query->orderBy('department')->get()->map(fn (SalesTarget $target) => [
-            'id' => $target->id,
-            'department' => $target->department,
+            'id'               => $target->id,
+            'department'       => $target->department,
             'department_label' => SalesTarget::DEPARTMENTS[$target->department] ?? $target->department,
-            'branch_name' => $target->branch?->name,
-            'agent_code' => $target->agent_code,
-            'target_amount' => (float) $target->target_amount,
+            'branch_name'      => $target->branch?->name,
+            'agent_code'       => $target->agent_code,
+            'target_amount'    => (float) $target->target_amount,
         ]);
     }
 

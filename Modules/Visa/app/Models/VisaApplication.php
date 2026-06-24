@@ -79,6 +79,10 @@ class VisaApplication extends Model
         'branch_id',
         'created_by',
         'updated_by',
+
+        // ── Phase 2.3 / 3.4 — attention flag (replaces manual yellow-highlight in Excel) ──
+        'needs_attention',
+        'attention_reason',
     ];
 
     protected $casts = [
@@ -93,6 +97,7 @@ class VisaApplication extends Model
         'payment_request_sent_at' => 'datetime',
         'or_received_at'          => 'datetime',
         'or_endorsed_at'          => 'datetime',
+        'needs_attention'         => 'boolean',
         'selling_price'           => 'decimal:2',
         'net_payable'             => 'decimal:2',
         'income'                  => 'decimal:2',

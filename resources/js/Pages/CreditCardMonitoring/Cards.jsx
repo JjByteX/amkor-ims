@@ -47,6 +47,7 @@ function CardForm({ card, onClose }) {
         <form onSubmit={submit} className="flex flex-col" style={{ gap: 'var(--space-3)' }}>
             <Input
                 label="Card Name"
+                required
                 placeholder="e.g. BDO Corporate Visa"
                 value={form.data.card_name}
                 onChange={(e) => form.setData('card_name', e.target.value)}

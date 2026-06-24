@@ -1,8 +1,8 @@
 import { router, useForm } from '@inertiajs/react';
-import { Save, X, AlertTriangle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
-import { FormLayout, FormCard, FormRow, FormActions } from '../../Components/Shared/FormLayout';
+import { FormLayout, FormCard, FormRow, FormActions, FormCancelButton, FormEditButton, FormSubmitButton } from '../../Components/Shared/FormLayout';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
@@ -82,8 +82,8 @@ export default function APEdit({ payable, currencies, paymentModes, statuses, su
                         subtitle="Update payable details"
                         actions={
                             <>
-                                <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('ap.index'))}>Cancel</Button>
-                                <Button type="submit" variant="primary" icon={Save} loading={processing}>Save Changes</Button>
+                                <FormCancelButton onClick={() => router.get(route('ap.index'))} />
+                                <FormEditButton loading={processing} />
                             </>
                         }
                     />
@@ -98,7 +98,7 @@ export default function APEdit({ payable, currencies, paymentModes, statuses, su
                             error={errors.contact_id}
                         />
                         <Input
-                            label="Supplier Name *"
+                            label="Supplier Name"
                             placeholder="Operator / supplier name"
                             value={data.supplier_name}
                             onChange={(e) => setData('supplier_name', e.target.value)}
@@ -118,7 +118,7 @@ export default function APEdit({ payable, currencies, paymentModes, statuses, su
 
                     {/* Card 2 — Amounts */}
                     <FormCard title="Amounts">
-                        <Select label="Primary Currency *" options={currencyOptions} value={data.currency} onChange={(e) => setData('currency', e.target.value)} error={errors.currency} />
+                        <Select label="Primary Currency" required options={currencyOptions} value={data.currency} onChange={(e) => setData('currency', e.target.value)} error={errors.currency} />
                         {isCash && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'rgba(245,158,11,0.1)', borderRadius: 'var(--radius-md)' }}>
                                 <AlertTriangle size={16} style={{ color: 'var(--color-warning)', flexShrink: 0 }} />
@@ -162,8 +162,8 @@ export default function APEdit({ payable, currencies, paymentModes, statuses, su
                     </FormCard>
 
                     <FormActions>
-                        <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('ap.index'))}>Cancel</Button>
-                        <Button type="submit" variant="primary" icon={Save} loading={processing}>Save Changes</Button>
+                        <FormCancelButton onClick={() => router.get(route('ap.index'))} />
+                        <FormEditButton loading={processing} />
                     </FormActions>
                 </FormLayout>
             </form>

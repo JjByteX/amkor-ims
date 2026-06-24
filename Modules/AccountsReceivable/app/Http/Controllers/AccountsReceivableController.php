@@ -72,6 +72,7 @@ class AccountsReceivableController extends Controller
         $status = $request->get('status');
         $agent = $request->get('agent');
         $month = $request->get('month');
+        $account = $request->get('account'); // Phase 3.5 — corporate account filter
 
         $query = Collectible::with(['branch', 'createdBy'])
             ->latest('date');
@@ -91,7 +92,8 @@ class AccountsReceivableController extends Controller
         $query->search($search)
             ->forDepartment($dept)
             ->forAgent($agent)
-            ->forStatus($status);
+            ->forStatus($status)
+            ->forCorporateAccount($account); // Phase 3.5
 
         if ($month) {
             [$y, $m] = explode('-', $month.'-01');
@@ -115,6 +117,8 @@ class AccountsReceivableController extends Controller
             $summaryQuery->where('department', 'visa');
         }
 
+        $summaryQuery->forCorporateAccount($account); // Phase 3.5
+
         $summary = $summaryQuery->selectRaw('
             sum(collectible_amount_php) as total_collectible_php,
             sum(collectible_amount_usd) as total_collectible_usd,
@@ -128,7 +132,7 @@ class AccountsReceivableController extends Controller
         return Inertia::render('AccountsReceivable/Index', [
             'collectibles' => $collectibles,
             'summary' => $summary,
-            'filters' => compact('search', 'dept', 'status', 'agent', 'month'),
+            'filters' => compact('search', 'dept', 'status', 'agent', 'month', 'account'),
             'departments' => Collectible::DEPARTMENTS,
             'statuses' => Collectible::STATUSES,
             'approvalStatuses' => Collectible::APPROVAL_STATUSES,

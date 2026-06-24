@@ -3,7 +3,7 @@
     "Contacts": true,
     "Reservation": true,
     "Visa": true,
-    "OrmocBranch": true,
+    "OrmocBranch": false,
     "SalesSummary": true,
     "AccountsReceivable": true,
     "AccountsPayable": true,

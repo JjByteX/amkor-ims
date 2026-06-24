@@ -376,7 +376,12 @@ button, input, select, textarea {
 
 /* Remove the browser spinner/calendar icon on WebKit/Blink */
 input[type="date"].date-input-native::-webkit-calendar-picker-indicator {
-    display: none;
+    display: none !important;
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
     -webkit-appearance: none;
 }
 
@@ -394,6 +399,20 @@ input[type="date"].date-input-native {
 input[type="date"].date-input-native::-moz-focus-inner {
     border: 0;
     padding: 0;
+}
+
+/* Hide the native calendar icon in Firefox */
+input[type="date"].date-input-native::-moz-calendar-picker-indicator {
+    display: none !important;
+    opacity: 0 !important;
+}
+
+/* Firefox: clip any remaining native picker decoration */
+@-moz-document url-prefix() {
+    input[type="date"].date-input-native {
+        appearance: none;
+        -moz-appearance: textfield;
+    }
 }
 
 /* ── Sidebar nav item hover ─────────────────────────────────────────────────

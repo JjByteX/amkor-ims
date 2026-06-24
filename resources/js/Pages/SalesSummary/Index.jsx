@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { router, useForm } from '@inertiajs/react';
-import { BanknoteArrowDown, BanknoteArrowUp, ChartSpline, ClipboardList, Download, Save, Search, Target } from 'lucide-react';
+import { BanknoteArrowDown, BanknoteArrowUp, ChartSpline, ClipboardList, Download, Search, Target } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
 import DataTable from '../../Components/Shared/DataTable';
@@ -146,7 +146,7 @@ export default function SalesSummaryIndex({ rows, totals, departments, targets, 
                                     <Select label="Branch" value={target.data.branch_id} onChange={(e) => target.setData('branch_id', e.target.value)} options={[{ value: '', label: 'All branches' }, ...branches.map((branch) => ({ value: branch.id, label: branch.name }))]} error={target.errors.branch_id} />
                                     <Input label="Agent Code" value={target.data.agent_code} onChange={(e) => target.setData('agent_code', e.target.value)} error={target.errors.agent_code} />
                                     <Input label="Target Amount" type="number" step="0.01" value={target.data.target_amount} onChange={(e) => target.setData('target_amount', e.target.value)} error={target.errors.target_amount} />
-                                    <Button type="submit" icon={Save} loading={target.processing}>Save Target</Button>
+                                    <FormSubmitButton loading={target.processing} />
                                 </div>
                             </Card>
                         )}

@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { router, useForm } from '@inertiajs/react';
-import { Save, X } from 'lucide-react';
+;
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
-import { FormLayout, FormCard, FormRow, FormActions } from '../../Components/Shared/FormLayout';
+import { FormLayout, FormCard, FormRow, FormActions, FormCancelButton, FormEditButton, FormSubmitButton } from '../../Components/Shared/FormLayout';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
@@ -57,8 +57,8 @@ export default function CreditCardCreate({ cards }) {
                         subtitle="Log a credit card payment"
                         actions={
                             <>
-                                <Button type="button" variant="ghost" icon={X} onClick={() => router.visit(route('credit-cards.index'))}>Cancel</Button>
-                                <Button type="submit" variant="primary" icon={Save} loading={form.processing}>Record Payment</Button>
+                                <FormCancelButton onClick={() => router.visit(route('credit-cards.index'))} />
+                                <FormSubmitButton loading={form.processing} />
                             </>
                         }
                     />
@@ -66,6 +66,7 @@ export default function CreditCardCreate({ cards }) {
                     <FormCard title="Payment Details">
                         <Select
                             label="Credit Card"
+                            required
                             options={cardOptions}
                             value={form.data.credit_card_id}
                             onChange={(e) => form.setData('credit_card_id', e.target.value)}
@@ -91,6 +92,7 @@ export default function CreditCardCreate({ cards }) {
 
                         <Input
                             label="Amount (PHP)"
+                            required
                             type="number"
                             min="0.01"
                             step="0.01"
@@ -100,15 +102,15 @@ export default function CreditCardCreate({ cards }) {
                             error={form.errors.amount}
                         />
                         <FormRow>
-                            <Input label="Due Date" type="date" value={form.data.due_date} onChange={(e) => form.setData('due_date', e.target.value)} error={form.errors.due_date} />
+                            <Input label="Due Date" required type="date" value={form.data.due_date} onChange={(e) => form.setData('due_date', e.target.value)} error={form.errors.due_date} />
                             <Input label="Statement Date" type="date" value={form.data.statement_date} onChange={(e) => form.setData('statement_date', e.target.value)} error={form.errors.statement_date} />
                         </FormRow>
                         <Textarea label="Remarks" value={form.data.remarks} onChange={(e) => form.setData('remarks', e.target.value)} error={form.errors.remarks} rows={3} />
                     </FormCard>
 
                     <FormActions>
-                        <Button type="button" variant="ghost" icon={X} onClick={() => router.visit(route('credit-cards.index'))}>Cancel</Button>
-                        <Button type="submit" variant="primary" icon={Save} loading={form.processing}>Record Payment</Button>
+                        <FormCancelButton onClick={() => router.visit(route('credit-cards.index'))} />
+                        <FormSubmitButton loading={form.processing} />
                     </FormActions>
                 </FormLayout>
             </form>

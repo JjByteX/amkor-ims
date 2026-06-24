@@ -134,8 +134,11 @@ class Employee extends Model
      * Roles that default to is_agent = true when creating an employee.
      */
     public const AGENT_ROLES = [
-        'resa_officer',
-        'ormoc_branch_officer',
+        'sales_reservation_officer',
+        'sales_ticketing_officer',
+        'group_sales_officer',
+        'branch_sales_officer',
+        'branch_supervisor',
         'visa_documentation_officer',
     ];
 
@@ -159,7 +162,7 @@ class Employee extends Model
         }
 
         $code   = $this->agent_code;
-        $tables = ['reservation_bookings', 'ormoc_bookings', 'visa_applications'];
+        $tables = ['reservation_bookings', 'visa_applications'];
 
         foreach ($tables as $table) {
             if (\Illuminate\Support\Facades\Schema::hasTable($table)) {

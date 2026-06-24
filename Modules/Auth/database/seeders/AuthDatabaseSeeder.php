@@ -48,15 +48,13 @@ class AuthDatabaseSeeder extends Seeder
             'reservation.forward_accounting',
             'reservation.view_sales_report', // full report (managers+)
             'reservation.view_own_sales',    // own-agent summary only
+            'reservation.approve',          // Gap 5 — branch_supervisor approval before forwarding (was ormoc.approve)
+            'reservation.escalate',         // Gap 5 — escalate to sales_ticketing_officer (was ormoc.escalate)
 
-            // Module 2 — Ormoc Branch
-            'ormoc.view',
-            'ormoc.create',
-            'ormoc.update',
-            'ormoc.delete',                  // president only
-            'ormoc.approve',                 // branch_supervisor approval before forwarding
-            'ormoc.escalate',                // escalate to sales_ticketing_officer
-            'ormoc.forward_accounting',
+            // Module 2 — Ormoc Branch (REMOVED — module disabled after merge)
+            // ormoc.* permissions dropped; branch_supervisor and branch_sales_officer
+            // now use reservation.* permissions to access unified reservation_bookings.
+            // Any existing ormoc.* rows in the DB are harmless no-ops (no route checks them).
 
             // Module 3 — Visa & Documentation
             'visa.view',
@@ -231,9 +229,7 @@ class AuthDatabaseSeeder extends Seeder
                 // Module 1 — Reservation (full CRU, no delete)
                 'reservation.view', 'reservation.create', 'reservation.update',
                 'reservation.forward_accounting', 'reservation.view_sales_report',
-                // Module 2 — Ormoc (full CRU, no delete)
-                'ormoc.view', 'ormoc.create', 'ormoc.update',
-                'ormoc.approve', 'ormoc.escalate', 'ormoc.forward_accounting',
+                // Module 2 — Ormoc (module disabled; reservation.* permissions cover Ormoc bookings)
                 // Module 3 — Visa (view only)
                 'visa.view',
                 // Module 4 — AR (approve + CRU, no delete)
@@ -274,8 +270,7 @@ class AuthDatabaseSeeder extends Seeder
                 // Module 1 — Reservation (view + annotate)
                 'reservation.view', 'reservation.update',
                 'reservation.forward_accounting', 'reservation.view_sales_report',
-                // Module 2 — Ormoc (view + annotate)
-                'ormoc.view', 'ormoc.update', 'ormoc.forward_accounting',
+                // Module 2 — Ormoc (module disabled; reservation.* permissions cover Ormoc bookings)
                 // Module 3 — Visa (view only)
                 'visa.view',
                 // Module 4 — AR (annotate / oversight)
@@ -314,8 +309,7 @@ class AuthDatabaseSeeder extends Seeder
             'administrative_assistant' => [
                 // Module 1 — Reservation (audit remarks only)
                 'reservation.view', 'reservation.update',
-                // Module 2 — Ormoc (audit remarks only)
-                'ormoc.view', 'ormoc.update',
+                // Module 2 — Ormoc (module disabled; reservation.view/update covers Ormoc bookings)
                 // Module 3 — Visa (audit remarks; receives endorsed documents)
                 'visa.view', 'visa.update',
                 // Module 4 — AR (audit remarks; receives AR report copy)
@@ -352,8 +346,7 @@ class AuthDatabaseSeeder extends Seeder
             'accounting_assistant' => [
                 // Module 1 — Reservation (records payment, updates AR/OR/SI)
                 'reservation.view', 'reservation.update',
-                // Module 2 — Ormoc (records Ormoc payments)
-                'ormoc.view', 'ormoc.update',
+                // Module 2 — Ormoc (module disabled; reservation.view/update covers Ormoc bookings)
                 // Module 3 — Visa (records OR; payment matching; prepares cash/voucher)
                 'visa.view', 'visa.update', 'visa.record_or',
                 // Module 4 — AR (primary owner: full CRU)
@@ -420,9 +413,7 @@ class AuthDatabaseSeeder extends Seeder
                 // Module 1 — Reservation (full CRU, no delete)
                 'reservation.view', 'reservation.create', 'reservation.update',
                 'reservation.forward_accounting', 'reservation.view_sales_report',
-                // Module 2 — Ormoc (full CRU, no delete; oversight of Ormoc sales)
-                'ormoc.view', 'ormoc.create', 'ormoc.update',
-                'ormoc.approve', 'ormoc.escalate', 'ormoc.forward_accounting',
+                // Module 2 — Ormoc (module disabled; reservation.* permissions cover Ormoc bookings)
                 // Module 3 — Visa (view only)
                 'visa.view',
                 // Module 4 — AR (approves AR flow)
@@ -481,8 +472,7 @@ class AuthDatabaseSeeder extends Seeder
                 // Module 1 — Reservation (own bookings; handles Ormoc escalations)
                 'reservation.view', 'reservation.create', 'reservation.update',
                 'reservation.forward_accounting', 'reservation.view_own_sales',
-                // Module 2 — Ormoc (OIC override — escalated records only)
-                'ormoc.view', 'ormoc.create', 'ormoc.update',
+                // Module 2 — Ormoc (module disabled; reservation.* handles escalated Ormoc records)
                 // Module 4 — AR (own bookings' AR status only)
                 'ar.view_own',
                 // Module 8 — Cashbond (read-only — portal balances for booking + Ormoc escalations)
@@ -530,10 +520,9 @@ class AuthDatabaseSeeder extends Seeder
             // Jhoanna Marie Tismo — oversees Marketing team + Business Dev contacts.
             // Modules: 1👁 2👁 3👁 4👁 5🚫 6🚫 7🚫 8🚫 9🚫 10🚫 11🚫 12✏️(BD+Visa) 13✅ 14🚫 15🌿 16✅ 17🔒
             'business_development_manager' => [
-                // Module 1 — Reservation (view only — cross-dept reporting)
+                // Module 1 — Reservation (view only — cross-dept reporting; reservation.view
+                // already covers Ormoc bookings post-merge, so no separate Ormoc grant needed)
                 'reservation.view', 'reservation.view_sales_report',
-                // Module 2 — Ormoc (view only)
-                'ormoc.view',
                 // Module 3 — Visa (view only)
                 'visa.view',
                 // Module 4 — AR (view only)
@@ -639,10 +628,16 @@ class AuthDatabaseSeeder extends Seeder
             // Anjelly Miroy — full access to all Ormoc records; formally approves
             // before forwarding invoice + quotation + payment to QC accounting.
             // Modules: 1🚫 2🌿 3🚫 4🌿 5🚫 6🚫 7🚫 8👁 9🚫 10🚫 11🚫 12🌿 13👁 14🔒 15🌿 16✏️ 17🔒
+            //
+            // Gap 5 fix: this role now uses reservation.* (the unified module that
+            // post-merge guards Ormoc bookings) instead of ormoc.* — ormoc.* no
+            // longer guards any route, since OrmocBranchController/routes are
+            // disabled. approve/escalate/forward_accounting map directly onto the
+            // same actions exposed under the Reservation module.
             'branch_supervisor' => [
-                // Module 2 — Ormoc (full branch access: CRU, no delete)
-                'ormoc.view', 'ormoc.create', 'ormoc.update',
-                'ormoc.approve', 'ormoc.escalate', 'ormoc.forward_accounting',
+                // Module 1/2 — Reservation & Booking (full Ormoc branch access: CRU, no delete)
+                'reservation.view', 'reservation.create', 'reservation.update',
+                'reservation.approve', 'reservation.escalate', 'reservation.forward_accounting',
                 // Module 4 — AR (read Ormoc collectibles only)
                 'ar.view_own',
                 // Module 8 — Cashbond (read-only — portal balances before Ormoc bookings)
@@ -665,9 +660,11 @@ class AuthDatabaseSeeder extends Seeder
             // ── 17. Branch Sales Officer ───────────────────────────────────────
             // Louie Bacalso, Rhea Dedace, Kay Parrilla — own bookings only.
             // Modules: 1🚫 2🔒 3🚫 4🚫 5🚫 6🚫 7🚫 8👁 9🚫 10🚫 11🚫 12🔒 13👁 14🔒 15🔒 16✏️ 17🔒
+            //
+            // Gap 5 fix: reservation.* replaces ormoc.* (see branch_supervisor note above).
             'branch_sales_officer' => [
-                // Module 2 — Ormoc (own bookings only)
-                'ormoc.view', 'ormoc.create', 'ormoc.update',
+                // Module 1/2 — Reservation & Booking (own bookings only)
+                'reservation.view', 'reservation.create', 'reservation.update',
                 // Module 8 — Cashbond (read-only — portal balances before Ormoc bookings)
                 'cashbond.view_readonly',
                 // Module 12 — Sales Summary (own agent summary only)
@@ -707,25 +704,31 @@ class AuthDatabaseSeeder extends Seeder
             ['name' => 'Maria Alexandria De Quiros',   'email' => 'alex@amkor.ph',        'role' => 'visa_documentation_supervisor','branch_id' => $qcMain],
             ['name' => 'Randy Callueng',               'email' => 'randy@amkor.ph',       'role' => 'liaison_officer_visa',         'branch_id' => $qcMain],
             ['name' => 'Anjelly Miroy',                'email' => 'anjelly@amkor.ph',     'role' => 'branch_supervisor',            'branch_id' => $ormoc],
-            // Placeholder accounts (to be updated with real emails)
-            ['name' => '[Accounting Assistant 1]',     'email' => 'accounting1@amkor.ph', 'role' => 'accounting_assistant',         'branch_id' => $qcMain],
-            ['name' => '[Accounting Assistant 2]',     'email' => 'accounting2@amkor.ph', 'role' => 'accounting_assistant',         'branch_id' => $qcMain],
-            ['name' => '[Accounting Assistant 3]',     'email' => 'accounting3@amkor.ph', 'role' => 'accounting_assistant',         'branch_id' => $qcMain],
-            ['name' => '[RESA Officer 1]',             'email' => 'resa1@amkor.ph',       'role' => 'sales_reservation_officer',    'branch_id' => $qcMain],
-            ['name' => '[RESA Officer 2]',             'email' => 'resa2@amkor.ph',       'role' => 'sales_reservation_officer',    'branch_id' => $qcMain],
-            ['name' => '[RESA Officer 3]',             'email' => 'resa3@amkor.ph',       'role' => 'sales_reservation_officer',    'branch_id' => $qcMain],
-            ['name' => '[RESA Officer 4]',             'email' => 'resa4@amkor.ph',       'role' => 'sales_reservation_officer',    'branch_id' => $qcMain],
-            ['name' => '[RESA Officer 5]',             'email' => 'resa5@amkor.ph',       'role' => 'sales_reservation_officer',    'branch_id' => $qcMain],
-            ['name' => '[RESA Officer 6]',             'email' => 'resa6@amkor.ph',       'role' => 'sales_reservation_officer',    'branch_id' => $qcMain],
-            ['name' => '[Group Sales Officer 1]',      'email' => 'groups1@amkor.ph',     'role' => 'group_sales_officer',          'branch_id' => $qcMain],
-            ['name' => '[Group Sales Officer 2]',      'email' => 'groups2@amkor.ph',     'role' => 'group_sales_officer',          'branch_id' => $qcMain],
-            ['name' => '[Marketing Officer 1]',        'email' => 'marketing1@amkor.ph',  'role' => 'sales_marketing_officer',      'branch_id' => $qcMain],
-            ['name' => '[Marketing Officer 2]',        'email' => 'marketing2@amkor.ph',  'role' => 'sales_marketing_officer',      'branch_id' => $qcMain],
-            ['name' => '[Visa Officer 1]',             'email' => 'visa1@amkor.ph',       'role' => 'visa_documentation_officer',   'branch_id' => $qcMain],
-            ['name' => '[Visa Officer 2]',             'email' => 'visa2@amkor.ph',       'role' => 'visa_documentation_officer',   'branch_id' => $qcMain],
-            ['name' => '[Branch Sales Officer 1]',     'email' => 'ormoc1@amkor.ph',      'role' => 'branch_sales_officer',         'branch_id' => $ormoc],
-            ['name' => '[Branch Sales Officer 2]',     'email' => 'ormoc2@amkor.ph',      'role' => 'branch_sales_officer',         'branch_id' => $ormoc],
-            ['name' => '[Branch Sales Officer 3]',     'email' => 'ormoc3@amkor.ph',      'role' => 'branch_sales_officer',         'branch_id' => $ormoc],
+            // Placeholder accounts — replaced with real staff from org chart + Excel
+            ['name' => 'Kristia Cassandra Borbe',  'email' => 'accounting1@amkor.ph', 'role' => 'accounting_assistant',         'branch_id' => $qcMain],
+            ['name' => 'Zarah Mae Padecio',         'email' => 'accounting2@amkor.ph', 'role' => 'accounting_assistant',         'branch_id' => $qcMain],
+            ['name' => 'Ashly Joyce Ayag',          'email' => 'accounting3@amkor.ph', 'role' => 'accounting_assistant',         'branch_id' => $qcMain],
+            ['name' => 'Elaiza Joaquin',            'email' => 'resa1@amkor.ph',       'role' => 'sales_reservation_officer',    'branch_id' => $qcMain],
+            ['name' => 'Christine Mateo',           'email' => 'resa2@amkor.ph',       'role' => 'sales_reservation_officer',    'branch_id' => $qcMain],
+            ['name' => 'Kristine Grefal',           'email' => 'resa3@amkor.ph',       'role' => 'sales_reservation_officer',    'branch_id' => $qcMain],
+            ['name' => 'Ederlyn Boyles',            'email' => 'resa4@amkor.ph',       'role' => 'sales_reservation_officer',    'branch_id' => $qcMain],
+            ['name' => 'Jezielyn Ferol',            'email' => 'resa5@amkor.ph',       'role' => 'sales_reservation_officer',    'branch_id' => $qcMain],
+            ['name' => 'Wenchelle Anne Novelo',     'email' => 'resa6@amkor.ph',       'role' => 'sales_reservation_officer',    'branch_id' => $qcMain],
+            ['name' => 'Angela Beatriz Lo',         'email' => 'groups1@amkor.ph',     'role' => 'group_sales_officer',          'branch_id' => $qcMain],
+            ['name' => 'Kyla Luna',                 'email' => 'groups2@amkor.ph',     'role' => 'group_sales_officer',          'branch_id' => $qcMain],
+            ['name' => 'Mitzi Vidor',               'email' => 'marketing1@amkor.ph',  'role' => 'sales_marketing_officer',      'branch_id' => $qcMain],
+            ['name' => 'Jahara Jade Ramirez',       'email' => 'marketing2@amkor.ph',  'role' => 'sales_marketing_officer',      'branch_id' => $qcMain],
+            // Visa officers — Ricci and Joanne confirmed. Mel, Kae, Mimi: full names TBC from Alex/John Vic.
+            // Using confirmed names where known; placeholder names for the three pending.
+            ['name' => 'Ricci Joy Alcaraz',         'email' => 'visa1@amkor.ph',       'role' => 'visa_documentation_officer',   'branch_id' => $qcMain],
+            ['name' => 'Joanne May Evasco',         'email' => 'visa2@amkor.ph',       'role' => 'visa_documentation_officer',   'branch_id' => $qcMain],
+            ['name' => '[Visa Officer — Mel]',      'email' => 'visa3@amkor.ph',       'role' => 'visa_documentation_officer',   'branch_id' => $qcMain],
+            ['name' => '[Visa Officer — Kae]',      'email' => 'visa4@amkor.ph',       'role' => 'visa_documentation_officer',   'branch_id' => $qcMain],
+            ['name' => '[Visa Officer — Mimi]',     'email' => 'visa5@amkor.ph',       'role' => 'visa_documentation_officer',   'branch_id' => $qcMain],
+            // Ormoc branch sales officers
+            ['name' => 'Louie Jay Bacalso',         'email' => 'ormoc1@amkor.ph',      'role' => 'branch_sales_officer',         'branch_id' => $ormoc],
+            ['name' => 'Rhea Mae Dedace',           'email' => 'ormoc2@amkor.ph',      'role' => 'branch_sales_officer',         'branch_id' => $ormoc],
+            ['name' => 'Kay Ann Mavel Parrilla',    'email' => 'ormoc3@amkor.ph',      'role' => 'branch_sales_officer',         'branch_id' => $ormoc],
         ];
 
         foreach ($users as $userData) {
@@ -745,28 +748,38 @@ class AuthDatabaseSeeder extends Seeder
         }
 
         // ── 5. Agent codes ────────────────────────────────────────────────────
-        // Agent codes are used for sales-report attribution. Each officer's
-        // code maps to their department and optionally a sub-group.
+        // Sourced directly from the client's Excel files (June 2026).
+        // sub_group drives the Resa vs Groups split in the Sales Summary report.
         $agentCodes = [
-            // RESA — Individual bookings
+            // ── RESA — Individual bookings ────────────────────────────────────
+            ['code' => 'RT',    'department' => 'resa', 'sub_group' => 'individual'],  // Rochelle Tienzo (GSM — also agents in RESA)
+            ['code' => 'RP',    'department' => 'resa', 'sub_group' => 'individual'],  // Identity TBC (Phase 5.2 — ask Rochelle/John Vic)
             ['code' => 'EJ',    'department' => 'resa', 'sub_group' => 'individual'],  // Elaiza Joaquin
             ['code' => 'CM',    'department' => 'resa', 'sub_group' => 'individual'],  // Christine Mateo
             ['code' => 'KG',    'department' => 'resa', 'sub_group' => 'individual'],  // Kristine Grefal
+            ['code' => 'JR',    'department' => 'resa', 'sub_group' => 'individual'],  // Jhonalyn Ramos (OIC — sales_ticketing_officer)
             ['code' => 'EB',    'department' => 'resa', 'sub_group' => 'individual'],  // Ederlyn Boyles
             ['code' => 'JF',    'department' => 'resa', 'sub_group' => 'individual'],  // Jezielyn Ferol
             ['code' => 'WAN',   'department' => 'resa', 'sub_group' => 'individual'],  // Wenchelle Anne Novelo
-            ['code' => 'JR',    'department' => 'resa', 'sub_group' => 'individual'],  // Jhonalyn Ramos (OIC)
-            // RESA — Group bookings
-            ['code' => 'AL',    'department' => 'resa', 'sub_group' => 'groups'],       // Angela Lo
-            ['code' => 'KL',    'department' => 'resa', 'sub_group' => 'groups'],       // Kyla Luna
-            // Visa
-            ['code' => 'ALEX',  'department' => 'visa', 'sub_group' => null],           // Maria Alexandria De Quiros
-            ['code' => 'RICCI', 'department' => 'visa', 'sub_group' => null],           // Ricci Joy Alcaraz
-            ['code' => 'JME',   'department' => 'visa', 'sub_group' => null],           // Joanne May Evasco
-            // Ormoc Branch
-            ['code' => 'LJB',   'department' => 'ormoc', 'sub_group' => null],          // Louie Jay Bacalso
-            ['code' => 'RMD',   'department' => 'ormoc', 'sub_group' => null],          // Rhea Mae Dedace
-            ['code' => 'KAP',   'department' => 'ormoc', 'sub_group' => null],          // Kay Ann Mavel Parrilla
+            // ── RESA — Group bookings ─────────────────────────────────────────
+            ['code' => 'MMT',   'department' => 'resa', 'sub_group' => 'groups'],      // Jhoanna Marie Tismo (BDM; also books groups)
+            ['code' => 'JMMT',  'department' => 'resa', 'sub_group' => 'groups'],      // Jhoanna Marie Tismo (alt code — Phase 5.1: consolidate with client)
+            ['code' => 'AL',    'department' => 'resa', 'sub_group' => 'groups'],      // Angela Beatriz Lo
+            ['code' => 'KL',    'department' => 'resa', 'sub_group' => 'groups'],      // Kyla Luna
+            // ── Visa & Documentation ──────────────────────────────────────────
+            ['code' => 'ALEX',  'department' => 'visa', 'sub_group' => null],          // Maria Alexandria De Quiros (Supervisor)
+            ['code' => 'RICCI', 'department' => 'visa', 'sub_group' => null],          // Ricci Joy Alcaraz
+            ['code' => 'JME',   'department' => 'visa', 'sub_group' => null],          // Joanne May Evasco
+            ['code' => 'MEL',   'department' => 'visa', 'sub_group' => null],          // Mel (full name TBC from Alex/John Vic)
+            ['code' => 'KAE',   'department' => 'visa', 'sub_group' => null],          // Kae (full name TBC)
+            ['code' => 'MIMI',  'department' => 'visa', 'sub_group' => null],          // Mimi (full name TBC)
+            ['code' => 'MMT',   'department' => 'visa', 'sub_group' => null],          // Jhoanna Marie Tismo (also appears in Visa Excel)
+            // ── Ormoc Branch ─────────────────────────────────────────────────
+            ['code' => 'AM',    'department' => 'ormoc', 'sub_group' => null],         // Anjelly Miroy (Branch Supervisor)
+            ['code' => 'LB',    'department' => 'ormoc', 'sub_group' => null],         // Louie Jay Bacalso
+            ['code' => 'RD',    'department' => 'ormoc', 'sub_group' => null],         // Rhea Mae Dedace
+            ['code' => 'KP',    'department' => 'ormoc', 'sub_group' => null],         // Kay Ann Mavel Parrilla
+            ['code' => 'MMT',   'department' => 'ormoc', 'sub_group' => null],         // Jhoanna Marie Tismo (appears in Ormoc summary too)
         ];
 
         foreach ($agentCodes as $code) {
@@ -777,13 +790,31 @@ class AuthDatabaseSeeder extends Seeder
         }
 
         // ── 6. Link known users to their agent codes ──────────────────────────
-        // Only named staff with confirmed codes are linked here.
-        // Placeholder users ([RESA Officer N] etc.) should be updated via the
-        // admin UI once real staff are assigned to those accounts.
+        // Sourced from Excel agent breakdown tables (June 2026).
+        // Placeholder visa officers (Mel, Kae, Mimi) linked once their real
+        // accounts are updated with correct emails in the admin UI.
         $userCodeLinks = [
-            // email                    => agent code
-            'jhona@amkor.ph'            => 'JR',    // Jhonalyn Ramos — sales_ticketing_officer
-            'alex@amkor.ph'             => 'ALEX',  // Maria Alexandria De Quiros — visa_documentation_supervisor
+            'rochelle@amkor.ph'   => 'RT',    // Rochelle Tienzo — also books as agent
+            'jhona@amkor.ph'      => 'JR',    // Jhonalyn Ramos — OIC sales_ticketing_officer
+            'jhoanna@amkor.ph'    => 'MMT',   // Jhoanna Marie Tismo — BDM; primary MMT code
+            'alex@amkor.ph'       => 'ALEX',  // Maria Alexandria De Quiros — visa supervisor
+            'resa1@amkor.ph'      => 'EJ',    // Elaiza Joaquin
+            'resa2@amkor.ph'      => 'CM',    // Christine Mateo
+            'resa3@amkor.ph'      => 'KG',    // Kristine Grefal
+            'resa4@amkor.ph'      => 'EB',    // Ederlyn Boyles
+            'resa5@amkor.ph'      => 'JF',    // Jezielyn Ferol
+            'resa6@amkor.ph'      => 'WAN',   // Wenchelle Anne Novelo
+            'groups1@amkor.ph'    => 'AL',    // Angela Beatriz Lo
+            'groups2@amkor.ph'    => 'KL',    // Kyla Luna
+            'visa1@amkor.ph'      => 'RICCI', // Ricci Joy Alcaraz
+            'visa2@amkor.ph'      => 'JME',   // Joanne May Evasco
+            'visa3@amkor.ph'      => 'MEL',   // Mel — full name TBC
+            'visa4@amkor.ph'      => 'KAE',   // Kae — full name TBC
+            'visa5@amkor.ph'      => 'MIMI',  // Mimi — full name TBC
+            'anjelly@amkor.ph'    => 'AM',    // Anjelly Miroy — Ormoc branch supervisor
+            'ormoc1@amkor.ph'     => 'LB',    // Louie Jay Bacalso
+            'ormoc2@amkor.ph'     => 'RD',    // Rhea Mae Dedace
+            'ormoc3@amkor.ph'     => 'KP',    // Kay Ann Mavel Parrilla
         ];
 
         foreach ($userCodeLinks as $email => $code) {

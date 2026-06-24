@@ -1,8 +1,8 @@
 import { router, usePage, useForm } from '@inertiajs/react';
-import { Save, X, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
-import { FormLayout, FormCard, FormRow, FormActions } from '../../Components/Shared/FormLayout';
+import { FormLayout, FormCard, FormRow, FormActions, FormCancelButton, FormEditButton, FormSubmitButton } from '../../Components/Shared/FormLayout';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
@@ -64,8 +64,8 @@ export default function BirEdit({ transaction, documentTypes, sourceTypes, payme
                         subtitle={`${documentTypes[transaction.document_type] ?? transaction.document_type} · ${transaction.client_name}`}
                         actions={
                             <>
-                                <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('bir.index'))}>Cancel</Button>
-                                <Button type="submit" variant="primary" icon={Save} loading={processing}>Save Changes</Button>
+                                <FormCancelButton onClick={() => router.get(route('bir.index'))} />
+                                <FormEditButton loading={processing} />
                             </>
                         }
                     />
@@ -74,7 +74,8 @@ export default function BirEdit({ transaction, documentTypes, sourceTypes, payme
                     <FormCard title="Document & Client">
                         <FormRow>
                             <Select
-                                label="Document Type *"
+                                label="Document Type"
+                                required
                                 value={data.document_type}
                                 onChange={(e) => setData('document_type', e.target.value)}
                                 error={errors.document_type}
@@ -96,7 +97,8 @@ export default function BirEdit({ transaction, documentTypes, sourceTypes, payme
                                 options={Object.entries(sourceTypes).map(([v, l]) => ({ value: v, label: l }))}
                             />
                             <Input
-                                label="Transaction Date *"
+                                label="Transaction Date"
+                                required
                                 type="date"
                                 value={data.transaction_date}
                                 onChange={(e) => setData('transaction_date', e.target.value)}
@@ -112,7 +114,7 @@ export default function BirEdit({ transaction, documentTypes, sourceTypes, payme
                                 Service Invoice — BIR ATP No. {atpNumber} will be printed.
                             </div>
                         )}
-                        <Input label="Client Name *" value={data.client_name} onChange={(e) => setData('client_name', e.target.value)} error={errors.client_name} />
+                        <Input label="Client Name" required value={data.client_name} onChange={(e) => setData('client_name', e.target.value)} error={errors.client_name} />
                         <FormRow>
                             <Input label="TIN" value={data.tin} onChange={(e) => setData('tin', e.target.value)} error={errors.tin} placeholder="000-000-000-00000" />
                             <Input label="Business Style" value={data.business_style} onChange={(e) => setData('business_style', e.target.value)} error={errors.business_style} />
@@ -122,7 +124,7 @@ export default function BirEdit({ transaction, documentTypes, sourceTypes, payme
 
                     {/* Card 2 — Amounts & Notes */}
                     <FormCard title="Amounts & Notes">
-                        <Input label="Gross Amount (VAT-inclusive) *" type="number" step="0.01" min="0" value={data.gross_amount} onChange={(e) => setData('gross_amount', e.target.value)} error={errors.gross_amount} />
+                        <Input label="Gross Amount (VAT-inclusive)" required type="number" step="0.01" min="0" value={data.gross_amount} onChange={(e) => setData('gross_amount', e.target.value)} error={errors.gross_amount} />
                         {isSI && (
                             <FormRow>
                                 <Checkbox label="VAT Exempt" checked={data.is_vat_exempt} onChange={(e) => { setData('is_vat_exempt', e.target.checked); if (e.target.checked) setData('is_vat_zero_rated', false); }} />
@@ -179,8 +181,8 @@ export default function BirEdit({ transaction, documentTypes, sourceTypes, payme
                     </FormCard>
 
                     <FormActions>
-                        <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('bir.index'))}>Cancel</Button>
-                        <Button type="submit" variant="primary" icon={Save} loading={processing}>Save Changes</Button>
+                        <FormCancelButton onClick={() => router.get(route('bir.index'))} />
+                        <FormEditButton loading={processing} />
                     </FormActions>
                 </FormLayout>
             </form>
