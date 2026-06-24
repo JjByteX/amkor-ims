@@ -1,3 +1,5 @@
+import { fieldConstraints } from './fieldConstraints';
+
 /**
  * Textarea — shared multiline input.
  *
@@ -30,6 +32,9 @@
  *   id          : string
  *   required    : bool
  *   className   : string
+ *
+ * maxLength is derived automatically from fieldConstraints(label) — defaults
+ * to 500 for all textarea fields. Pass maxLength explicitly to override.
  */
 export default function Textarea({
     label       = '',
@@ -47,6 +52,11 @@ export default function Textarea({
     ...rest
 }) {
     const textareaId = id ?? (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
+
+    // Textareas are always long-form; default 500, overridable via prop
+    const constraints = fieldConstraints(label, 'textarea');
+    const maxLength   = rest.maxLength ?? constraints.maxLength;
+    const { maxLength: _ml, ...restClean } = rest;
 
     return (
         <div className={`flex flex-col gap-1 ${className}`}>
@@ -74,6 +84,7 @@ export default function Textarea({
                 disabled={disabled}
                 placeholder={placeholder}
                 required={required}
+                maxLength={maxLength}
                 className="w-full outline-none font-body transition-colors duration-150 focus:ring-0 focus:ring-offset-0 placeholder:text-[var(--color-text-muted)]"
                 style={{
                     minHeight   : 'var(--textarea-min-height)',
@@ -108,7 +119,7 @@ export default function Textarea({
                         : 'var(--textarea-border)';
                     onBlur?.(e);
                 }}
-                {...rest}
+                {...restClean}
             />
 
             {error && (

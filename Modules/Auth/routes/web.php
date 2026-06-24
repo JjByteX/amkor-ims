@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\Auth\Http\Controllers\AuthController;
+use Modules\Auth\Http\Controllers\BranchSessionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,4 +23,11 @@ Route::middleware(['guest'])->group(function () {
 // Authenticated only
 Route::middleware(['auth'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('auth.logout');
+
+    // Gap 8 — Global branch switcher: stores active_branch_id in the session.
+    // POST sets the active branch (view + create context).
+    // GET returns the current active branch as JSON (used by create forms to show confirmation banner).
+    // Only accessible to the four all-access roles; the controller enforces this.
+    Route::post('/session/branch', [BranchSessionController::class, 'store'])->name('session.branch');
+    Route::get('/session/branch',  [BranchSessionController::class, 'show'])->name('session.branch.show');
 });

@@ -26,10 +26,11 @@ class SalesTarget extends Model
     ];
 
     public const DEPARTMENTS = [
-        'reservation' => 'Reservation',
-        'ormoc' => 'Ormoc Branch',
-        'visa' => 'Visa & Documentation',
-        'ar' => 'Accounts Receivable',
+        'reservation' => 'Reservation',   // QC individual/RESA bookings
+        'groups'      => 'Groups',         // Phase 3.7 — QC groups sub-group
+        'ormoc'       => 'Ormoc Branch',
+        'visa'        => 'Visa & Documentation',
+        'ar'          => 'Accounts Receivable',
     ];
 
     public function branch(): BelongsTo

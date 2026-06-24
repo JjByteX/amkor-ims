@@ -1,8 +1,8 @@
 import { router, useForm, usePage } from '@inertiajs/react';
-import { Save, X } from 'lucide-react';
+;
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
-import { FormLayout, FormCard, FormRow, FormActions } from '../../Components/Shared/FormLayout';
+import { FormLayout, FormCard, FormRow, FormActions, FormCancelButton, FormEditButton, FormSubmitButton } from '../../Components/Shared/FormLayout';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
@@ -51,29 +51,29 @@ export default function IataPaymentsCreate({ operators }) {
                         title="Record IATA Payment"
                         actions={
                             <>
-                                <Button type="button" variant="ghost" icon={X} onClick={() => router.visit(route('iata.index'))}>Cancel</Button>
-                                <Button type="submit" variant="primary" icon={Save} loading={form.processing}>Record Payment</Button>
+                                <FormCancelButton onClick={() => router.visit(route('iata.index'))} />
+                                <FormSubmitButton loading={form.processing} />
                             </>
                         }
                     />
 
                     <FormCard title="Payment Details">
                         <Select label="Operator (from Directory)" options={operatorOptions} value={form.data.contact_id} onChange={handleOperatorSelect} error={form.errors.contact_id} />
-                        <Input label="Operator Name" placeholder="Name is stored on record even if not in directory" value={form.data.operator_name} onChange={(e) => form.setData('operator_name', e.target.value)} error={form.errors.operator_name} />
+                        <Input label="Operator Name" required placeholder="Name is stored on record even if not in directory" value={form.data.operator_name} onChange={(e) => form.setData('operator_name', e.target.value)} error={form.errors.operator_name} />
                         <FormRow>
                             <Input label="Billing Reference" placeholder="Confirmation # from operator" value={form.data.billing_reference} onChange={(e) => form.setData('billing_reference', e.target.value)} error={form.errors.billing_reference} />
                             <Input label="Billing Date" type="date" value={form.data.billing_date} onChange={(e) => form.setData('billing_date', e.target.value)} error={form.errors.billing_date} />
                         </FormRow>
                         <FormRow>
-                            <Input label="Amount (PHP)" type="number" min="0.01" step="0.01" placeholder="0.00" value={form.data.amount} onChange={(e) => form.setData('amount', e.target.value)} error={form.errors.amount} />
-                            <Input label="Due Date" type="date" value={form.data.due_date} onChange={(e) => form.setData('due_date', e.target.value)} error={form.errors.due_date} />
+                            <Input label="Amount (PHP)" required type="number" min="0.01" step="0.01" placeholder="0.00" value={form.data.amount} onChange={(e) => form.setData('amount', e.target.value)} error={form.errors.amount} />
+                            <Input label="Due Date" required type="date" value={form.data.due_date} onChange={(e) => form.setData('due_date', e.target.value)} error={form.errors.due_date} />
                         </FormRow>
                         <Textarea label="Remarks" value={form.data.remarks} onChange={(e) => form.setData('remarks', e.target.value)} error={form.errors.remarks} rows={3} />
                     </FormCard>
 
                     <FormActions>
-                        <Button type="button" variant="ghost" icon={X} onClick={() => router.visit(route('iata.index'))}>Cancel</Button>
-                        <Button type="submit" variant="primary" icon={Save} loading={form.processing}>Record Payment</Button>
+                        <FormCancelButton onClick={() => router.visit(route('iata.index'))} />
+                        <FormSubmitButton loading={form.processing} />
                     </FormActions>
                 </FormLayout>
             </form>

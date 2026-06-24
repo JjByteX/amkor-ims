@@ -1,8 +1,8 @@
 import { router, useForm } from '@inertiajs/react';
-import { Save, X } from 'lucide-react';
+;
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
-import { FormLayout, FormCard, FormRow, FormActions } from '../../Components/Shared/FormLayout';
+import { FormLayout, FormCard, FormRow, FormActions, FormCancelButton, FormEditButton, FormSubmitButton } from '../../Components/Shared/FormLayout';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
@@ -42,8 +42,8 @@ export default function LedgerCreate({ categories, fundTypes, currencies }) {
                         subtitle="Record a disbursement entry manually"
                         actions={
                             <>
-                                <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('disbursement.ledger.index'))}>Cancel</Button>
-                                <Button type="submit" variant="primary" icon={Save} loading={processing}>Save Entry</Button>
+                                <FormCancelButton onClick={() => router.get(route('disbursement.ledger.index'))} />
+                                <FormSubmitButton loading={processing} />
                             </>
                         }
                     />
@@ -51,23 +51,23 @@ export default function LedgerCreate({ categories, fundTypes, currencies }) {
                     {/* Card 1 — Entry Details */}
                     <FormCard title="Entry Details">
                         <FormRow>
-                            <Input label="Date *" type="date" value={data.date} onChange={(e) => setData('date', e.target.value)} error={errors.date} />
-                            <Select label="Category *" value={data.category} onChange={(e) => setData('category', e.target.value)} error={errors.category} options={Object.entries(categories).map(([v, l]) => ({ value: v, label: l }))} />
+                            <Input label="Date" required type="date" value={data.date} onChange={(e) => setData('date', e.target.value)} error={errors.date} />
+                            <Select label="Category" required value={data.category} onChange={(e) => setData('category', e.target.value)} error={errors.category} options={Object.entries(categories).map(([v, l]) => ({ value: v, label: l }))} />
                         </FormRow>
                         <FormRow>
                             <Input label="Reference #" value={data.reference_no} onChange={(e) => setData('reference_no', e.target.value)} error={errors.reference_no} placeholder="Voucher # or reference" />
                             <Input label="Account Code" value={data.account_code} onChange={(e) => setData('account_code', e.target.value)} error={errors.account_code} placeholder="Account code" />
                         </FormRow>
                         <FormRow>
-                            <Input label="Payee" value={data.payee} onChange={(e) => setData('payee', e.target.value)} error={errors.payee} placeholder="Payee name" />
+                            <Input label="Payee" value={data.payee} onChange={(e) => setData('payee', e.target.value)} error={errors.payee} />
                             <Input label="Access File Period" type="date" value={data.access_file_period} onChange={(e) => setData('access_file_period', e.target.value)} error={errors.access_file_period} />
                         </FormRow>
                         <Textarea label="Description" value={data.description} onChange={(e) => setData('description', e.target.value)} error={errors.description} rows={3} placeholder="What is this disbursement for?" />
                         <FormRow>
-                            <Select label="Currency *" value={data.currency} onChange={(e) => setData('currency', e.target.value)} error={errors.currency} options={Object.entries(currencies).map(([v, l]) => ({ value: v, label: l }))} />
-                            <Input label="Amount *" type="number" step="0.01" value={data.amount} onChange={(e) => setData('amount', e.target.value)} error={errors.amount} placeholder="0.00" />
+                            <Select label="Currency" required value={data.currency} onChange={(e) => setData('currency', e.target.value)} error={errors.currency} options={Object.entries(currencies).map(([v, l]) => ({ value: v, label: l }))} />
+                            <Input label="Amount" required type="number" step="0.01" value={data.amount} onChange={(e) => setData('amount', e.target.value)} error={errors.amount} />
                         </FormRow>
-                        <Select label="Fund Type *" value={data.fund_type} onChange={(e) => setData('fund_type', e.target.value)} error={errors.fund_type} options={Object.entries(fundTypes).map(([v, l]) => ({ value: v, label: l }))} />
+                        <Select label="Fund Type" required value={data.fund_type} onChange={(e) => setData('fund_type', e.target.value)} error={errors.fund_type} options={Object.entries(fundTypes).map(([v, l]) => ({ value: v, label: l }))} />
                     </FormCard>
 
                     {/* Card 2 — Remarks */}
@@ -76,8 +76,8 @@ export default function LedgerCreate({ categories, fundTypes, currencies }) {
                     </FormCard>
 
                     <FormActions>
-                        <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('disbursement.ledger.index'))}>Cancel</Button>
-                        <Button type="submit" variant="primary" icon={Save} loading={processing}>Save Entry</Button>
+                        <FormCancelButton onClick={() => router.get(route('disbursement.ledger.index'))} />
+                        <FormSubmitButton loading={processing} />
                     </FormActions>
                 </FormLayout>
             </form>

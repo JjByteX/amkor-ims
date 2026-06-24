@@ -1,56 +1,106 @@
 import { router, useForm } from '@inertiajs/react';
-import { Save, X } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
-import { FormLayout, FormCard, FormRow, FormActions } from '../../Components/Shared/FormLayout';
-import Button from '../../Components/UI/Button';
+import {
+    FormLayout, FormCard, FormRow, FormActions,
+    FormCancelButton, FormSubmitButton,
+} from '../../Components/Shared/FormLayout';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
 import Textarea from '../../Components/UI/Textarea';
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-export default function ReservationForm({ booking, statuses, serviceTypes, transactionTypes, paymentModes, agentCodes }) {
+/**
+ * ReservationForm — create/edit form for ALL branches (QC and Ormoc).
+ *
+ * Ormoc-specific fields (booking_type, hotel, room_type, flight_details,
+ * passport_expiry, date_of_payment, notes) are conditionally rendered based
+ * on the `isOrmocBranch` prop passed from the controller.
+ *
+ * The CC surcharge flag is not surfaced here — it is set automatically by the
+ * controller when mode_of_payment === 'credit_card' for Ormoc bookings.
+ */
+export default function ReservationForm({
+    booking,
+    statuses,
+    serviceTypes,
+    bookingTypes,
+    transactionTypes,
+    paymentModes,
+    agentCodes,
+    isOrmocBranch,
+    contactsSearchUrl,
+}) {
     const isEdit = Boolean(booking);
 
     const { data, setData, post, put, processing, errors } = useForm({
+        // Core
         date              : booking?.date               ?? today(),
         agent_code        : booking?.agent_code         ?? '',
         status            : booking?.status             ?? 'inquiry',
+
+        // QC: service + transaction type; Ormoc: booking_type
         service_type      : booking?.service_type       ?? 'package',
         transaction_type  : booking?.transaction_type   ?? '',
+        booking_type      : booking?.booking_type       ?? 'domestic',
+
+        // Client
         client_name       : booking?.client_name        ?? '',
+        contact_person    : booking?.contact_person     ?? '',
         date_of_birth     : booking?.date_of_birth      ?? '',
         contact_number    : booking?.contact_number     ?? '',
         email             : booking?.email              ?? '',
         corporate_account : booking?.corporate_account  ?? '',
+
+        // Trip
         destination       : booking?.destination        ?? '',
         airline           : booking?.airline            ?? '',
         travel_date       : booking?.travel_date        ?? '',
         return_date       : booking?.return_date        ?? '',
         pax_count         : booking?.pax_count          ?? 1,
+
+        // Ormoc: hotel + room
+        hotel             : booking?.hotel              ?? '',
+        room_type         : booking?.room_type          ?? '',
+        flight_details    : booking?.flight_details     ?? '',
+
+        // QC: text fields for quotation notes
         particulars       : booking?.particulars        ?? '',
         inclusions        : booking?.inclusions         ?? '',
         exclusions        : booking?.exclusions         ?? '',
         source            : booking?.source             ?? '',
+
+        // Passport (Ormoc)
+        passport_expiry   : booking?.passport_expiry    ?? '',
+
+        // Financials
         selling_price     : booking?.selling_price      ?? '',
         net_payable       : booking?.net_payable        ?? '',
         income            : booking?.income             ?? '',
         excess            : booking?.excess             ?? '',
         insurance_nett    : booking?.insurance_nett     ?? '',
         acr               : booking?.acr                ?? '',
+
+        // Payment
         mode_of_payment   : booking?.mode_of_payment    ?? '',
-        payment_due_date  : booking?.payment_due_date   ?? '',
+        payment_due_date  : booking?.payment_due_date   ?? '',  // QC
+        date_of_payment   : booking?.date_of_payment    ?? '',  // Ormoc
+
+        // Document references
         soa_number        : booking?.soa_number         ?? '',
         po_number         : booking?.po_number          ?? '',
         si_number         : booking?.si_number          ?? '',
         ar_number         : booking?.ar_number          ?? '',
         or_number         : booking?.or_number          ?? '',
+
+        // Notes & audit
         remarks           : booking?.remarks            ?? '',
         audit_remarks     : booking?.audit_remarks      ?? '',
+        notes             : booking?.notes              ?? '',   // Ormoc freeform notes
     });
 
-    const set = (key) => (e) => setData(key, e.target.value);
+    const set     = (key) => (e) => setData(key, e.target.value);
     const options = (items) => Object.entries(items).map(([value, label]) => ({ value, label }));
 
     function handleFinancialChange(field, value) {
@@ -85,22 +135,13 @@ export default function ReservationForm({ booking, statuses, serviceTypes, trans
                         subtitle="Capture inquiry, quotation, and booking details"
                         actions={
                             <>
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    icon={X}
-                                    onClick={() => router.get(cancelUrl)}
-                                >
-                                    Cancel
-                                </Button>
-                                <Button type="submit" icon={Save} loading={processing}>
-                                    Save
-                                </Button>
+                                <FormCancelButton onClick={() => router.get(cancelUrl)} />
+                                <FormSubmitButton loading={processing} />
                             </>
                         }
                     />
 
-                    {/* ── Card 1 — Client & Contact ──────────────────────────── */}
+                    {/* ── Card 1 — Client & Contact ─────────────────────────── */}
                     <FormCard title="Client & Contact">
                         <FormRow>
                             <Input
@@ -129,32 +170,46 @@ export default function ReservationForm({ booking, statuses, serviceTypes, trans
                                 error={errors.status}
                                 required
                             />
-                            <Select
-                                label="Service Type"
-                                value={data.service_type}
-                                onChange={set('service_type')}
-                                options={options(serviceTypes)}
-                                error={errors.service_type}
-                                required
-                            />
+                            {/* Ormoc: booking type (domestic/international); QC: service type */}
+                            {isOrmocBranch ? (
+                                <Select
+                                    label="Booking Type"
+                                    value={data.booking_type}
+                                    onChange={set('booking_type')}
+                                    options={options(bookingTypes)}
+                                    error={errors.booking_type}
+                                />
+                            ) : (
+                                <Select
+                                    label="Service Type"
+                                    value={data.service_type}
+                                    onChange={set('service_type')}
+                                    options={options(serviceTypes)}
+                                    error={errors.service_type}
+                                    required
+                                />
+                            )}
                         </FormRow>
 
-                        <FormRow>
-                            <Select
-                                label="Transaction Type"
-                                value={data.transaction_type}
-                                onChange={set('transaction_type')}
-                                options={[{ value: '', label: 'Not set' }, ...options(transactionTypes)]}
-                                error={errors.transaction_type}
-                            />
-                            <Input
-                                label="Source"
-                                value={data.source}
-                                onChange={set('source')}
-                                error={errors.source}
-                                placeholder="Walk-in, Referral, Online"
-                            />
-                        </FormRow>
+                        {/* QC: transaction type + source */}
+                        {!isOrmocBranch && (
+                            <FormRow>
+                                <Select
+                                    label="Transaction Type"
+                                    value={data.transaction_type}
+                                    onChange={set('transaction_type')}
+                                    options={[{ value: '', label: 'Not set' }, ...options(transactionTypes)]}
+                                    error={errors.transaction_type}
+                                />
+                                <Input
+                                    label="Source"
+                                    value={data.source}
+                                    onChange={set('source')}
+                                    error={errors.source}
+                                    placeholder="Walk-in, Referral, Online"
+                                />
+                            </FormRow>
+                        )}
 
                         <Input
                             label="Client Name"
@@ -162,6 +217,14 @@ export default function ReservationForm({ booking, statuses, serviceTypes, trans
                             onChange={set('client_name')}
                             error={errors.client_name}
                             required
+                        />
+
+                        <Input
+                            label="Contact Person"
+                            value={data.contact_person}
+                            onChange={set('contact_person')}
+                            error={errors.contact_person}
+                            placeholder="Corporate coordinator — leave blank for FIT"
                         />
 
                         <FormRow>
@@ -188,12 +251,23 @@ export default function ReservationForm({ booking, statuses, serviceTypes, trans
                                 onChange={set('email')}
                                 error={errors.email}
                             />
-                            <Input
-                                label="Corporate Account"
-                                value={data.corporate_account}
-                                onChange={set('corporate_account')}
-                                error={errors.corporate_account}
-                            />
+                            {/* Ormoc: passport expiry instead of corporate account */}
+                            {isOrmocBranch ? (
+                                <Input
+                                    label="Passport Expiry"
+                                    type="date"
+                                    value={data.passport_expiry}
+                                    onChange={set('passport_expiry')}
+                                    error={errors.passport_expiry}
+                                />
+                            ) : (
+                                <Input
+                                    label="Corporate Account"
+                                    value={data.corporate_account}
+                                    onChange={set('corporate_account')}
+                                    error={errors.corporate_account}
+                                />
+                            )}
                         </FormRow>
                     </FormCard>
 
@@ -223,13 +297,16 @@ export default function ReservationForm({ booking, statuses, serviceTypes, trans
                                 onChange={set('travel_date')}
                                 error={errors.travel_date}
                             />
-                            <Input
-                                label="Return Date"
-                                type="date"
-                                value={data.return_date}
-                                onChange={set('return_date')}
-                                error={errors.return_date}
-                            />
+                            {/* QC: return date; Ormoc doesn't track this */}
+                            {!isOrmocBranch && (
+                                <Input
+                                    label="Return Date"
+                                    type="date"
+                                    value={data.return_date}
+                                    onChange={set('return_date')}
+                                    error={errors.return_date}
+                                />
+                            )}
                         </FormRow>
 
                         <Input
@@ -242,27 +319,72 @@ export default function ReservationForm({ booking, statuses, serviceTypes, trans
                             required
                         />
 
-                        <Textarea
-                            label="Particulars"
-                            value={data.particulars}
-                            onChange={set('particulars')}
-                            rows={2}
-                            error={errors.particulars}
-                        />
-                        <Textarea
-                            label="Inclusions"
-                            value={data.inclusions}
-                            onChange={set('inclusions')}
-                            rows={2}
-                            error={errors.inclusions}
-                        />
-                        <Textarea
-                            label="Exclusions"
-                            value={data.exclusions}
-                            onChange={set('exclusions')}
-                            rows={2}
-                            error={errors.exclusions}
-                        />
+                        {/* Ormoc: hotel + room type */}
+                        {isOrmocBranch && (
+                            <FormRow>
+                                <Input
+                                    label="Hotel"
+                                    value={data.hotel}
+                                    onChange={set('hotel')}
+                                    error={errors.hotel}
+                                />
+                                <Input
+                                    label="Room Type"
+                                    value={data.room_type}
+                                    onChange={set('room_type')}
+                                    error={errors.room_type}
+                                />
+                            </FormRow>
+                        )}
+
+                        {/* Ormoc: flight details as freetext */}
+                        {isOrmocBranch && (
+                            <Textarea
+                                label="Flight Details"
+                                value={data.flight_details}
+                                onChange={set('flight_details')}
+                                rows={2}
+                                error={errors.flight_details}
+                            />
+                        )}
+
+                        {/* QC: package content fields */}
+                        {!isOrmocBranch && (
+                            <>
+                                <Textarea
+                                    label="Particulars"
+                                    value={data.particulars}
+                                    onChange={set('particulars')}
+                                    rows={2}
+                                    error={errors.particulars}
+                                />
+                                <Textarea
+                                    label="Inclusions"
+                                    value={data.inclusions}
+                                    onChange={set('inclusions')}
+                                    rows={2}
+                                    error={errors.inclusions}
+                                />
+                                <Textarea
+                                    label="Exclusions"
+                                    value={data.exclusions}
+                                    onChange={set('exclusions')}
+                                    rows={2}
+                                    error={errors.exclusions}
+                                />
+                            </>
+                        )}
+
+                        {/* Ormoc: freeform notes */}
+                        {isOrmocBranch && (
+                            <Textarea
+                                label="Notes"
+                                value={data.notes}
+                                onChange={set('notes')}
+                                rows={3}
+                                error={errors.notes}
+                            />
+                        )}
                     </FormCard>
 
                     {/* ── Card 3 — Financials, Payment & References ──────────── */}
@@ -294,34 +416,41 @@ export default function ReservationForm({ booking, statuses, serviceTypes, trans
                                 value={data.income}
                                 onChange={(e) => setData('income', e.target.value)}
                                 error={errors.income}
+                                disabled
+                                readOnly
                             />
-                            <Input
-                                label="Excess"
-                                type="number"
-                                step="0.01"
-                                value={data.excess}
-                                onChange={(e) => setData('excess', e.target.value)}
-                                error={errors.excess}
-                            />
+                            {/* QC: excess; Ormoc doesn't track this */}
+                            {!isOrmocBranch && (
+                                <Input
+                                    label="Excess"
+                                    type="number"
+                                    step="0.01"
+                                    value={data.excess}
+                                    onChange={(e) => setData('excess', e.target.value)}
+                                    error={errors.excess}
+                                />
+                            )}
                         </FormRow>
 
-                        <FormRow>
-                            <Input
-                                label="Insurance (Nett)"
-                                type="number"
-                                step="0.01"
-                                value={data.insurance_nett}
-                                onChange={(e) => setData('insurance_nett', e.target.value)}
-                                error={errors.insurance_nett}
-                            />
-                            <Input
-                                label="ACR"
-                                value={data.acr}
-                                onChange={set('acr')}
-                                error={errors.acr}
-                                placeholder="ACR reference"
-                            />
-                        </FormRow>
+                        {!isOrmocBranch && (
+                            <FormRow>
+                                <Input
+                                    label="Insurance (Nett)"
+                                    type="number"
+                                    step="0.01"
+                                    value={data.insurance_nett}
+                                    onChange={(e) => setData('insurance_nett', e.target.value)}
+                                    error={errors.insurance_nett}
+                                />
+                                <Input
+                                    label="ACR"
+                                    value={data.acr}
+                                    onChange={set('acr')}
+                                    error={errors.acr}
+                                    placeholder="ACR reference"
+                                />
+                            </FormRow>
+                        )}
 
                         <FormRow>
                             <Select
@@ -331,13 +460,24 @@ export default function ReservationForm({ booking, statuses, serviceTypes, trans
                                 options={[{ value: '', label: 'Not set' }, ...options(paymentModes)]}
                                 error={errors.mode_of_payment}
                             />
-                            <Input
-                                label="Payment Due"
-                                type="date"
-                                value={data.payment_due_date}
-                                onChange={set('payment_due_date')}
-                                error={errors.payment_due_date}
-                            />
+                            {/* QC: payment due date; Ormoc: date of payment (actual received) */}
+                            {isOrmocBranch ? (
+                                <Input
+                                    label="Date of Payment"
+                                    type="date"
+                                    value={data.date_of_payment}
+                                    onChange={set('date_of_payment')}
+                                    error={errors.date_of_payment}
+                                />
+                            ) : (
+                                <Input
+                                    label="Payment Due"
+                                    type="date"
+                                    value={data.payment_due_date}
+                                    onChange={set('payment_due_date')}
+                                    error={errors.payment_due_date}
+                                />
+                            )}
                         </FormRow>
 
                         <FormRow>
@@ -395,17 +535,8 @@ export default function ReservationForm({ booking, statuses, serviceTypes, trans
                     </FormCard>
 
                     <FormActions>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            icon={X}
-                            onClick={() => router.get(cancelUrl)}
-                        >
-                            Cancel
-                        </Button>
-                        <Button type="submit" icon={Save} loading={processing}>
-                            Save
-                        </Button>
+                        <FormCancelButton onClick={() => router.get(cancelUrl)} />
+                        <FormSubmitButton loading={processing} />
                     </FormActions>
                 </FormLayout>
             </form>

@@ -1,8 +1,8 @@
 import { router, useForm } from '@inertiajs/react';
-import { Save, X } from 'lucide-react';
+;
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
-import { FormLayout, FormCard, FormRow, FormActions } from '../../Components/Shared/FormLayout';
+import { FormLayout, FormCard, FormRow, FormActions, FormCancelButton, FormEditButton, FormSubmitButton } from '../../Components/Shared/FormLayout';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
@@ -48,8 +48,8 @@ export default function VoucherCreate({ types, currencies }) {
                         subtitle="Create a cash or check voucher"
                         actions={
                             <>
-                                <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('disbursement.vouchers.index'))}>Cancel</Button>
-                                <Button type="submit" variant="primary" icon={Save} loading={processing}>Create Voucher</Button>
+                                <FormCancelButton onClick={() => router.get(route('disbursement.vouchers.index'))} />
+                                <FormSubmitButton loading={processing} />
                             </>
                         }
                     />
@@ -57,10 +57,10 @@ export default function VoucherCreate({ types, currencies }) {
                     {/* Card 1 — Voucher & Payee */}
                     <FormCard title="Voucher & Payee">
                         <FormRow>
-                            <Select label="Voucher Type *" value={data.type} onChange={(e) => setData('type', e.target.value)} error={errors.type} options={Object.entries(types).map(([v, l]) => ({ value: v, label: l }))} />
-                            <Input label="Date *" type="date" value={data.date} onChange={(e) => setData('date', e.target.value)} error={errors.date} />
+                            <Select label="Voucher Type" required value={data.type} onChange={(e) => setData('type', e.target.value)} error={errors.type} options={Object.entries(types).map(([v, l]) => ({ value: v, label: l }))} />
+                            <Input label="Date" required type="date" value={data.date} onChange={(e) => setData('date', e.target.value)} error={errors.date} />
                         </FormRow>
-                        <Input label="Payee *" value={data.payee} onChange={(e) => setData('payee', e.target.value)} error={errors.payee} placeholder="Payee name" />
+                        <Input label="Payee" required value={data.payee} onChange={(e) => setData('payee', e.target.value)} error={errors.payee} />
                         <Input label="Payee Address" value={data.payee_address} onChange={(e) => setData('payee_address', e.target.value)} error={errors.payee_address} placeholder="Address (optional)" />
                         {isCheck && (
                             <>
@@ -80,10 +80,10 @@ export default function VoucherCreate({ types, currencies }) {
                             <Input label="Account Code" value={data.account_code} onChange={(e) => setData('account_code', e.target.value)} error={errors.account_code} placeholder="Account code" />
                             <Input label="Account Description" value={data.account_description} onChange={(e) => setData('account_description', e.target.value)} error={errors.account_description} placeholder="Account description" />
                         </FormRow>
-                        <Select label="Currency *" value={data.currency} onChange={(e) => setData('currency', e.target.value)} error={errors.currency} options={Object.entries(currencies).map(([v, l]) => ({ value: v, label: l }))} />
+                        <Select label="Currency" required value={data.currency} onChange={(e) => setData('currency', e.target.value)} error={errors.currency} options={Object.entries(currencies).map(([v, l]) => ({ value: v, label: l }))} />
                         <FormRow>
-                            <Input label="Amount (PHP) *" type="number" step="0.01" value={data.amount} onChange={(e) => setData('amount', e.target.value)} error={errors.amount} placeholder="0.00" />
-                            <Input label="Amount (USD)" type="number" step="0.01" value={data.amount_usd} onChange={(e) => setData('amount_usd', e.target.value)} error={errors.amount_usd} placeholder="0.00" />
+                            <Input label="Amount (PHP)" required type="number" step="0.01" value={data.amount} onChange={(e) => setData('amount', e.target.value)} error={errors.amount} />
+                            <Input label="Amount (USD)" type="number" step="0.01" value={data.amount_usd} onChange={(e) => setData('amount_usd', e.target.value)} error={errors.amount_usd} />
                         </FormRow>
                         <Input label="Amount (JPY)" type="number" step="0.01" value={data.amount_jpy} onChange={(e) => setData('amount_jpy', e.target.value)} error={errors.amount_jpy} placeholder="0" />
                     </FormCard>
@@ -94,8 +94,8 @@ export default function VoucherCreate({ types, currencies }) {
                     </FormCard>
 
                     <FormActions>
-                        <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('disbursement.vouchers.index'))}>Cancel</Button>
-                        <Button type="submit" variant="primary" icon={Save} loading={processing}>Create Voucher</Button>
+                        <FormCancelButton onClick={() => router.get(route('disbursement.vouchers.index'))} />
+                        <FormSubmitButton loading={processing} />
                     </FormActions>
                 </FormLayout>
             </form>

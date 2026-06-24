@@ -1,4 +1,5 @@
 import { cloneElement, isValidElement } from 'react';
+import Button from '../UI/Button';
 
 /**
  * FormLayout — universal wrapper for all create/edit form pages.
@@ -15,7 +16,7 @@ import { cloneElement, isValidElement } from 'react';
  *   └─────────────────────────────────────────────────────────────────┘
  *   ┌──────────── centered container (maxWidth, margin auto) ─────────┐
  *   │  [ Card A ]   [ Card B ]   [ Card C? ]                          │
- *   │                                  [ Cancel ]  [ Save ]           │
+ *   │                                  [ Cancel ]  [ Done ]           │
  *   └─────────────────────────────────────────────────────────────────┘
  *
  * Single-card rule: even when columns={2} or columns={3} is declared,
@@ -143,12 +144,59 @@ export function FormRow({ children }) {
 }
 
 /**
- * FormActions — Cancel / Save button row, lives inside the centered container.
+ * FormActions — Cancel / Done button row, lives inside the centered container.
  */
 export function FormActions({ children }) {
     return (
         <div className="flex justify-end" style={{ gap: 'var(--space-1)', paddingBottom: 'var(--space-3)' }}>
             {children}
         </div>
+    );
+}
+
+/**
+ * FormCancelButton — universal Cancel button.
+ * Solid gray fill, no border, no icon.
+ */
+export function FormCancelButton({ onClick, ...rest }) {
+    return (
+        <Button
+            type="button"
+            variant="ghost"
+            onClick={onClick}
+            style={{
+                backgroundColor: 'var(--color-card)',
+                border: 'var(--border-container)',
+                boxShadow: 'none',
+                color: 'var(--color-text)',
+            }}
+            {...rest}
+        >
+            Cancel
+        </Button>
+    );
+}
+
+/**
+ * FormSubmitButton — universal create/save submit button. Label is always "Done".
+ * No icon. Pass loading={processing} from the form.
+ */
+export function FormSubmitButton({ loading, ...rest }) {
+    return (
+        <Button type="submit" variant="primary" loading={loading} {...rest}>
+            Done
+        </Button>
+    );
+}
+
+/**
+ * FormEditButton — universal edit submit button. Label is always "Edit".
+ * No icon. Pass loading={processing} from the form.
+ */
+export function FormEditButton({ loading, ...rest }) {
+    return (
+        <Button type="submit" variant="primary" loading={loading} {...rest}>
+            Edit
+        </Button>
     );
 }

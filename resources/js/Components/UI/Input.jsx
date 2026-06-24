@@ -2,6 +2,7 @@ import { isValidElement } from 'react';
 import DatePicker from './DatePicker';
 import MonthPicker from './MonthPicker';
 import TimePicker from './TimePicker';
+import { fieldConstraints } from './fieldConstraints';
 
 /**
  * Input — 40px height, 8px radius, exact 13px label, exact 16px input text.
@@ -15,6 +16,10 @@ import TimePicker from './TimePicker';
  *   type="date"  → DatePicker  (custom calendar popup)
  *   type="month" → MonthPicker (custom month/year popup)
  *   type="time"  → TimePicker  (custom HH:MM scroll picker)
+ *
+ * Field limits (maxLength, inputMode) are applied automatically via
+ * fieldConstraints(label, type) — no per-page changes needed.
+ * Explicit maxLength/inputMode props always override the auto-derived values.
  */
 export default function Input({
     label       = '',
@@ -22,7 +27,7 @@ export default function Input({
     value,
     onChange,
     error       = null,
-    placeholder = '',
+    placeholder = undefined,
     disabled    = false,
     icon        = null,
     rightIcon   = null,
@@ -86,6 +91,14 @@ export default function Input({
         );
     }
 
+    // Derive field constraints from label + type; explicit props take priority
+    const constraints      = fieldConstraints(label, type);
+    const maxLength        = rest.maxLength  ?? constraints.maxLength;
+    const inputMode        = rest.inputMode  ?? constraints.inputMode;
+    const finalPlaceholder = placeholder ?? constraints.placeholder ?? '';
+    // Remove from rest so they don't get double-applied
+    const { maxLength: _ml, inputMode: _im, ...restClean } = rest;
+
     // Normalise left icon
     let iconNode = null;
     if (icon) {
@@ -142,9 +155,11 @@ export default function Input({
                     type={type}
                     value={value}
                     onChange={onChange}
-                    placeholder={placeholder}
+                    placeholder={finalPlaceholder}
                     disabled={disabled}
                     required={required}
+                    maxLength={maxLength}
+                    inputMode={inputMode}
                     className="w-full outline-none transition-colors duration-150 focus:ring-0 focus:ring-offset-0"
                     style={{
                         height      : 'var(--height-input)',
@@ -177,7 +192,7 @@ export default function Input({
                         e.currentTarget.style.boxShadow = 'none';
                         onBlur?.(e);
                     }}
-                    {...rest}
+                    {...restClean}
                 />
                 {rightIconNode && (
                     <span

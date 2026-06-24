@@ -5,9 +5,7 @@ namespace Modules\AccountsReceivable\Providers;
 use App\Events\DashboardSummaryRequested;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Modules\AccountsReceivable\Listeners\ContributeDashboardSummary;
-use Modules\AccountsReceivable\Listeners\CreateCollectibleFromOrmocBooking;
-use Modules\AccountsReceivable\Listeners\CreateCollectibleFromReservation;
-use Modules\OrmocBranch\Events\OrmocBookingForwardedToAccounting;
+use Modules\AccountsReceivable\Listeners\CreateCollectibleFromBooking;
 use Modules\Reservation\Events\ReservationForwardedToAccounting;
 
 class EventServiceProvider extends ServiceProvider
@@ -23,11 +21,10 @@ class EventServiceProvider extends ServiceProvider
         ],
 
         // Phase 1 — Booking → AR Auto-Creation
+        // Handles ALL branches (QC and Ormoc) from the unified reservation_bookings table.
+        // Replaces the old CreateCollectibleFromReservation + CreateCollectibleFromOrmocBooking pair.
         ReservationForwardedToAccounting::class => [
-            CreateCollectibleFromReservation::class,
-        ],
-        OrmocBookingForwardedToAccounting::class => [
-            CreateCollectibleFromOrmocBooking::class,
+            CreateCollectibleFromBooking::class,
         ],
     ];
 

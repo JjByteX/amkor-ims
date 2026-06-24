@@ -1,9 +1,9 @@
 import { useForm } from '@inertiajs/react';
 import { router } from '@inertiajs/react';
-import { Save, X } from 'lucide-react';
+;
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
-import { FormLayout, FormCard, FormRow, FormActions } from '../../Components/Shared/FormLayout';
+import { FormLayout, FormCard, FormRow, FormActions, FormCancelButton, FormEditButton, FormSubmitButton } from '../../Components/Shared/FormLayout';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
@@ -54,8 +54,8 @@ export default function ARCreate({ departments, statuses, defaultDept }) {
                         subtitle="Record an accounts receivable / collectible transaction"
                         actions={
                             <>
-                                <Button type="button" variant="ghost" icon={X} onClick={() => router.visit(route('ar.index'))}>Cancel</Button>
-                                <Button type="submit" variant="primary" icon={Save} loading={processing}>Save Collectible</Button>
+                                <FormCancelButton onClick={() => router.visit(route('ar.index'))} />
+                                <FormSubmitButton loading={processing} />
                             </>
                         }
                     />
@@ -96,8 +96,8 @@ export default function ARCreate({ departments, statuses, defaultDept }) {
                     </FormCard>
 
                     <FormActions>
-                        <Button type="button" variant="ghost" icon={X} onClick={() => router.visit(route('ar.index'))}>Cancel</Button>
-                        <Button type="submit" variant="primary" icon={Save} loading={processing}>Save Collectible</Button>
+                        <FormCancelButton onClick={() => router.visit(route('ar.index'))} />
+                        <FormSubmitButton loading={processing} />
                     </FormActions>
                 </FormLayout>
             </form>

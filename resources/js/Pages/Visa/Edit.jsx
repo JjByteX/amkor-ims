@@ -1,8 +1,8 @@
 import { useForm, router } from '@inertiajs/react';
-import { Save, X } from 'lucide-react';
+;
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
-import { FormLayout, FormCard, FormRow, FormActions } from '../../Components/Shared/FormLayout';
+import { FormLayout, FormCard, FormRow, FormActions, FormCancelButton, FormEditButton, FormSubmitButton } from '../../Components/Shared/FormLayout';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
@@ -90,8 +90,8 @@ export default function VisaEdit({ application, visaTypes, agentCodes, statuses,
                         subtitle={application.visa_type}
                         actions={
                             <>
-                                <Button type="button" variant="ghost" icon={X} onClick={() => history.back()}>Cancel</Button>
-                                <Button type="submit" variant="primary" icon={Save} loading={processing}>Save Changes</Button>
+                                <FormCancelButton onClick={() => history.back()} />
+                                <FormEditButton loading={processing} />
                             </>
                         }
                     />
@@ -99,10 +99,10 @@ export default function VisaEdit({ application, visaTypes, agentCodes, statuses,
                     {/* Card 1 — Client & Service */}
                     <FormCard title="Client & Service">
                         <FormRow>
-                            <Select label="Agent *" options={agentOptions} value={data.agent_code} onChange={(e) => setData('agent_code', e.target.value)} error={errors.agent_code} />
-                            <Input label="Date *" type="date" value={data.date} onChange={(e) => setData('date', e.target.value)} error={errors.date} />
+                            <Select label="Agent" required options={agentOptions} value={data.agent_code} onChange={(e) => setData('agent_code', e.target.value)} error={errors.agent_code} />
+                            <Input label="Date" required type="date" value={data.date} onChange={(e) => setData('date', e.target.value)} error={errors.date} />
                         </FormRow>
-                        <Input label="Customer Name *" value={data.customer_name} onChange={(e) => setData('customer_name', e.target.value)} error={errors.customer_name} />
+                        <Input label="Customer Name" required value={data.customer_name} onChange={(e) => setData('customer_name', e.target.value)} error={errors.customer_name} />
                         <Input label="Date of Birth" type="date" value={data.date_of_birth} onChange={(e) => setData('date_of_birth', e.target.value)} error={errors.date_of_birth} />
                         <ContactPicker
                             label="Linked Contact (optional)"
@@ -113,7 +113,7 @@ export default function VisaEdit({ application, visaTypes, agentCodes, statuses,
                             error={errors.contact_id}
                         />
                         <Input label="Agency" value={data.agency} onChange={(e) => setData('agency', e.target.value)} error={errors.agency} />
-                        <Select label="Visa / Service Type *" options={visaTypeOptions} value={data.visa_type} onChange={(e) => setData('visa_type', e.target.value)} error={errors.visa_type} />
+                        <Select label="Visa / Service Type" required options={visaTypeOptions} value={data.visa_type} onChange={(e) => setData('visa_type', e.target.value)} error={errors.visa_type} />
                         <Input label="Embassy / Operator Name" placeholder="e.g. China Embassy, Japan Embassy via VFS" value={data.embassy_name} onChange={(e) => setData('embassy_name', e.target.value)} error={errors.embassy_name} />
                     </FormCard>
 
@@ -185,8 +185,8 @@ export default function VisaEdit({ application, visaTypes, agentCodes, statuses,
                     </FormCard>
 
                     <FormActions>
-                        <Button type="button" variant="ghost" icon={X} onClick={() => history.back()}>Cancel</Button>
-                        <Button type="submit" variant="primary" icon={Save} loading={processing}>Save Changes</Button>
+                        <FormCancelButton onClick={() => history.back()} />
+                        <FormEditButton loading={processing} />
                     </FormActions>
                 </FormLayout>
             </form>

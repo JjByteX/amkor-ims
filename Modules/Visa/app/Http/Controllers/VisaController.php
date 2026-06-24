@@ -19,7 +19,6 @@ use Illuminate\Support\Facades\DB;
 use Modules\Contacts\Models\Contact;
 use Modules\Visa\Models\VisaTarget;
 use Modules\Reservation\Models\ReservationBooking;
-use Modules\OrmocBranch\Models\OrmocBooking;
 
 class VisaController extends Controller
 {
@@ -203,7 +202,8 @@ class VisaController extends Controller
                     'href'           => route('visa.show', $v->id),
                 ]);
 
-            $ormoc = OrmocBooking::where('contact_id', $visa->contact_id)
+            $ormocBookings = ReservationBooking::where('contact_id', $visa->contact_id)
+                ->whereIn('agent_code', ReservationBooking::ORMOC_AGENT_CODES)
                 ->orderByDesc('date')
                 ->limit(10)
                 ->get(['id', 'client_name', 'status', 'selling_price'])
@@ -213,13 +213,13 @@ class VisaController extends Controller
                     'type_label'     => 'ORMOC',
                     'label'          => $o->client_name,
                     'status'         => $o->status,
-                    'status_label'   => OrmocBooking::STATUSES[$o->status] ?? $o->status,
+                    'status_label'   => ReservationBooking::STATUSES[$o->status] ?? $o->status,
                     'status_variant' => $statusVariants[$o->status] ?? 'neutral',
                     'selling_price'  => $o->selling_price,
-                    'href'           => route('ormoc.show', $o->id),
+                    'href'           => route('reservation.show', $o->id),
                 ]);
 
-            $relatedTransactions = $reservations->concat($visas)->concat($ormoc)
+            $relatedTransactions = $reservations->concat($visas)->concat($ormocBookings)
                 ->sortByDesc('id')
                 ->values()
                 ->all();
@@ -573,6 +573,38 @@ class VisaController extends Controller
         ]);
 
         return back()->with('flash', ['type' => 'success', 'message' => 'Contact unlinked.']);
+    }
+
+    // ─── Toggle attention flag (Phase 3.4) ───────────────────────────────────
+    //
+    // Replaces the manual yellow row highlight staff use in the Visa Excel.
+    // Any officer or supervisor can flag/unflag their own applications;
+    // supervisors and above can flag any application.
+
+    public function toggleAttention(Request $request, VisaApplication $visa): RedirectResponse
+    {
+        $role = $request->user()?->getRoleNames()->first();
+
+        $canFlag = in_array($role, array_merge(self::WRITE_ROLES, ['president', 'chief_operating_officer']), true);
+        if (! $canFlag) {
+            abort(403);
+        }
+
+        $data = $request->validate([
+            'attention_reason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $nowFlagged = ! $visa->needs_attention;
+
+        $visa->update([
+            'needs_attention'  => $nowFlagged,
+            'attention_reason' => $nowFlagged ? ($data['attention_reason'] ?? null) : null,
+            'updated_by'       => $request->user()->id,
+        ]);
+
+        $msg = $nowFlagged ? 'Application flagged for attention.' : 'Attention flag cleared.';
+
+        return back()->with('flash', ['type' => 'success', 'message' => $msg]);
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────

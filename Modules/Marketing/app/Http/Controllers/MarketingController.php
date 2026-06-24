@@ -356,10 +356,50 @@ class MarketingController extends Controller
 
         $yearTotal = MarketingExpense::forYear($year)->sum('amount');
 
+        // Phase 3.8 — Budget vs Spend variance by category for the selected period.
+        // Groups all expenses for the selected year (and month if filtered) by category,
+        // then computes total_budget, total_spend, and variance per category.
+        // Rows with no budget set (null) are shown with variance = null.
+        $varianceQuery = MarketingExpense::forYear($year);
+        if ($month) {
+            $varianceQuery->forPeriod($month, null);
+        }
+        $budgetVsSpend = $varianceQuery
+            ->selectRaw('
+                category,
+                sum(amount)                                          as total_spend,
+                sum(budget)                                          as total_budget,
+                CASE WHEN sum(budget) IS NOT NULL
+                     THEN sum(budget) - sum(amount)
+                     ELSE NULL END                                   as variance
+            ')
+            ->groupBy('category')
+            ->orderBy('category')
+            ->get()
+            ->map(fn ($row) => [
+                'category'       => $row->category,
+                'category_label' => MarketingExpense::CATEGORIES[$row->category] ?? $row->category,
+                'total_spend'    => (float) $row->total_spend,
+                'total_budget'   => $row->total_budget !== null ? (float) $row->total_budget : null,
+                'variance'       => $row->variance !== null ? (float) $row->variance : null,
+                'over_budget'    => $row->variance !== null && (float) $row->variance < 0,
+            ]);
+
+        // Overall totals for ROI banner: total budget, total spend, variance
+        $overallBudget = MarketingExpense::forYear($year)
+            ->when($month, fn ($q) => $q->forPeriod($month, null))
+            ->sum('budget');
+        $overallSpend  = MarketingExpense::forYear($year)
+            ->when($month, fn ($q) => $q->forPeriod($month, null))
+            ->sum('amount');
+
         return Inertia::render('Marketing/Expenses', [
-            'expenses' => $expenses,
+            'expenses'      => $expenses,
             'monthlyTotals' => $monthlyTotals,
-            'yearTotal' => $yearTotal,
+            'yearTotal'     => $yearTotal,
+            'budgetVsSpend' => $budgetVsSpend,   // Phase 3.8 — variance table
+            'overallBudget' => (float) $overallBudget,
+            'overallSpend'  => (float) $overallSpend,
             'filters' => compact('search', 'category', 'status', 'year', 'month'),
             'categories' => MarketingExpense::CATEGORIES,
             'statuses' => MarketingExpense::STATUSES,

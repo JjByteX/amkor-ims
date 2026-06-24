@@ -12,10 +12,11 @@ class ContributeDashboardSummary
     /**
      * Sales sources — each entry is [table, date_col, status_col, confirmed_statuses, label, ?where_clause].
      *
-     * IMPORTANT: reservation_bookings is split into two logical departments:
+     * IMPORTANT: reservation_bookings is split into three logical departments:
      *
      *   RESA   = FIT + Corporate bookings (transaction_type IN ('fit', 'corporate') OR NULL)
      *   Groups = Group + Blocking bookings (transaction_type IN ('group', 'blocking'))
+     *   Ormoc  = Any booking from the Ormoc branch (branch_id = Ormoc branch)
      *
      * This matches the four-panel Excel Sales Summary exactly:
      *   Resa | Groups | Visa | Ormoc
@@ -24,40 +25,45 @@ class ContributeDashboardSummary
      * predate this migration have transaction_type = NULL — these are treated
      * as RESA (legacy FIT/corporate entries).
      *
+     * The ormoc_bookings table was dropped in the Ormoc merge migration.
+     * Ormoc bookings now live in reservation_bookings, distinguished by their
+     * branch_id matching the Ormoc branch (code = 'ORMOC').
+     *
      * Verified status values against actual migrations:
      *   reservation_bookings — confirmed
-     *   ormoc_bookings       — confirmed
      *   visa_applications    — approved | completed
      */
     private const SOURCES = [
-        // RESA — FIT and Corporate (excludes group/blocking rows)
+        // RESA — FIT and Corporate (excludes group/blocking rows, excludes Ormoc branch)
         [
             'table'    => 'reservation_bookings',
             'date_col' => 'date',
             'status_col' => 'status',
             'statuses' => ['confirmed'],
             'label'    => 'RESA',
-            'where'    => "transaction_type IS NULL OR transaction_type IN ('fit', 'corporate')",
+            'where'    => "(transaction_type IS NULL OR transaction_type IN ('fit', 'corporate'))
+                           AND branch_id = (SELECT id FROM branches WHERE code = 'QC_MAIN' LIMIT 1)",
         ],
 
-        // Groups — Group and Blocking bookings from the same table
+        // Groups — Group and Blocking bookings (QC branch)
         [
             'table'    => 'reservation_bookings',
             'date_col' => 'date',
             'status_col' => 'status',
             'statuses' => ['confirmed'],
             'label'    => 'Groups',
-            'where'    => "transaction_type IN ('group', 'blocking')",
+            'where'    => "transaction_type IN ('group', 'blocking')
+                           AND branch_id = (SELECT id FROM branches WHERE code = 'QC_MAIN' LIMIT 1)",
         ],
 
-        // Ormoc
+        // Ormoc — all booking types from the Ormoc branch (replaces dropped ormoc_bookings table)
         [
-            'table'    => 'ormoc_bookings',
+            'table'    => 'reservation_bookings',
             'date_col' => 'date',
             'status_col' => 'status',
             'statuses' => ['confirmed'],
             'label'    => 'Ormoc',
-            'where'    => null,
+            'where'    => "branch_id = (SELECT id FROM branches WHERE code = 'ORMOC' LIMIT 1)",
         ],
 
         // Visa

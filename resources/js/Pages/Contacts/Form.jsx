@@ -1,8 +1,8 @@
 import { router, useForm } from '@inertiajs/react';
-import { Save, X } from 'lucide-react';
+;
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
-import { FormLayout, FormCard, FormActions } from '../../Components/Shared/FormLayout';
+import { FormLayout, FormCard, FormActions, FormCancelButton, FormEditButton, FormSubmitButton } from '../../Components/Shared/FormLayout';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
@@ -63,17 +63,8 @@ function ContactForm({ contact, types, currencies, defaultType }) {
                     subtitle={isEditing ? 'Update contact details.' : 'Add a new contact to the directory.'}
                     actions={
                         <>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                icon={X}
-                                onClick={() => router.get(route('contacts.index', { type: data.type }))}
-                            >
-                                Cancel
-                            </Button>
-                            <Button type="submit" variant="primary" icon={Save} loading={processing}>
-                                {isEditing ? 'Save Changes' : 'Add Contact'}
-                            </Button>
+                            <FormCancelButton onClick={() => router.get(route('contacts.index', { type: data.type }))} />
+                            <FormSubmitButton loading={processing} />
                         </>
                     }
                 />
@@ -94,10 +85,8 @@ function ContactForm({ contact, types, currencies, defaultType }) {
                 </FormCard>
 
                 <FormActions>
-                    <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('contacts.index', { type: data.type }))}>Cancel</Button>
-                    <Button type="submit" variant="primary" icon={Save} loading={processing}>
-                        {isEditing ? 'Save Changes' : 'Add Contact'}
-                    </Button>
+                    <FormCancelButton onClick={() => router.get(route('contacts.index', { type: data.type }))} />
+                    <FormSubmitButton loading={processing} />
                 </FormActions>
             </FormLayout>
         </form>

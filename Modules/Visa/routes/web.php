@@ -57,6 +57,9 @@ Route::middleware(['auth'])->group(function () {
     // visa_documentation_supervisor endorses OR to accounting after verification
     Route::post('visa/{visa}/endorse', [VisaController::class, 'endorseOr'])->name('visa.endorse-or');
 
+    // Phase 3.4 — flag/unflag for attention (replaces manual yellow highlight in Excel)
+    Route::post('visa/{visa}/attention', [VisaController::class, 'toggleAttention'])->name('visa.toggle-attention');
+
     // ── Contact link (TIN auto-pull) ────────────────────────────────────────
     Route::post('visa/{visa}/link-contact', [VisaController::class, 'linkContact'])->name('visa.link-contact');
     Route::delete('visa/{visa}/link-contact', [VisaController::class, 'unlinkContact'])->name('visa.unlink-contact');

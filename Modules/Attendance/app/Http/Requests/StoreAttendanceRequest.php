@@ -32,9 +32,9 @@ class StoreAttendanceRequest extends FormRequest
             'minutes_overtime'  => ['nullable', 'integer', 'min:0'],
             'minutes_overbreak' => ['nullable', 'integer', 'min:0'],
             'status'          => ['required', 'string', 'in:'.implode(',', array_keys(AttendanceRecord::STATUSES))],
-            'leave_type'      => ['nullable', 'string', 'in:'.implode(',', array_keys(AttendanceRecord::LEAVE_TYPES))],
+            'leave_type'      => ['nullable', 'string', 'required_if:status,on_leave', 'in:'.implode(',', array_keys(AttendanceRecord::LEAVE_TYPES))],
             'branch_id'       => ['nullable', 'integer', 'exists:branches,id'],
-            'override_reason' => ['nullable', 'string', 'max:500'],
+            'override_reason' => ['required', 'string', 'max:500'],
             'remarks'         => ['nullable', 'string', 'max:500'],
         ];
     }

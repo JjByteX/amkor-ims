@@ -11,11 +11,11 @@ class VisaDatabaseSeeder extends Seeder
     {
         $now = now();
 
-        $visaCentre = DB::table('branches')->where('code', 'VISA_CENTRE')->value('id');
+        $qcMain  = DB::table('branches')->where('code', 'QC_MAIN')->value('id');
 
-        $visa    = DB::table('users')->where('email', 'visa@amkor.ph')->value('id');
-        $liaison = DB::table('users')->where('email', 'liaison@amkor.ph')->value('id');
-        $gsm     = DB::table('users')->where('email', 'gsm@amkor.ph')->value('id');
+        $visa    = DB::table('users')->where('email', 'alex@amkor.ph')->value('id');
+        $liaison = DB::table('users')->where('email', 'randy@amkor.ph')->value('id');
+        $gsm     = DB::table('users')->where('email', 'rochelle@amkor.ph')->value('id');
 
         // ── Visa Applications ───────────────────────────────────────────────────
         DB::table('visa_applications')->delete();
@@ -61,7 +61,7 @@ class VisaDatabaseSeeder extends Seeder
                 'courier_name'            => 'Grab Padala',
                 'date_received'           => '2026-01-10',
                 'date_filed'              => '2026-01-06',
-                'branch_id'               => $visaCentre,
+                'branch_id'               => $qcMain,
                 'created_by'              => $visa,
                 'updated_by'              => $visa,
                 'created_at'              => $now,
@@ -107,7 +107,7 @@ class VisaDatabaseSeeder extends Seeder
                 'courier_name'            => '2GO Express',
                 'date_received'           => '2026-01-20',
                 'date_filed'              => '2026-01-16',
-                'branch_id'               => $visaCentre,
+                'branch_id'               => $qcMain,
                 'created_by'              => $visa,
                 'updated_by'              => $visa,
                 'created_at'              => $now,
@@ -153,7 +153,7 @@ class VisaDatabaseSeeder extends Seeder
                 'courier_name'            => null,
                 'date_received'           => null,
                 'date_filed'              => '2026-02-02',
-                'branch_id'               => $visaCentre,
+                'branch_id'               => $qcMain,
                 'created_by'              => $visa,
                 'updated_by'              => $visa,
                 'created_at'              => $now,
@@ -199,7 +199,7 @@ class VisaDatabaseSeeder extends Seeder
                 'courier_name'            => null,
                 'date_received'           => null,
                 'date_filed'              => '2026-02-21',
-                'branch_id'               => $visaCentre,
+                'branch_id'               => $qcMain,
                 'created_by'              => $visa,
                 'updated_by'              => $visa,
                 'created_at'              => $now,
@@ -245,7 +245,7 @@ class VisaDatabaseSeeder extends Seeder
                 'courier_name'            => null,
                 'date_received'           => null,
                 'date_filed'              => null,
-                'branch_id'               => $visaCentre,
+                'branch_id'               => $qcMain,
                 'created_by'              => $visa,
                 'updated_by'              => $visa,
                 'created_at'              => $now,
@@ -291,7 +291,7 @@ class VisaDatabaseSeeder extends Seeder
                 'courier_name'            => 'Grab Padala',
                 'date_received'           => '2026-03-05',
                 'date_filed'              => '2026-03-02',
-                'branch_id'               => $visaCentre,
+                'branch_id'               => $qcMain,
                 'created_by'              => $visa,
                 'updated_by'              => $visa,
                 'created_at'              => $now,
@@ -337,7 +337,7 @@ class VisaDatabaseSeeder extends Seeder
                 'courier_name'            => 'Japan Embassy pickup',
                 'date_received'           => '2026-03-20',
                 'date_filed'              => '2026-03-16',
-                'branch_id'               => $visaCentre,
+                'branch_id'               => $qcMain,
                 'created_by'              => $visa,
                 'updated_by'              => $visa,
                 'created_at'              => $now,
@@ -383,7 +383,7 @@ class VisaDatabaseSeeder extends Seeder
                 'courier_name'            => null,
                 'date_received'           => null,
                 'date_filed'              => '2026-04-11',
-                'branch_id'               => $visaCentre,
+                'branch_id'               => $qcMain,
                 'created_by'              => $visa,
                 'updated_by'              => $visa,
                 'created_at'              => $now,
@@ -429,7 +429,7 @@ class VisaDatabaseSeeder extends Seeder
                 'courier_name'            => null,
                 'date_received'           => null,
                 'date_filed'              => '2026-04-17',
-                'branch_id'               => $visaCentre,
+                'branch_id'               => $qcMain,
                 'created_by'              => $visa,
                 'updated_by'              => $visa,
                 'created_at'              => $now,
@@ -475,7 +475,7 @@ class VisaDatabaseSeeder extends Seeder
                 'courier_name'            => null,
                 'date_received'           => null,
                 'date_filed'              => null,
-                'branch_id'               => $visaCentre,
+                'branch_id'               => $qcMain,
                 'created_by'              => $visa,
                 'updated_by'              => $visa,
                 'created_at'              => $now,
@@ -521,7 +521,7 @@ class VisaDatabaseSeeder extends Seeder
                 'courier_name'            => null,
                 'date_received'           => '2026-05-15',
                 'date_filed'              => null,
-                'branch_id'               => $visaCentre,
+                'branch_id'               => $qcMain,
                 'created_by'              => $visa,
                 'updated_by'              => $visa,
                 'created_at'              => $now,
@@ -567,7 +567,7 @@ class VisaDatabaseSeeder extends Seeder
                 'courier_name'            => null,
                 'date_received'           => null,
                 'date_filed'              => null,
-                'branch_id'               => $visaCentre,
+                'branch_id'               => $qcMain,
                 'created_by'              => $visa,
                 'updated_by'              => $visa,
                 'created_at'              => $now,

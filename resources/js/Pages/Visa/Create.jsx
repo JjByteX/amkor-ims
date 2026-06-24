@@ -1,8 +1,8 @@
 import { useForm } from '@inertiajs/react';
-import { Save, X } from 'lucide-react';
+;
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
-import { FormLayout, FormCard, FormRow, FormActions } from '../../Components/Shared/FormLayout';
+import { FormLayout, FormCard, FormRow, FormActions, FormCancelButton, FormEditButton, FormSubmitButton } from '../../Components/Shared/FormLayout';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
@@ -89,8 +89,8 @@ export default function VisaCreate({ visaTypes, agentCodes, statuses, paymentMod
                         subtitle="Record a visa or documentation service"
                         actions={
                             <>
-                                <Button type="button" variant="ghost" icon={X} onClick={() => history.back()}>Cancel</Button>
-                                <Button type="submit" icon={Save} loading={processing}>Save Application</Button>
+                                <FormCancelButton onClick={() => history.back()} />
+                                <FormSubmitButton loading={processing} />
                             </>
                         }
                     />
@@ -99,14 +99,14 @@ export default function VisaCreate({ visaTypes, agentCodes, statuses, paymentMod
                     <FormCard title="Client & Service">
                         <FormRow>
                             <Select
-                                label="Agent *"
+                                label="Agent" required
                                 options={[{ value: '', label: 'Select agent...' }, ...agentOptions]}
                                 value={data.agent_code}
                                 onChange={(e) => setData('agent_code', e.target.value)}
                                 error={errors.agent_code}
                             />
                             <Input
-                                label="Date *"
+                                label="Date" required
                                 type="date"
                                 value={data.date}
                                 onChange={(e) => setData('date', e.target.value)}
@@ -114,7 +114,7 @@ export default function VisaCreate({ visaTypes, agentCodes, statuses, paymentMod
                             />
                         </FormRow>
                         <Input
-                            label="Customer Name *"
+                            label="Customer Name" required
                             placeholder="Full name of applicant"
                             value={data.customer_name}
                             onChange={(e) => setData('customer_name', e.target.value)}
@@ -143,7 +143,7 @@ export default function VisaCreate({ visaTypes, agentCodes, statuses, paymentMod
                                 error={errors.agency}
                             />
                             <Select
-                                label="Visa / Service Type *"
+                                label="Visa / Service Type" required
                                 options={[{ value: '', label: 'Select type...' }, ...visaOptions]}
                                 value={data.visa_type}
                                 onChange={(e) => setData('visa_type', e.target.value)}
@@ -165,7 +165,7 @@ export default function VisaCreate({ visaTypes, agentCodes, statuses, paymentMod
                             <Input
                                 label="Selling Price (SP)"
                                 type="number"
-                                placeholder="0.00"
+                               
                                 value={data.selling_price}
                                 onChange={(e) => handleFinancialChange('selling_price', e.target.value)}
                                 error={errors.selling_price}
@@ -173,7 +173,7 @@ export default function VisaCreate({ visaTypes, agentCodes, statuses, paymentMod
                             <Input
                                 label="Net Payable (NP)"
                                 type="number"
-                                placeholder="0.00"
+                               
                                 value={data.net_payable}
                                 onChange={(e) => handleFinancialChange('net_payable', e.target.value)}
                                 error={errors.net_payable}
@@ -223,16 +223,16 @@ export default function VisaCreate({ visaTypes, agentCodes, statuses, paymentMod
                             Payment Breakdown (per bank)
                         </div>
                         <FormRow>
-                            <Input label="Cash" type="number" placeholder="0.00" value={data.payment_cash} onChange={(e) => setData('payment_cash', e.target.value)} error={errors.payment_cash} />
-                            <Input label="BDO" type="number" placeholder="0.00" value={data.payment_bdo} onChange={(e) => setData('payment_bdo', e.target.value)} error={errors.payment_bdo} />
+                            <Input label="Cash" type="number" value={data.payment_cash} onChange={(e) => setData('payment_cash', e.target.value)} error={errors.payment_cash} />
+                            <Input label="BDO" type="number" value={data.payment_bdo} onChange={(e) => setData('payment_bdo', e.target.value)} error={errors.payment_bdo} />
                         </FormRow>
                         <FormRow>
-                            <Input label="BPI" type="number" placeholder="0.00" value={data.payment_bpi} onChange={(e) => setData('payment_bpi', e.target.value)} error={errors.payment_bpi} />
-                            <Input label="Metrobank" type="number" placeholder="0.00" value={data.payment_metrobank} onChange={(e) => setData('payment_metrobank', e.target.value)} error={errors.payment_metrobank} />
+                            <Input label="BPI" type="number" value={data.payment_bpi} onChange={(e) => setData('payment_bpi', e.target.value)} error={errors.payment_bpi} />
+                            <Input label="Metrobank" type="number" value={data.payment_metrobank} onChange={(e) => setData('payment_metrobank', e.target.value)} error={errors.payment_metrobank} />
                         </FormRow>
                         <FormRow>
-                            <Input label="Card" type="number" placeholder="0.00" value={data.payment_card} onChange={(e) => setData('payment_card', e.target.value)} error={errors.payment_card} />
-                            <Input label="Check" type="number" placeholder="0.00" value={data.payment_check} onChange={(e) => setData('payment_check', e.target.value)} error={errors.payment_check} />
+                            <Input label="Card" type="number" value={data.payment_card} onChange={(e) => setData('payment_card', e.target.value)} error={errors.payment_card} />
+                            <Input label="Check" type="number" value={data.payment_check} onChange={(e) => setData('payment_check', e.target.value)} error={errors.payment_check} />
                         </FormRow>
                     </FormCard>
 
@@ -248,12 +248,12 @@ export default function VisaCreate({ visaTypes, agentCodes, statuses, paymentMod
                             Payable to Embassy / Operator (NP)
                         </div>
                         <FormRow>
-                            <Input label="Cash (PHP)" type="number" placeholder="0.00" value={data.payable_cash} onChange={(e) => setData('payable_cash', e.target.value)} error={errors.payable_cash} />
-                            <Input label="Cash (USD)" type="number" placeholder="0.00" value={data.payable_cash_usd} onChange={(e) => setData('payable_cash_usd', e.target.value)} error={errors.payable_cash_usd} />
+                            <Input label="Cash (PHP)" type="number" value={data.payable_cash} onChange={(e) => setData('payable_cash', e.target.value)} error={errors.payable_cash} />
+                            <Input label="Cash (USD)" type="number" value={data.payable_cash_usd} onChange={(e) => setData('payable_cash_usd', e.target.value)} error={errors.payable_cash_usd} />
                         </FormRow>
                         <FormRow>
-                            <Input label="Bank Deposit" type="number" placeholder="0.00" value={data.payable_bank_deposit} onChange={(e) => setData('payable_bank_deposit', e.target.value)} error={errors.payable_bank_deposit} />
-                            <Input label="Credit Card" type="number" placeholder="0.00" value={data.payable_credit_card} onChange={(e) => setData('payable_credit_card', e.target.value)} error={errors.payable_credit_card} />
+                            <Input label="Bank Deposit" type="number" value={data.payable_bank_deposit} onChange={(e) => setData('payable_bank_deposit', e.target.value)} error={errors.payable_bank_deposit} />
+                            <Input label="Credit Card" type="number" value={data.payable_credit_card} onChange={(e) => setData('payable_credit_card', e.target.value)} error={errors.payable_credit_card} />
                         </FormRow>
 
                         <div className="font-heading font-semibold" style={{ fontSize: 'var(--font-size-small)', letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--color-text-muted)', marginTop: 'var(--space-1)' }}>
@@ -280,8 +280,8 @@ export default function VisaCreate({ visaTypes, agentCodes, statuses, paymentMod
                     </FormCard>
 
                     <FormActions>
-                        <Button type="button" variant="ghost" icon={X} onClick={() => history.back()}>Cancel</Button>
-                        <Button type="submit" icon={Save} loading={processing}>Save Application</Button>
+                        <FormCancelButton onClick={() => history.back()} />
+                        <FormSubmitButton loading={processing} />
                     </FormActions>
                 </FormLayout>
             </form>

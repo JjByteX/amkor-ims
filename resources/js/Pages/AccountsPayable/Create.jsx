@@ -1,9 +1,9 @@
 import { useForm } from '@inertiajs/react';
 import { router } from '@inertiajs/react';
-import { Save, X } from 'lucide-react';
+;
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
-import { FormLayout, FormCard, FormRow, FormActions } from '../../Components/Shared/FormLayout';
+import { FormLayout, FormCard, FormRow, FormActions, FormCancelButton, FormEditButton, FormSubmitButton } from '../../Components/Shared/FormLayout';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
@@ -67,6 +67,8 @@ export default function APCreate({ currencies, paymentModes, statuses, suppliers
         ...Object.entries(paymentModes).map(([v, l]) => ({ value: v, label: l })),
     ];
 
+    const isCheck = data.mode_of_payment === 'check';
+
     return (
         <AppShell>
             <form
@@ -81,8 +83,8 @@ export default function APCreate({ currencies, paymentModes, statuses, suppliers
                         subtitle="Record an operator payable — PHP, USD, or JPY"
                         actions={
                             <>
-                                <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('ap.index'))}>Cancel</Button>
-                                <Button type="submit" variant="primary" icon={Save} loading={processing}>Save Payable</Button>
+                                <FormCancelButton onClick={() => router.get(route('ap.index'))} />
+                                <FormSubmitButton loading={processing} />
                             </>
                         }
                     />
@@ -97,7 +99,7 @@ export default function APCreate({ currencies, paymentModes, statuses, suppliers
                             error={errors.contact_id}
                         />
                         <Input
-                            label="Supplier Name *"
+                            label="Supplier Name"
                             placeholder="Name is stored on record even if not in directory"
                             value={data.supplier_name}
                             onChange={(e) => setData('supplier_name', e.target.value)}
@@ -117,18 +119,18 @@ export default function APCreate({ currencies, paymentModes, statuses, suppliers
 
                     {/* Card 2 — Amounts */}
                     <FormCard title="Amounts">
-                        <Select label="Primary Currency *" options={currencyOptions} value={data.currency} onChange={(e) => setData('currency', e.target.value)} error={errors.currency} />
+                        <Select label="Primary Currency" required options={currencyOptions} value={data.currency} onChange={(e) => setData('currency', e.target.value)} error={errors.currency} />
                         <FormRow>
-                            <Input label="PHP Amount" type="number" step="0.01" placeholder="0.00" value={data.invoice_amount_php} onChange={(e) => setData('invoice_amount_php', e.target.value)} error={errors.invoice_amount_php} />
-                            <Input label="Payment PHP" type="number" step="0.01" placeholder="0.00" value={data.payment_php} onChange={(e) => setData('payment_php', e.target.value)} error={errors.payment_php} />
+                            <Input label="PHP Amount" type="number" step="0.01" value={data.invoice_amount_php} onChange={(e) => setData('invoice_amount_php', e.target.value)} error={errors.invoice_amount_php} />
+                            <Input label="Payment PHP" type="number" step="0.01" value={data.payment_php} onChange={(e) => setData('payment_php', e.target.value)} error={errors.payment_php} />
                         </FormRow>
                         <FormRow>
-                            <Input label="USD Amount" type="number" step="0.01" placeholder="0.00" value={data.invoice_amount_usd} onChange={(e) => setData('invoice_amount_usd', e.target.value)} error={errors.invoice_amount_usd} />
-                            <Input label="Payment USD" type="number" step="0.01" placeholder="0.00" value={data.payment_usd} onChange={(e) => setData('payment_usd', e.target.value)} error={errors.payment_usd} />
+                            <Input label="USD Amount" type="number" step="0.01" value={data.invoice_amount_usd} onChange={(e) => setData('invoice_amount_usd', e.target.value)} error={errors.invoice_amount_usd} />
+                            <Input label="Payment USD" type="number" step="0.01" value={data.payment_usd} onChange={(e) => setData('payment_usd', e.target.value)} error={errors.payment_usd} />
                         </FormRow>
                         <FormRow>
-                            <Input label="JPY Amount" type="number" step="0.01" placeholder="0.00" value={data.invoice_amount_jpy} onChange={(e) => setData('invoice_amount_jpy', e.target.value)} error={errors.invoice_amount_jpy} />
-                            <Input label="Payment JPY" type="number" step="0.01" placeholder="0.00" value={data.payment_jpy} onChange={(e) => setData('payment_jpy', e.target.value)} error={errors.payment_jpy} />
+                            <Input label="JPY Amount" type="number" step="0.01" value={data.invoice_amount_jpy} onChange={(e) => setData('invoice_amount_jpy', e.target.value)} error={errors.invoice_amount_jpy} />
+                            <Input label="Payment JPY" type="number" step="0.01" value={data.payment_jpy} onChange={(e) => setData('payment_jpy', e.target.value)} error={errors.payment_jpy} />
                         </FormRow>
                         <Input label="Payment Date" type="date" value={data.payment_date} onChange={(e) => setData('payment_date', e.target.value)} error={errors.payment_date} />
                     </FormCard>
@@ -138,14 +140,16 @@ export default function APCreate({ currencies, paymentModes, statuses, suppliers
                         <Select label="Mode of Payment" options={paymentOptions} value={data.mode_of_payment} onChange={(e) => setData('mode_of_payment', e.target.value)} error={errors.mode_of_payment} />
                         <FormRow>
                             <Input label="Account #" value={data.account_no} onChange={(e) => setData('account_no', e.target.value)} error={errors.account_no} />
-                            <Input label="Check #" value={data.check_no} onChange={(e) => setData('check_no', e.target.value)} error={errors.check_no} />
+                            {isCheck && (
+                                <Input label="Check #" value={data.check_no} onChange={(e) => setData('check_no', e.target.value)} error={errors.check_no} placeholder="Check number" />
+                            )}
                         </FormRow>
                         <Textarea label="Remarks" value={data.remarks} onChange={(e) => setData('remarks', e.target.value)} error={errors.remarks} rows={3} />
                     </FormCard>
 
                     <FormActions>
-                        <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('ap.index'))}>Cancel</Button>
-                        <Button type="submit" variant="primary" icon={Save} loading={processing}>Save Payable</Button>
+                        <FormCancelButton onClick={() => router.get(route('ap.index'))} />
+                        <FormSubmitButton loading={processing} />
                     </FormActions>
                 </FormLayout>
             </form>

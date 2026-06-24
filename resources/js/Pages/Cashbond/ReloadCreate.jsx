@@ -1,8 +1,8 @@
 import { router, useForm, usePage } from '@inertiajs/react';
-import { Save, X } from 'lucide-react';
+;
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
-import { FormLayout, FormCard, FormActions } from '../../Components/Shared/FormLayout';
+import { FormLayout, FormCard, FormActions, FormCancelButton, FormEditButton, FormSubmitButton } from '../../Components/Shared/FormLayout';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
@@ -47,8 +47,8 @@ export default function CashbondReloadCreate({ portals }) {
                         subtitle="Prepare a cashbond reload for audit and approval"
                         actions={
                             <>
-                                <Button type="button" variant="ghost" icon={X} onClick={() => router.visit(route('cashbond.index'))}>Cancel</Button>
-                                <Button type="submit" variant="primary" icon={Save} loading={form.processing}>Submit Request</Button>
+                                <FormCancelButton onClick={() => router.visit(route('cashbond.index'))} />
+                                <FormSubmitButton loading={form.processing} />
                             </>
                         }
                     />
@@ -71,8 +71,8 @@ export default function CashbondReloadCreate({ portals }) {
                     </FormCard>
 
                     <FormActions>
-                        <Button type="button" variant="ghost" icon={X} onClick={() => router.visit(route('cashbond.index'))}>Cancel</Button>
-                        <Button type="submit" variant="primary" icon={Save} loading={form.processing}>Submit Request</Button>
+                        <FormCancelButton onClick={() => router.visit(route('cashbond.index'))} />
+                        <FormSubmitButton loading={form.processing} />
                     </FormActions>
                 </FormLayout>
             </form>

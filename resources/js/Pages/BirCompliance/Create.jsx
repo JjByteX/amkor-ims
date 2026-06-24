@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { router, usePage, useForm } from '@inertiajs/react';
-import { Save, X, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
-import { FormLayout, FormCard, FormRow, FormActions } from '../../Components/Shared/FormLayout';
+import { FormLayout, FormCard, FormRow, FormActions, FormCancelButton, FormEditButton, FormSubmitButton } from '../../Components/Shared/FormLayout';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
@@ -75,8 +75,8 @@ export default function BirCreate({ documentTypes, sourceTypes, paymentModes, va
                         subtitle="Record an Acknowledgement Receipt, Service Invoice, or Statement of Account"
                         actions={
                             <>
-                                <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('bir.index'))}>Cancel</Button>
-                                <Button type="submit" variant="primary" icon={Save} loading={processing}>Save Transaction</Button>
+                                <FormCancelButton onClick={() => router.get(route('bir.index'))} />
+                                <FormSubmitButton loading={processing} />
                             </>
                         }
                     />
@@ -85,7 +85,7 @@ export default function BirCreate({ documentTypes, sourceTypes, paymentModes, va
                     <FormCard title="Document & Client">
                         <FormRow>
                             <Select
-                                label="Document Type *"
+                                label="Document Type" required
                                 value={data.document_type}
                                 onChange={(e) => setData('document_type', e.target.value)}
                                 error={errors.document_type}
@@ -108,7 +108,7 @@ export default function BirCreate({ documentTypes, sourceTypes, paymentModes, va
                                 options={Object.entries(sourceTypes).map(([v, l]) => ({ value: v, label: l }))}
                             />
                             <Input
-                                label="Transaction Date *"
+                                label="Transaction Date" required
                                 type="date"
                                 value={data.transaction_date}
                                 onChange={(e) => setData('transaction_date', e.target.value)}
@@ -124,9 +124,9 @@ export default function BirCreate({ documentTypes, sourceTypes, paymentModes, va
                                 Service Invoice — BIR ATP No. {atpNumber} will be printed. TIN is required.
                             </div>
                         )}
-                        <Input label="Client Name *" value={data.client_name} onChange={(e) => setData('client_name', e.target.value)} error={errors.client_name} placeholder="Full name or company" />
+                        <Input label="Client Name" required value={data.client_name} onChange={(e) => setData('client_name', e.target.value)} error={errors.client_name} placeholder="Full name or company" />
                         <FormRow>
-                            <Input label={`TIN${isAR || isSI ? ' (required for BIR)' : ''}`} value={data.tin} onChange={(e) => setData('tin', e.target.value)} error={errors.tin} placeholder="000-000-000-00000" />
+                            <Input label={`TIN${isAR || isSI ? ' (required for BIR)' : ''}`} value={data.tin} onChange={(e) => setData('tin', e.target.value)} error={errors.tin} />
                             <Input label="Business Style" value={data.business_style} onChange={(e) => setData('business_style', e.target.value)} error={errors.business_style} placeholder="Trade name (if any)" />
                         </FormRow>
                         <Textarea label="Address" value={data.address} onChange={(e) => setData('address', e.target.value)} error={errors.address} placeholder="Full address" rows={2} />
@@ -134,7 +134,7 @@ export default function BirCreate({ documentTypes, sourceTypes, paymentModes, va
 
                     {/* Card 2 — Amounts & Notes */}
                     <FormCard title="Amounts & Notes">
-                        <Input label="Gross Amount (VAT-inclusive) *" type="number" step="0.01" min="0" value={data.gross_amount} onChange={(e) => setData('gross_amount', e.target.value)} error={errors.gross_amount} placeholder="0.00" />
+                        <Input label="Gross Amount (VAT-inclusive)" required type="number" step="0.01" min="0" value={data.gross_amount} onChange={(e) => setData('gross_amount', e.target.value)} error={errors.gross_amount} />
                         {isSI && (
                             <FormRow>
                                 <Checkbox label="VAT Exempt" checked={data.is_vat_exempt} onChange={(e) => { setData('is_vat_exempt', e.target.checked); if (e.target.checked) setData('is_vat_zero_rated', false); }} />
@@ -142,8 +142,8 @@ export default function BirCreate({ documentTypes, sourceTypes, paymentModes, va
                             </FormRow>
                         )}
                         <FormRow>
-                            <Input label="SC/PWD Discount" type="number" step="0.01" min="0" value={data.sc_pwd_discount} onChange={(e) => setData('sc_pwd_discount', e.target.value)} error={errors.sc_pwd_discount} placeholder="0.00" />
-                            <Input label={`Withholding Tax${isSI ? ` (${(whtRate * 100).toFixed(0)}%)` : ''}`} type="number" step="0.01" min="0" value={data.withholding_tax} onChange={(e) => setData('withholding_tax', e.target.value)} error={errors.withholding_tax} placeholder="0.00" />
+                            <Input label="SC/PWD Discount" type="number" step="0.01" min="0" value={data.sc_pwd_discount} onChange={(e) => setData('sc_pwd_discount', e.target.value)} error={errors.sc_pwd_discount} />
+                            <Input label={`Withholding Tax${isSI ? ` (${(whtRate * 100).toFixed(0)}%)` : ''}`} type="number" step="0.01" min="0" value={data.withholding_tax} onChange={(e) => setData('withholding_tax', e.target.value)} error={errors.withholding_tax} />
                         </FormRow>
                         {/* Live preview */}
                         {gross > 0 && (
@@ -191,8 +191,8 @@ export default function BirCreate({ documentTypes, sourceTypes, paymentModes, va
                     </FormCard>
 
                     <FormActions>
-                        <Button type="button" variant="ghost" icon={X} onClick={() => router.get(route('bir.index'))}>Cancel</Button>
-                        <Button type="submit" variant="primary" icon={Save} loading={processing}>Save Transaction</Button>
+                        <FormCancelButton onClick={() => router.get(route('bir.index'))} />
+                        <FormSubmitButton loading={processing} />
                     </FormActions>
                 </FormLayout>
             </form>

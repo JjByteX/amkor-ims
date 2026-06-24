@@ -10,14 +10,13 @@ class SalesSummaryDatabaseSeeder extends Seeder
     public function run(): void
     {
         $now = now();
-        $qcMain = DB::table('branches')->where('code', 'QC_MAIN')->value('id');
-        $visaCentre = DB::table('branches')->where('code', 'VISA_CENTRE')->value('id');
-        $ormoc = DB::table('branches')->where('code', 'ORMOC')->value('id');
+        $qcMain    = DB::table('branches')->where('code', 'QC_MAIN')->value('id');
+        $ormoc     = DB::table('branches')->where('code', 'ORMOC')->value('id');
 
-        $jhona = DB::table('users')->where('email', 'jhona@amkor.ph')->value('id');
-        $visa = DB::table('users')->where('email', 'visa@amkor.ph')->value('id');
-        $ormocUser = DB::table('users')->where('email', 'ormoc@amkor.ph')->value('id');
-        $coo = DB::table('users')->where('email', 'coo@amkor.ph')->value('id');
+        $jhona     = DB::table('users')->where('email', 'jhona@amkor.ph')->value('id');
+        $visa      = DB::table('users')->where('email', 'alex@amkor.ph')->value('id');
+        $ormocUser = DB::table('users')->where('email', 'anjelly@amkor.ph')->value('id');
+        $coo       = DB::table('users')->where('email', 'marianne@amkor.ph')->value('id');
 
         $targets = [
             // ── May 2026 ──────────────────────────────────────────────────
@@ -42,15 +41,15 @@ class SalesSummaryDatabaseSeeder extends Seeder
                 'remarks' => 'RESA sub-group target May', 'created_by' => $coo, 'updated_by' => $coo,
                 'created_at' => $now, 'updated_at' => $now],
 
-            ['department' => 'visa', 'branch_id' => $visaCentre, 'agent_code' => null,
+            ['department' => 'visa', 'branch_id' => $qcMain, 'agent_code' => null,
                 'year' => 2026, 'month' => 5, 'target_amount' => 200000.00,
                 'remarks' => 'Visa Centre overall target May', 'created_by' => $coo, 'updated_by' => $coo,
                 'created_at' => $now, 'updated_at' => $now],
-            ['department' => 'visa', 'branch_id' => $visaCentre, 'agent_code' => 'ALEX',
+            ['department' => 'visa', 'branch_id' => $qcMain, 'agent_code' => 'ALEX',
                 'year' => 2026, 'month' => 5, 'target_amount' => 50000.00,
                 'remarks' => 'Alex target May', 'created_by' => $coo, 'updated_by' => $coo,
                 'created_at' => $now, 'updated_at' => $now],
-            ['department' => 'visa', 'branch_id' => $visaCentre, 'agent_code' => 'RICCI',
+            ['department' => 'visa', 'branch_id' => $qcMain, 'agent_code' => 'RICCI',
                 'year' => 2026, 'month' => 5, 'target_amount' => 45000.00,
                 'remarks' => 'Ricci target May', 'created_by' => $coo, 'updated_by' => $coo,
                 'created_at' => $now, 'updated_at' => $now],
@@ -87,15 +86,15 @@ class SalesSummaryDatabaseSeeder extends Seeder
                 'remarks' => 'RESA sub-group target June', 'created_by' => $coo, 'updated_by' => $coo,
                 'created_at' => $now, 'updated_at' => $now],
 
-            ['department' => 'visa', 'branch_id' => $visaCentre, 'agent_code' => null,
+            ['department' => 'visa', 'branch_id' => $qcMain, 'agent_code' => null,
                 'year' => 2026, 'month' => 6, 'target_amount' => 220000.00,
                 'remarks' => 'Visa Centre overall target June', 'created_by' => $coo, 'updated_by' => $coo,
                 'created_at' => $now, 'updated_at' => $now],
-            ['department' => 'visa', 'branch_id' => $visaCentre, 'agent_code' => 'ALEX',
+            ['department' => 'visa', 'branch_id' => $qcMain, 'agent_code' => 'ALEX',
                 'year' => 2026, 'month' => 6, 'target_amount' => 55000.00,
                 'remarks' => 'Alex target June', 'created_by' => $coo, 'updated_by' => $coo,
                 'created_at' => $now, 'updated_at' => $now],
-            ['department' => 'visa', 'branch_id' => $visaCentre, 'agent_code' => 'RICCI',
+            ['department' => 'visa', 'branch_id' => $qcMain, 'agent_code' => 'RICCI',
                 'year' => 2026, 'month' => 6, 'target_amount' => 50000.00,
                 'remarks' => 'Ricci target June', 'created_by' => $coo, 'updated_by' => $coo,
                 'created_at' => $now, 'updated_at' => $now],
@@ -115,7 +114,7 @@ class SalesSummaryDatabaseSeeder extends Seeder
                 'year' => 2026, 'month' => 1, 'target_amount' => 400000.00,
                 'remarks' => 'QC Main reservation target Jan', 'created_by' => $coo, 'updated_by' => $coo,
                 'created_at' => $now, 'updated_at' => $now],
-            ['department' => 'visa', 'branch_id' => $visaCentre, 'agent_code' => null,
+            ['department' => 'visa', 'branch_id' => $qcMain, 'agent_code' => null,
                 'year' => 2026, 'month' => 1, 'target_amount' => 150000.00,
                 'remarks' => 'Visa Centre overall target Jan', 'created_by' => $coo, 'updated_by' => $coo,
                 'created_at' => $now, 'updated_at' => $now],

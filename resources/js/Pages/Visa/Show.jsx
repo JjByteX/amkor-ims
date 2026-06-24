@@ -318,7 +318,7 @@ export function VisaContent({ application, statuses, paymentModes, canWrite, can
 
             <Modal open={orModal} onClose={() => setOrModal(false)} title="Record OR Number">
                 <form onSubmit={submitOr} className="flex flex-col gap-[var(--space-2)]">
-                    <Input label="Official Receipt Number *" placeholder="Enter OR number from embassy"
+                    <Input label="Official Receipt Number" required placeholder="Enter OR number from embassy"
                         value={orForm.data.or_number}
                         onChange={(e) => orForm.setData('or_number', e.target.value)}
                         error={orForm.errors.or_number}

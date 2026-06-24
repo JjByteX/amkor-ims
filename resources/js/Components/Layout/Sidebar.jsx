@@ -5,12 +5,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     PanelLeftOpen,
     Gauge,
-    PlaneTakeoff, FileCheck2, MapPinned, Ticket,
+    PlaneTakeoff, FileCheck2, Ticket,
     ChartNoAxesCombined,
     CreditCard, Landmark, WalletCards, ShieldCheck, ReceiptText, Building2, Files,
     UsersRound, CalendarClock, Megaphone,
     Bell, BellDot, ContactRound, ClipboardCheck,
-    Sun, Moon, LogOut,
+    Sun, Moon, LogOut, ChevronsUpDown,
 } from 'lucide-react';
 import NavItem from './NavItem';
 import AmkorLogo from '../UI/AmkorLogo';
@@ -26,6 +26,11 @@ import Tooltip from './Tooltip';
    Access rules per section mirror the MD file exactly:
      'all'  → every authenticated user sees this item
      array  → only the listed roles see this item
+
+   MERGE NOTE (2026-06-23):
+   The standalone "Ormoc Branch" nav item (M2, /ormoc) has been removed.
+   branch_supervisor and branch_sales_officer are now included in the
+   Reservation & Booking item (M1, /reservation) — same page, branch-scoped.
    ───────────────────────────────────────────────────────────────────────────── */
 const NAV_SECTIONS = [
     {
@@ -60,8 +65,10 @@ const NAV_SECTIONS = [
         label: 'Operations',
         items: [
             {
-                // M1 — Reservation & Booking (QC)
-                // All roles with any reservation.* permission
+                // M1 — Reservation & Booking (all branches: QC and Ormoc)
+                // Branch-scoped automatically by the controller based on role.
+                // QC roles see QC bookings; Ormoc roles see Ormoc bookings;
+                // all-access roles see everything.
                 key  : 'reservation',
                 href : '/reservation',
                 icon : <PlaneTakeoff size={20} />,
@@ -77,11 +84,13 @@ const NAV_SECTIONS = [
                     'sales_ticketing_officer',
                     'group_sales_officer',
                     'business_development_manager',
+                    // Ormoc branch roles — added as part of OrmocBranch merge
+                    'branch_supervisor',
+                    'branch_sales_officer',
                 ],
             },
             {
                 // M3 — Visa & Documentation
-                // All roles with any visa.* permission
                 key  : 'visa',
                 href : '/visa',
                 icon : <FileCheck2 size={20} />,
@@ -100,27 +109,7 @@ const NAV_SECTIONS = [
                 ],
             },
             {
-                // M2 — Ormoc Branch
-                // All roles with any ormoc.* permission
-                key  : 'ormoc',
-                href : '/ormoc',
-                icon : <MapPinned size={20} />,
-                label: 'Ormoc Branch',
-                roles: [
-                    'president',
-                    'chief_operating_officer',
-                    'finance_admin_supervisor',
-                    'administrative_assistant',
-                    'accounting_assistant',
-                    'general_sales_manager',
-                    'sales_ticketing_officer',
-                    'business_development_manager',
-                    'branch_supervisor',
-                    'branch_sales_officer',
-                ],
-            },
-            {
-                // Airline Rates — managed by GSM and above; viewed by all RESA roles
+                // Airline Rates — managed by GSM and above; viewed by all RESA + Ormoc roles
                 key  : 'airline-rates',
                 href : '/airline-rates',
                 icon : <Ticket size={20} />,
@@ -141,7 +130,6 @@ const NAV_SECTIONS = [
             },
             {
                 // M12 — Sales Summary Report
-                // All roles with any sales.view_* permission
                 key  : 'sales',
                 href : '/sales',
                 icon : <ChartNoAxesCombined size={20} />,
@@ -311,7 +299,6 @@ const NAV_SECTIONS = [
         items: [
             {
                 // M14 — HR & Employee Records
-                // Only roles with hr.view or hr.create/update (not just hr.view_own)
                 key       : 'hr',
                 href      : '/hr',
                 icon      : <UsersRound size={20} />,
@@ -335,7 +322,6 @@ const NAV_SECTIONS = [
             },
             {
                 // M13 — Marketing
-                // Roles with any marketing.* permission beyond view_itinerary
                 key  : 'marketing',
                 href : '/marketing',
                 icon : <Megaphone size={20} />,
@@ -394,7 +380,7 @@ const LABEL_ENTER_DELAY    = 0.12;
 /* ─────────────────────────────────────────────────────────────────────────────
    ProfileMenu — portal-rendered popup that escapes the sidebar clip context.
    ───────────────────────────────────────────────────────────────────────────── */
-function ProfileMenu({ triggerRef, onClose, dark, onToggleDark, onLogout, borderColor }) {
+function ProfileMenu({ triggerRef, onClose, dark, onToggleDark, onLogout, borderColor, activeBranch, branches }) {
     const menuRef = useRef(null);
     const [style, setStyle] = useState({});
 
@@ -424,6 +410,16 @@ function ProfileMenu({ triggerRef, onClose, dark, onToggleDark, onLogout, border
         return () => document.removeEventListener('mousedown', handler);
     }, [onClose, triggerRef]);
 
+    // Gap 8 — branch switcher: only rendered when the server passes `branches`
+    // (i.e. the user is one of the four all-access roles).
+    const handleBranchChange = (branchId) => {
+        router.post(
+            route('session.branch'),
+            { branch_id: branchId },
+            { preserveScroll: true, onSuccess: () => onClose() }
+        );
+    };
+
     return createPortal(
         <div
             ref={menuRef}
@@ -436,6 +432,54 @@ function ProfileMenu({ triggerRef, onClose, dark, onToggleDark, onLogout, border
                 padding      : '6px',
             }}
         >
+            {/* ── Branch switcher — only for all-access roles ──────────────── */}
+            {branches && branches.length > 0 && (
+                <>
+                    <div
+                        style={{
+                            padding     : '4px 12px 6px',
+                            fontSize    : '10px',
+                            fontWeight  : 600,
+                            letterSpacing: '0.04em',
+                            textTransform: 'uppercase',
+                            color       : 'var(--color-text-muted)',
+                        }}
+                    >
+                        Active Branch
+                    </div>
+                    {branches.map((branch) => (
+                        <button
+                            key={branch.id}
+                            onClick={() => handleBranchChange(branch.id)}
+                            className={[
+                                'w-full flex items-center gap-3',
+                                'h-10 px-3',
+                                'font-body',
+                                activeBranch?.id === branch.id
+                                    ? 'text-[var(--color-primary)] bg-[var(--color-primary-soft,rgba(var(--color-primary-rgb,99,102,241),0.08))]'
+                                    : 'text-[var(--color-text)] hover:bg-black/5 dark:hover:bg-white/6',
+                                'transition-colors duration-0',
+                            ].join(' ')}
+                            style={{ fontSize: '13px', borderRadius: 'var(--radius-md)', fontWeight: activeBranch?.id === branch.id ? 600 : 500 }}
+                        >
+                            <ChevronsUpDown size={14} className="shrink-0 text-gray-400" />
+                            <span className="truncate">{branch.name}</span>
+                            {activeBranch?.id === branch.id && (
+                                <span
+                                    className="ml-auto shrink-0 rounded-full"
+                                    style={{
+                                        width     : 6,
+                                        height    : 6,
+                                        background: 'var(--color-primary)',
+                                    }}
+                                />
+                            )}
+                        </button>
+                    ))}
+                    <div style={{ margin: '4px 0', height: '1px', background: borderColor }} />
+                </>
+            )}
+
             <button
                 onClick={() => { onToggleDark(); onClose(); }}
                 className={[
@@ -495,7 +539,7 @@ function SidebarLabel({ children, className, style: extraStyle }) {
 
 
 export default function Sidebar({ dark = false, onToggleDark }) {
-    const { auth } = usePage().props;
+    const { auth, activeBranch, branches } = usePage().props;
     const user      = auth?.user;
     const role      = user?.role ?? '';
     const roleLabel = ROLE_LABELS[role] ?? role;
@@ -727,6 +771,8 @@ export default function Sidebar({ dark = false, onToggleDark }) {
                     onToggleDark={onToggleDark}
                     onLogout={handleLogout}
                     borderColor={borderColor}
+                    activeBranch={activeBranch}
+                    branches={branches}
                 />
             )}
         </motion.aside>

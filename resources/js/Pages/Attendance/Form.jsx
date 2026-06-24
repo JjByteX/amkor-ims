@@ -1,8 +1,8 @@
 import { useForm, router } from '@inertiajs/react';
-import { ArrowLeft, Save, Shield, Coffee, Clock, TrendingUp } from 'lucide-react';
+import { Shield, Coffee, Clock, TrendingUp } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
-import { FormLayout, FormCard, FormRow, FormActions } from '../../Components/Shared/FormLayout';
+import { FormLayout, FormCard, FormRow, FormActions, FormCancelButton, FormEditButton, FormSubmitButton } from '../../Components/Shared/FormLayout';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
@@ -116,20 +116,8 @@ export default function AttendanceForm({ record, employees, branches, statuses, 
                         subtitle="HR override — all changes are flagged in the audit trail"
                         actions={
                             <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    icon={ArrowLeft}
-                                    onClick={() => isEdit
-                                        ? router.get(route('attendance.index'))
-                                        : router.get(route('attendance.index'))
-                                    }
-                                >
-                                    Cancel
-                                </Button>
-                                <Button type="submit" icon={Save} loading={processing}>
-                                    {isEdit ? 'Save Changes' : 'Create Record'}
-                                </Button>
+                                <FormCancelButton onClick={() => router.get(route('attendance.index'))} />
+                                <FormSubmitButton loading={processing} />
                             </div>
                         }
                     />
@@ -154,7 +142,8 @@ export default function AttendanceForm({ record, employees, branches, statuses, 
                         </div>
 
                         <Select
-                            label="Employee *"
+                            label="Employee"
+                            required
                             options={[
                                 { value: '', label: 'Select employee…' },
                                 ...employees.map((e) => ({ value: e.id, label: e.name })),
@@ -165,7 +154,8 @@ export default function AttendanceForm({ record, employees, branches, statuses, 
                         />
                         <FormRow>
                             <Input
-                                label="Work Date *"
+                                label="Work Date"
+                                required
                                 type="date"
                                 value={data.work_date}
                                 onChange={(e) => setData('work_date', e.target.value)}
@@ -183,7 +173,8 @@ export default function AttendanceForm({ record, employees, branches, statuses, 
                             />
                         </FormRow>
                         <Select
-                            label="Status *"
+                            label="Status"
+                            required
                             options={Object.entries(statuses).map(([v, l]) => ({ value: v, label: l }))}
                             value={data.status}
                             onChange={(e) => setData('status', e.target.value)}
@@ -191,7 +182,8 @@ export default function AttendanceForm({ record, employees, branches, statuses, 
                         />
                         {requiresLeaveType && (
                             <Select
-                                label="Leave Type *"
+                                label="Leave Type"
+                                required
                                 options={[
                                     { value: '', label: 'Select type…' },
                                     ...Object.entries(leaveTypes).map(([v, l]) => ({ value: v, label: l })),
@@ -202,7 +194,8 @@ export default function AttendanceForm({ record, employees, branches, statuses, 
                             />
                         )}
                         <Textarea
-                            label="Override Reason *"
+                            label="Override Reason"
+                            required
                             placeholder="Explain why this record is being manually entered or corrected…"
                             value={data.override_reason}
                             onChange={(e) => setData('override_reason', e.target.value)}
@@ -373,19 +366,8 @@ export default function AttendanceForm({ record, employees, branches, statuses, 
                     )}
 
                     <FormActions>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={() => isEdit
-                                ? router.get(route('attendance.index'))
-                                : router.get(route('attendance.index'))
-                            }
-                        >
-                            Cancel
-                        </Button>
-                        <Button type="submit" icon={Save} loading={processing}>
-                            {isEdit ? 'Save Changes' : 'Create Record'}
-                        </Button>
+                        <FormCancelButton onClick={() => router.get(route('attendance.index'))} />
+                        <FormSubmitButton loading={processing} />
                     </FormActions>
                 </FormLayout>
             </form>
