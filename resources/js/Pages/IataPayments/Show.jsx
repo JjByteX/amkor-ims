@@ -52,7 +52,7 @@ export function IataContent({ payment, statuses, approvalStatuses, canWrite, can
             person : payment.checker?.name,
             at     : payment.checked_at,
             action : canCheck && !payment.checked_at
-                ? <Button variant="secondary" size="sm" icon={CheckCircle2} onClick={() => setCheckOpen(true)} style={{ width: '100%' }}>Check IATA Payment</Button>
+                ? <Button variant="primary" size="sm" icon={CheckCircle2} onClick={() => setCheckOpen(true)} style={{ width: '100%' }}>Check IATA Payment</Button>
                 : null,
         },
         {
@@ -79,7 +79,7 @@ export function IataContent({ payment, statuses, approvalStatuses, canWrite, can
             person : null,
             at     : payment.operator_notified_at,
             action : canWrite && payment.released_at && !payment.operator_notified
-                ? <Button variant="secondary" size="sm" icon={Bell} onClick={() => setNotifyOpen(true)} style={{ width: '100%' }}>Notify Operator</Button>
+                ? <Button variant="primary" size="sm" icon={Bell} onClick={() => setNotifyOpen(true)} style={{ width: '100%' }}>Notify Operator</Button>
                 : null,
         },
     ];

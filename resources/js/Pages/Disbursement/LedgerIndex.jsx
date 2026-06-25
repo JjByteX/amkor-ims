@@ -15,16 +15,16 @@ import Badge from '../../Components/UI/Badge';
 import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
 
 const CATEGORY_VARIANT = {
-    cash:          'info',
+    cash:          'neutral',
     check:         'neutral',
-    liaison_admin: 'warning',
-    liaison_banks: 'warning',
+    liaison_admin: 'neutral',
+    liaison_banks: 'neutral',
 };
 
 const FUND_TYPE_VARIANT = {
-    cash_on_hand: 'success',
-    cash_on_bank: 'info',
-    petty_cash:   'warning',
+    cash_on_hand: 'neutral',
+    cash_on_bank: 'neutral',
+    petty_cash:   'neutral',
 };
 
 export default function LedgerIndex({
@@ -80,12 +80,12 @@ export default function LedgerIndex({
                         </p>
                     )}
                     {row.description && (
-                        <p style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)', opacity: 0.6 }}>
+                        <p style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>
                             {row.description.length > 60 ? row.description.substring(0, 60) + '…' : row.description}
                         </p>
                     )}
                     {row.reference_no && (
-                        <p style={{ fontSize: 11, color: 'var(--color-text)', opacity: 0.5 }}>
+                        <p style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
                             Ref: {row.reference_no}
                         </p>
                     )}
@@ -101,11 +101,9 @@ export default function LedgerIndex({
             ),
         },
         {
-            key: 'amount', label: 'Amount',
+            key: 'amount', label: 'Amount', align: 'right',
             render: (row) => (
-                <span className="font-heading" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)' }}>
-                    <CurrencyDisplay amount={row.amount ?? 0} currency={row.currency ?? 'PHP'} />
-                </span>
+                <CurrencyDisplay amount={row.amount ?? 0} currency={row.currency ?? 'PHP'} />
             ),
         },
         {
@@ -219,7 +217,7 @@ export default function LedgerIndex({
                                 />
                             </FilterField>
                             {hasActiveFilters && (
-                                <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                                <Button variant="ghost" onClick={clearFilters} style={{ backgroundColor: 'var(--color-card)', border: 'var(--border-container)', color: 'var(--color-text)' }}>Clear</Button>
                             )}
                         </FilterStrip>
                     }

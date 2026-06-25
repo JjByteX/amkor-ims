@@ -8,6 +8,7 @@ import DetailPanel, {PanelActions, PanelCol, PanelColRight, PanelColumns, PanelD
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
 import Modal from '../../Components/UI/Modal';
+import ApprovalStepper from '../../Components/Shared/ApprovalStepper';
 
 const fmt = (d) =>
     d ? new Date(d).toLocaleDateString('en-PH', { month: 'long', day: 'numeric', year: 'numeric' }) : '—';
@@ -67,7 +68,7 @@ function SilForm({ employee, onClose }) {
                 Remaining: <strong>{Math.max(0, total - used)} day{Math.max(0, total - used) !== 1 ? 's' : ''}</strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-1)' }}>
-                <Button variant="secondary" onClick={onClose}>Cancel</Button>
+                <Button variant="primary" onClick={onClose}>Cancel</Button>
                 <Button onClick={handleSubmit} loading={submitting}>Save SIL</Button>
             </div>
         </div>
@@ -201,6 +202,24 @@ export function EmployeeContent({ employee, statuses, departments, canManage }) 
 
                     <PanelDivider />
 
+                    <PanelSection title="Tenure Progress">
+                        <ApprovalStepper fmtDt={fmt} steps={
+                            ['terminated', 'resigned'].includes(employee.employment_status)
+                                ? [
+                                    { label: 'Hired',       done: true, person: null, at: employee.date_hired },
+                                    { label: 'Regularized', done: employee.regularization_date != null, person: null, at: employee.regularization_date },
+                                    { label: 'Separated',   done: true, person: null, at: employee.separation_date ?? null },
+                                  ]
+                                : [
+                                    { label: 'Hired',       done: true, person: null, at: employee.date_hired },
+                                    { label: 'Regularized', done: employee.employment_status === 'regular', person: null, at: employee.regularization_date },
+                                    { label: 'Active',      done: employee.employment_status === 'regular', person: null, at: null },
+                                  ]
+                        } />
+                    </PanelSection>
+
+                    <PanelDivider />
+
                     <PanelSection>
                         <div className="flex items-center gap-6">
                             {[
@@ -219,7 +238,7 @@ export function EmployeeContent({ employee, statuses, departments, canManage }) 
                             ))}
                         </div>
                         {canManage && (
-                            <Button variant="secondary" size="sm" icon={Pencil} onClick={() => setSilOpen(true)}>
+                            <Button variant="primary" size="sm" icon={Pencil} onClick={() => setSilOpen(true)}>
                                 Update SIL
                             </Button>
                         )}
@@ -274,7 +293,7 @@ export function EmployeeContent({ employee, statuses, departments, canManage }) 
                             <PanelDivider />
                             <PanelActions>
                                 <Button
-                                    variant="secondary"
+                                    variant="primary"
                                     icon={Pencil}
                                     onClick={() => router.get(route('employees.edit', employee.id))}
                                     style={{ width: '100%' }}
@@ -337,7 +356,7 @@ export function EmployeeContent({ employee, statuses, departments, canManage }) 
                         This will soft-delete <strong>{employee.display_name}</strong>'s record. The record will no longer appear in the active list but data is preserved.
                     </p>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-1)' }}>
-                        <Button variant="secondary" onClick={() => setDeleteOpen(false)}>Cancel</Button>
+                        <Button variant="primary" onClick={() => setDeleteOpen(false)}>Cancel</Button>
                         <Button variant="danger" loading={deleting} onClick={handleDelete}>Confirm Remove</Button>
                     </div>
                 </div>

@@ -113,7 +113,7 @@ export default function APIndex({
                         {row.supplier_name}
                     </p>
                     {row.invoice_no && (
-                        <p style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)', opacity: 0.6 }}>
+                        <p style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>
                             Inv# {row.invoice_no}
                         </p>
                     )}
@@ -123,38 +123,34 @@ export default function APIndex({
         {
             key: 'currency', label: 'Currency',
             render: (row) => (
-                <Badge variant={row.currency === 'USD' ? 'info' : row.currency === 'JPY' ? 'warning' : 'neutral'}>
+                <Badge variant="neutral">
                     {row.currency}
                 </Badge>
             ),
         },
         {
-            key: 'invoice_amount', label: 'Invoice',
+            key: 'invoice_amount', label: 'Invoice', align: 'right',
             render: (row) => (
-                <span style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)' }}>
-                    {row.currency === 'USD'
-                        ? <CurrencyDisplay amount={row.invoice_amount_usd} currency="USD" />
-                        : row.currency === 'JPY'
-                        ? <CurrencyDisplay amount={row.invoice_amount_jpy} currency="JPY" />
-                        : <CurrencyDisplay amount={row.invoice_amount_php} currency="PHP" />}
-                </span>
+                row.currency === 'USD'
+                    ? <CurrencyDisplay amount={row.invoice_amount_usd} currency="USD" />
+                    : row.currency === 'JPY'
+                    ? <CurrencyDisplay amount={row.invoice_amount_jpy} currency="JPY" />
+                    : <CurrencyDisplay amount={row.invoice_amount_php} currency="PHP" />
             ),
         },
         {
-            key: 'balance', label: 'Balance',
-            render: (row) => (
-                <span style={{
-                    fontSize: 'var(--font-size-small)',
-                    color: row.status === 'overdue' ? 'var(--color-error)' : 'var(--color-text)',
-                    fontWeight: row.status === 'overdue' ? 600 : 400,
-                }}>
-                    {row.currency === 'USD'
-                        ? <CurrencyDisplay amount={row.balance_usd} currency="USD" />
-                        : row.currency === 'JPY'
-                        ? <CurrencyDisplay amount={row.balance_jpy} currency="JPY" />
-                        : <CurrencyDisplay amount={row.balance_php} currency="PHP" />}
-                </span>
-            ),
+            key: 'balance', label: 'Balance', align: 'right',
+            render: (row) => {
+                const isOverdue = row.status === 'overdue';
+                const el = row.currency === 'USD'
+                    ? <CurrencyDisplay amount={row.balance_usd} currency="USD" />
+                    : row.currency === 'JPY'
+                    ? <CurrencyDisplay amount={row.balance_jpy} currency="JPY" />
+                    : <CurrencyDisplay amount={row.balance_php} currency="PHP" />;
+                return isOverdue
+                    ? <span style={{ color: 'var(--color-error)', fontWeight: 600, display: 'block', textAlign: 'right' }}>{el}</span>
+                    : el;
+            },
         },
         {
             key: 'due_date', label: 'Due',
@@ -337,7 +333,7 @@ export default function APIndex({
                                 />
                             </FilterField>
                             {hasActiveFilters && (
-                                <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                                <Button variant="ghost" onClick={clearFilters} style={{ backgroundColor: 'var(--color-card)', border: 'var(--border-container)', color: 'var(--color-text)' }}>Clear</Button>
                             )}
                         </FilterStrip>
                     }

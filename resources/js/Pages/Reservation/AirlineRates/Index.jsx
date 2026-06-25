@@ -214,7 +214,6 @@ export default function AirlineRatesIndex({ rates, filters, currencies, canWrite
                             <FilterField width={420}>
                                 <PeriodFilter value={period} onChange={handlePeriodChange} />
                             </FilterField>
-                            <Button variant="secondary" onClick={applySearch}>Search</Button>
                         </FilterStrip>
                     }
                 />

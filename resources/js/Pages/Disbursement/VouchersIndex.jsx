@@ -26,7 +26,7 @@ const APPROVAL_VARIANT = {
 };
 
 const TYPE_VARIANT = {
-    cash:  'info',
+    cash:  'neutral',
     check: 'neutral',
 };
 
@@ -62,6 +62,8 @@ export default function VouchersIndex({
         setSearchInput('');
         router.get(route('disbursement.vouchers.index'), {}, { preserveState: false });
     }
+
+    const hasActiveFilters = !!(searchInput || filters.search || filters.type || filters.approval || filters.month);
 
     function handleDelete() {
         setDeleting(true);
@@ -105,7 +107,7 @@ export default function VouchersIndex({
                         {row.payee}
                     </p>
                     {row.details && (
-                        <p style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)', opacity: 0.6 }}>
+                        <p style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>
                             {row.details.length > 60 ? row.details.substring(0, 60) + '…' : row.details}
                         </p>
                     )}
@@ -113,11 +115,9 @@ export default function VouchersIndex({
             ),
         },
         {
-            key: 'amount', label: 'Amount',
+            key: 'amount', label: 'Amount', align: 'right',
             render: (row) => (
-                <span style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)' }}>
-                    <CurrencyDisplay amount={row.amount ?? 0} currency={row.currency ?? 'PHP'} />
-                </span>
+                <CurrencyDisplay amount={row.amount ?? 0} currency={row.currency ?? 'PHP'} />
             ),
         },
         {
@@ -262,7 +262,9 @@ export default function VouchersIndex({
                                     onChange={(e) => applyFilter({ month: e.target.value || undefined })}
                                 />
                             </FilterField>
-                            <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                            {hasActiveFilters && (
+                                <Button variant="ghost" onClick={clearFilters} style={{ backgroundColor: 'var(--color-card)', border: 'var(--border-container)', color: 'var(--color-text)' }}>Clear</Button>
+                            )}
                         </FilterStrip>
                     }
                 />

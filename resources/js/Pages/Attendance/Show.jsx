@@ -133,7 +133,7 @@ export default function AttendanceShow({ record, statuses, leaveTypes, canManage
                             </Button>
                             {canManage && (
                                 <>
-                                    <Button variant="secondary" icon={Edit2} onClick={() => router.get(route('attendance.edit', record.id))}>
+                                    <Button variant="primary" icon={Edit2} onClick={() => router.get(route('attendance.edit', record.id))}>
                                         Edit
                                     </Button>
                                     <Button variant="danger" icon={Trash2} onClick={() => setShowDelete(true)}>

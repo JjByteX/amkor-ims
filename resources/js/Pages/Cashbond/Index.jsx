@@ -62,7 +62,7 @@ export default function CashbondIndex({
         {
             key: 'reload_no', label: 'Ref No.',
             render: (row) => (
-                <span className="font-body font-semibold text-[var(--color-primary)]" style={{ fontSize: 'var(--font-size-small)' }}>
+                <span className="font-body font-semibold text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-small)' }}>
                     {row.reload_no}
                 </span>
             ),
@@ -77,6 +77,7 @@ export default function CashbondIndex({
         },
         {
             key: 'amount', label: 'Amount',
+            align: 'right',
             render: (row) => <CurrencyDisplay amount={row.amount} currency="PHP" />,
         },
         {
@@ -90,7 +91,7 @@ export default function CashbondIndex({
         {
             key: 'deposit_date', label: 'Deposit Date',
             render: (row) => (
-                <span className="font-body text-gray-400" style={{ fontSize: 'var(--font-size-small)' }}>
+                <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>
                     {fmt(row.deposit_date)}
                 </span>
             ),
@@ -98,7 +99,7 @@ export default function CashbondIndex({
         {
             key: 'created_by', label: 'Prepared by',
             render: (row) => (
-                <span className="font-body text-gray-400" style={{ fontSize: 'var(--font-size-small)' }}>
+                <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>
                     {row.created_by?.name ?? '—'}
                 </span>
             ),

@@ -20,7 +20,7 @@ const money = (v) => new Intl.NumberFormat('en-PH', { style: 'currency', currenc
 const date  = (v) => v ? new Date(v).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '-';
 
 const STATUS_VARIANT  = { inquiry: 'neutral', quoted: 'info', confirmed: 'success', cancelled: 'error' };
-const BOOKING_VARIANT = { domestic: 'neutral', international: 'info' };
+const BOOKING_VARIANT = { domestic: 'neutral', international: 'neutral' };
 
 /**
  * ReservationIndex — Reservation & Booking list for ALL branches.
@@ -71,7 +71,7 @@ export default function ReservationIndex({
             render: (row) => (
                 <div>
                     <div className="font-semibold text-[var(--color-text)]">{row.booking_no}</div>
-                    <div className="text-gray-400">{date(row.date)}</div>
+                    <div style={{ color: "var(--color-text-muted)" }}>{date(row.date)}</div>
                 </div>
             ),
         },
@@ -81,7 +81,7 @@ export default function ReservationIndex({
             render: (row) => (
                 <div>
                     <div className="font-semibold text-[var(--color-text)]">{row.client_name}</div>
-                    <div className="text-gray-400">{row.destination ?? '-'}</div>
+                    <div style={{ color: "var(--color-text-muted)" }}>{row.destination ?? '-'}</div>
                 </div>
             ),
         },
@@ -93,7 +93,7 @@ export default function ReservationIndex({
             label : 'Type',
             render: (row) => row.booking_type
                 ? <Badge variant={BOOKING_VARIANT[row.booking_type] ?? 'neutral'}>{bookingTypes?.[row.booking_type] ?? row.booking_type}</Badge>
-                : <span className="text-gray-400">—</span>,
+                : <span style={{ color: "var(--color-text-muted)" }}>—</span>,
         }] : []),
         // All-access roles: show which branch the booking belongs to
         ...(showBranchColumn ? [{
@@ -101,8 +101,8 @@ export default function ReservationIndex({
             label : 'Branch',
             render: (row) => <span className="text-gray-500" style={{ fontSize: 'var(--font-size-small)' }}>{row.branch?.name ?? '—'}</span>,
         }] : []),
-        { key: 'selling_price', label: 'Sales',  render: (row) => money(row.selling_price) },
-        { key: 'income',        label: 'Income', render: (row) => money(row.income) },
+        { key: 'selling_price', label: 'Sales',  align: 'right', render: (row) => money(row.selling_price) },
+        { key: 'income',        label: 'Income', align: 'right', render: (row) => money(row.income) },
         {
             key   : 'status',
             label : 'Status',

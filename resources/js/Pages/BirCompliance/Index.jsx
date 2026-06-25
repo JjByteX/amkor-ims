@@ -17,8 +17,8 @@ import SegmentedControl from '../../Components/UI/SegmentedControl';
 import DetailPanel, { TableWithPanel, useDetailPanel, PanelSection, PanelField, PanelFieldRow, PanelDivider, PanelColumns, PanelCol, PanelColRight } from '../../Components/Shared/DetailPanel';
 
 const DOC_VARIANT = {
-    AR : 'success',
-    SI : 'info',
+    AR : 'neutral',
+    SI : 'neutral',
     SOA: 'neutral',
 };
 
@@ -26,7 +26,7 @@ const fmt = (d) =>
     d ? new Date(d).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
 
 const php = (v) =>
-    v != null ? '₱ ' + Number(v).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
+    v != null ? '₱' + Number(v).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
 
 
 
@@ -257,7 +257,7 @@ export default function BirIndex({
         window.location.href = route('bir.export-monthly') + (params.toString() ? '?' + params.toString() : '');
     }
 
-    const hasActiveFilters = filters.search || filters.year || filters.month || filters.document_type;
+    const hasActiveFilters = !!(filters.search || filters.month || filters.document_type || (filters.year && filters.year !== currentYear));
 
     // ─── Columns ──────────────────────────────────────────────────────────────
     const columns = [
@@ -274,7 +274,7 @@ export default function BirIndex({
             key   : 'document_number',
             label : 'Document #',
             render: (row) => (
-                <span className="font-body font-semibold" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-primary)' }}>
+                <span className="font-body font-semibold text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-small)' }}>
                     {row.document_number ?? '—'}
                 </span>
             ),
@@ -297,7 +297,7 @@ export default function BirIndex({
                         {row.client_name}
                     </div>
                     {row.tin && (
-                        <div className="font-body text-gray-400" style={{ fontSize: 'var(--font-size-small)' }}>
+                        <div className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>
                             TIN: {row.tin}
                         </div>
                     )}
@@ -307,8 +307,9 @@ export default function BirIndex({
         {
             key   : 'gross_amount',
             label : 'Gross Amount',
+            align : 'right',
             render: (row) => (
-                <span className="font-body font-semibold text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-small)' }}>
+                <span className="font-body font-semibold text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-small)', display: 'block', textAlign: 'right' }}>
                     {php(row.gross_amount)}
                 </span>
             ),
@@ -316,8 +317,9 @@ export default function BirIndex({
         {
             key   : 'net_amount_due',
             label : 'Net Due',
+            align : 'right',
             render: (row) => (
-                <span className="font-body text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-small)' }}>
+                <span className="font-body text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-small)', display: 'block', textAlign: 'right' }}>
                     {php(row.net_amount_due)}
                 </span>
             ),
@@ -402,7 +404,7 @@ export default function BirIndex({
                         />
                     </FilterField>
                     {hasActiveFilters && (
-                        <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                        <Button variant="ghost" onClick={clearFilters} style={{ backgroundColor: 'var(--color-card)', border: 'var(--border-container)', color: 'var(--color-text)' }}>Clear</Button>
                     )}
                 </>
             )}

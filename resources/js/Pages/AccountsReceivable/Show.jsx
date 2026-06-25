@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { router, usePage, useForm } from '@inertiajs/react';
-import { Trash2, CheckCircle2, DollarSign, FileText, RotateCcw, Send, Clock, ArrowRight } from 'lucide-react';
+import { Trash2, CheckCircle2, DollarSign, FileText, RotateCcw, Send } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
-import DetailPanel, {PanelActions, PanelCol, PanelColRight, PanelColumns, PanelDivider, PanelField, PanelFieldRow, PanelFullRow, PanelMeta, PanelMetaItem, PanelSection} from '../../Components/Shared/DetailPanel';
+import DetailPanel, {PanelActions, PanelCol, PanelColRight, PanelColumns, PanelDivider, PanelField, PanelFieldRow, PanelMeta, PanelMetaItem, PanelSection} from '../../Components/Shared/DetailPanel';
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
 import Modal from '../../Components/UI/Modal';
@@ -10,6 +10,7 @@ import Input from '../../Components/UI/Input';
 import Textarea from '../../Components/UI/Textarea';
 import ConfirmDialog from '../../Components/Shared/ConfirmDialog';
 import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
+import ApprovalStepper from '../../Components/Shared/ApprovalStepper';
 
 const STATUS_VARIANT    = { current: 'info', overdue: 'error', paid: 'success' };
 const APPROVAL_VARIANT  = { pending: 'warning', coo_approved: 'info', gsm_approved: 'info', approved: 'success', rejected: 'error' };
@@ -57,30 +58,23 @@ export function ARContent({ collectible, departments, statuses, approvalStatuses
     const cooApproved = !!collectible.approved_by_coo_at;
     const gsmApproved = !!collectible.approved_by_gsm_at;
 
-    const stepStyle = (approved, isNext) => ({
-        flex: 1,
-        padding: '10px 14px',
-        borderRadius: 'var(--border-radius-md)',
-        border: approved
-            ? '0.5px solid var(--color-border-success)'
-            : isNext
-                ? '0.5px solid var(--color-border-warning)'
-                : '0.5px solid var(--color-border-tertiary)',
-        background: approved
-            ? 'var(--color-background-success)'
-            : isNext
-                ? 'var(--color-background-warning)'
-                : 'var(--color-background-secondary)',
-    });
-
-    const stepRoleStyle = {
-        fontSize: 11,
-        fontWeight: 600,
-        textTransform: 'uppercase',
-        letterSpacing: '0.06em',
-        marginBottom: 4,
-        color: 'var(--color-text-tertiary)',
-    };
+    const approvalSteps = [
+        { label: 'Submitted', done: true, person: collectible.created_by?.name, at: collectible.created_at },
+        { label: 'COO Approval', done: cooApproved, person: collectible.coo_approver?.name, at: collectible.approved_by_coo_at,
+          action: !hydrating && canApproveCoo && !cooApproved
+            ? <Button variant="primary" size="sm" icon={CheckCircle2}
+                onClick={() => router.post(route('ar.approve-coo', collectible.id), {}, { onSuccess: () => onApprove?.() })}>
+                Approve as COO
+              </Button>
+            : null },
+        { label: 'GSM Approval', done: gsmApproved, person: collectible.gsm_approver?.name, at: collectible.approved_by_gsm_at,
+          action: !hydrating && canApproveGsm && cooApproved && !gsmApproved
+            ? <Button variant="primary" size="sm" icon={CheckCircle2}
+                onClick={() => router.post(route('ar.approve-gsm', collectible.id), {}, { onSuccess: () => onApprove?.() })}>
+                Approve as GSM
+              </Button>
+            : null },
+    ];
 
     const content = (
         <>
@@ -147,11 +141,11 @@ export function ARContent({ collectible, departments, statuses, approvalStatuses
                         <>
                             <PanelDivider />
                             <PanelActions>
-                                <Button variant="secondary" size="sm" icon={DollarSign} onClick={() => setPaymentModal(true)} style={{ width: '100%' }}>
+                                <Button variant="primary" size="sm" icon={DollarSign} onClick={() => setPaymentModal(true)} style={{ width: '100%' }}>
                                     Record Payment
                                 </Button>
                                 {!collectible.endorsed_to_disbursement && (
-                                    <Button variant="secondary" size="sm" icon={Send}
+                                    <Button variant="primary" size="sm" icon={Send}
                                         onClick={() => router.post(route('ar.endorse-disbursement', collectible.id))}
                                         style={{ width: '100%' }}>
                                         Endorse to Disbursement
@@ -182,79 +176,21 @@ export function ARContent({ collectible, departments, statuses, approvalStatuses
                         </>
                     )}
 
+                    <PanelDivider />
+                    <PanelSection title={isApproved ? 'Approval' : 'Approval Required'}>
+                        <ApprovalStepper steps={approvalSteps} fmtDt={fmtDt} />
+                    </PanelSection>
+
                     {(canWrite || canAudit) && (
                         <>
                             <PanelDivider />
                             <Button variant="danger" size="sm" icon={Trash2} onClick={() => setDeleteDialog(true)} style={{ width: '100%' }}>
-                                Remove Collectible
+                                Delete Collectible
                             </Button>
                         </>
                     )}
                 </PanelColRight>
             </PanelColumns>
-
-            {/* ── Approval zone — full width, own section ── */}
-            <PanelFullRow title={isApproved ? 'Approval' : 'Approval required'}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: (canApproveCoo || canApproveGsm) && !hydrating ? 14 : 0 }}>
-                    {/* COO step */}
-                    <div style={stepStyle(cooApproved, !cooApproved)}>
-                        <p style={stepRoleStyle}>COO</p>
-                        {cooApproved ? (
-                            <>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--color-success)', fontSize: 13, fontWeight: 500 }}>
-                                    <CheckCircle2 size={14} /> Approved
-                                </div>
-                                <p style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 3 }}>
-                                    {collectible.coo_approver?.name ?? 'COO'} · {fmtDt(collectible.approved_by_coo_at)}
-                                </p>
-                            </>
-                        ) : (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--color-warning)', fontSize: 13, fontWeight: 500 }}>
-                                <Clock size={13} /> Pending
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Connector arrow */}
-                    <ArrowRight size={14} style={{ flexShrink: 0, color: 'var(--color-text-muted)' }} />
-
-                    {/* GSM step */}
-                    <div style={stepStyle(gsmApproved, cooApproved && !gsmApproved)}>
-                        <p style={stepRoleStyle}>GSM</p>
-                        {gsmApproved ? (
-                            <>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--color-success)', fontSize: 13, fontWeight: 500 }}>
-                                    <CheckCircle2 size={14} /> Approved
-                                </div>
-                                <p style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 3 }}>
-                                    {collectible.gsm_approver?.name ?? 'GSM'} · {fmtDt(collectible.approved_by_gsm_at)}
-                                </p>
-                            </>
-                        ) : (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: cooApproved ? 'var(--color-warning)' : 'var(--color-text-muted)', fontSize: 13, fontWeight: 500 }}>
-                                <Clock size={13} /> Pending
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Approve button — only for the right role, only when not yet done */}
-                {!hydrating && canApproveCoo && !cooApproved && (
-                    <Button variant="secondary" size="sm" icon={CheckCircle2}
-                        onClick={() => router.post(route('ar.approve-coo', collectible.id), {}, { onSuccess: () => onApprove?.() })}
-                        style={{ width: '100%', marginTop: 2 }}>
-                        Approve as COO
-                    </Button>
-                )}
-                {!hydrating && canApproveGsm && !gsmApproved && (
-                    <Button variant="secondary" size="sm" icon={CheckCircle2}
-                        onClick={() => router.post(route('ar.approve-gsm', collectible.id), {}, { onSuccess: () => onApprove?.() })}
-                        style={{ width: '100%', marginTop: 2 }}>
-                        Approve as GSM
-                    </Button>
-                )}
-            </PanelFullRow>
-
             {/* Payment modal */}
             <Modal open={paymentModal} onClose={() => setPaymentModal(false)} title="Record Payment">
                 <form onSubmit={submitPayment} className="flex flex-col gap-[var(--space-2)]">

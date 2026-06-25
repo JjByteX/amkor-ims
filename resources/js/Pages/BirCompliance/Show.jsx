@@ -93,7 +93,7 @@ export default function BirShow({ transaction, documentTypes, sourceTypes, payme
                             </Button>
                             {canGenerate && (
                                 <Button
-                                    variant="secondary"
+                                    variant="primary"
                                     icon={Edit2}
                                     onClick={() => router.get(route('bir.edit', transaction.id))}
                                 >

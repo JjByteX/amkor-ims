@@ -63,6 +63,7 @@ class SalesSummaryController extends Controller
             'filters'           => $filters,
             'departmentOptions' => SalesTarget::DEPARTMENTS,
             'branches'          => Branch::active()->orderBy('name')->get(['id', 'name']),
+            'agentCodes'        => $this->agentCodes($request),
             'canSetTargets'     => $request->user()?->can('sales.set_monthly_target') ?? false,
             'canExport'         => $request->user()?->can('sales.export') ?? false,
         ]);
@@ -114,6 +115,38 @@ class SalesSummaryController extends Controller
         $filename = sprintf('sales-summary-%s-%02d.xlsx', $filters['year'], $filters['month']);
 
         return Excel::download(new SalesSummaryExport($rows), $filename);
+    }
+
+    /**
+     * Returns a flat list of active agent codes for the dropdown.
+     * Own-agent roles only see their own code; all other view roles see all codes.
+     */
+    private function agentCodes(Request $request): array
+    {
+        if (! Schema::hasTable('agent_codes')) {
+            return [];
+        }
+
+        $user = $request->user();
+        $role = $user?->getRoleNames()->first();
+
+        // Own-agent roles: restrict to their own code only
+        if (in_array($role, self::OWN_AGENT_ROLES, true) && $user?->agent_code) {
+            return [['value' => $user->agent_code, 'label' => $user->agent_code]];
+        }
+
+        return DB::table('agent_codes')
+            ->where('is_active', true)
+            ->orderBy('department')
+            ->orderBy('code')
+            ->get(['code', 'department', 'sub_group'])
+            ->map(fn ($row) => [
+                'value' => $row->code,
+                'label' => $row->code,
+            ])
+            ->unique('value')
+            ->values()
+            ->all();
     }
 
     private function filters(Request $request): array

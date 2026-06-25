@@ -99,7 +99,7 @@ export default function VisaIndex({ applications, filters, statuses, agentCodes,
                         {row.customer_name}
                     </div>
                     {row.agency && (
-                        <div className="font-body text-gray-400" style={{ fontSize: 'var(--font-size-small)' }}>
+                        <div className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>
                             {row.agency}
                         </div>
                     )}
@@ -118,11 +118,13 @@ export default function VisaIndex({ applications, filters, statuses, agentCodes,
         {
             key   : 'selling_price',
             label : 'SP',
+            align : 'right',
             render: (row) => <CurrencyDisplay amount={row.selling_price} currency="PHP" />,
         },
         {
             key   : 'income',
             label : 'Income',
+            align : 'right',
             render: (row) => <CurrencyDisplay amount={row.income} currency="PHP" />,
         },
         {
@@ -277,7 +279,7 @@ export default function VisaIndex({ applications, filters, statuses, agentCodes,
                                 />
                             </FilterField>
                             {hasActiveFilters && (
-                                <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                                <Button variant="ghost" onClick={clearFilters} style={{ backgroundColor: 'var(--color-card)', border: 'var(--border-container)', color: 'var(--color-text)' }}>Clear</Button>
                             )}
                         </FilterStrip>
                     }

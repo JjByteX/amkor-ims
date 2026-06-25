@@ -73,7 +73,7 @@ export function APContent({
             person : payable.checker?.name,
             at     : payable.checked_at,
             action : canCheck && payable.approval_status === 'pending'
-                ? <Button variant="secondary" size="sm" icon={CheckCircle} onClick={() => setCheckModal(true)} style={{ width: '100%' }}>Mark Checked</Button>
+                ? <Button variant="primary" size="sm" icon={CheckCircle} onClick={() => setCheckModal(true)} style={{ width: '100%' }}>Mark Checked</Button>
                 : null,
         },
         {
@@ -165,7 +165,7 @@ export function APContent({
                     </PanelSection>
 
                     {canWrite && !['paid', 'filed'].includes(payable.status) && (
-                        <Button variant="secondary" icon={CreditCard} onClick={() => setPaymentModal(true)} style={{ width: '100%' }}>
+                        <Button variant="primary" icon={CreditCard} onClick={() => setPaymentModal(true)} style={{ width: '100%' }}>
                             Record Payment
                         </Button>
                     )}

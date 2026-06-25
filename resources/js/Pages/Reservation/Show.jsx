@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { router, usePage, useForm } from '@inertiajs/react';
 import {
     Trash2, AlertTriangle, CheckCircle, Send,
@@ -13,13 +13,13 @@ import DetailPanel, {
 import Badge from '../../Components/UI/Badge';
 import Button from '../../Components/UI/Button';
 import Modal from '../../Components/UI/Modal';
-import Textarea from '../../Components/UI/Textarea';
 import Select from '../../Components/UI/Select';
 import Input from '../../Components/UI/Input';
 import ConfirmDialog from '../../Components/Shared/ConfirmDialog';
 import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
 import ContactLinkPanel from '../../Components/Shared/ContactLinkPanel';
 import RelatedTransactionsPanel from '../../Components/Shared/RelatedTransactionsPanel';
+import ApprovalStepper from '../../Components/Shared/ApprovalStepper';
 
 const STATUS_VARIANT = { inquiry: 'neutral', quoted: 'info', confirmed: 'success', cancelled: 'error' };
 const money   = (v) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(Number(v ?? 0));
@@ -49,12 +49,31 @@ export function BookingContent({
     relatedTransactions,
     isOrmocBranch,
 }) {
-    const [notesModal,   setNotesModal  ] = useState(false);
     const [deleteDialog, setDeleteDialog] = useState(false);
     const [deleting,     setDeleting    ] = useState(false);
     const [ackModal,     setAckModal    ] = useState(false);
 
-    const notesForm  = useForm({ notes: booking.notes ?? '' });
+    // ── Inline autosave notes (Ormoc) ─────────────────────────────────────────
+    // Uncontrolled textarea with key={booking.id} so it resets from the prop
+    // on every mount — avoids fighting Inertia's stale prop cache.
+    const [notesSaved, setNotesSaved] = useState(null); // null | 'saving' | 'saved'
+    const notesTimer  = useRef(null);
+
+    const saveNotes = useCallback((value) => {
+        router.post(route('reservation.update-notes', booking.id), { notes: value }, {
+            preserveScroll: true,
+            onSuccess: () => setNotesSaved('saved'),
+            onError:   () => setNotesSaved(null),
+        });
+    }, [booking.id]);
+
+    function handleNotesChange(e) {
+        const value = e.target.value;
+        setNotesSaved('saving');
+        clearTimeout(notesTimer.current);
+        notesTimer.current = setTimeout(() => saveNotes(value), 600);
+    }
+
     const statusForm = useForm({ status: booking.status });
     const ackForm    = useForm({ linked_resa_booking_id: booking.linked_resa_booking_id ?? '' });
 
@@ -214,6 +233,58 @@ export function BookingContent({
 
                     <PanelDivider />
 
+                    {/* ── Booking Lifecycle ────────────────────────────── */}
+                    <PanelSection title="Booking Progress">
+                        {canWrite && !booking.forwarded_to_accounting && (
+                            <div style={{ marginBottom: 'var(--space-2)' }}>
+                                <Select
+                                    label="Update Status"
+                                    value={statusForm.data.status}
+                                    onChange={changeStatus}
+                                    options={Object.entries(statuses).map(([v, l]) => ({ value: v, label: l }))}
+                                />
+                            </div>
+                        )}
+                        <ApprovalStepper fmtDt={fmtDt} steps={[
+                            {
+                                label : 'Inquiry',
+                                done  : true,
+                                person: booking.created_by?.name,
+                                at    : booking.created_at,
+                            },
+                            {
+                                label : 'Quoted',
+                                done  : ['quoted', 'confirmed'].includes(booking.status),
+                                person: null,
+                                at    : null,
+                            },
+                            {
+                                label : 'Confirmed',
+                                done  : booking.status === 'confirmed',
+                                person: null,
+                                at    : null,
+                            },
+                            {
+                                label : 'Forwarded to Accounting',
+                                done  : !!booking.forwarded_to_accounting,
+                                person: null,
+                                at    : booking.forwarded_to_accounting_at,
+                                action: canWrite && booking.status === 'confirmed' && !booking.forwarded_to_accounting
+                                    ? <Button
+                                        variant="primary"
+                                        size="sm"
+                                        icon={Send}
+                                        onClick={() => router.post(route('reservation.forward-accounting', booking.id), {}, { preserveScroll: true })}
+                                      >
+                                        Forward to Accounting
+                                      </Button>
+                                    : null,
+                            },
+                        ]} />
+                    </PanelSection>
+
+                    <PanelDivider />
+
                     {/* ── Contact Link ──────────────────────────────────── */}
                     <PanelSection title="Contact Link">
                         <ContactLinkPanel
@@ -267,7 +338,7 @@ export function BookingContent({
                                             Awaiting QC acknowledgment
                                         </div>
                                         {canAcknowledge && (
-                                            <Button variant="secondary" size="sm" icon={CheckCircle} onClick={() => setAckModal(true)} style={{ width: '100%' }}>
+                                            <Button variant="primary" size="sm" icon={CheckCircle} onClick={() => setAckModal(true)} style={{ width: '100%' }}>
                                                 Acknowledge Escalation
                                             </Button>
                                         )}
@@ -288,7 +359,7 @@ export function BookingContent({
                     )}
 
                     {/* ── Notes & Coverage ──────────────────────────────── */}
-                    {(booking.particulars || booking.remarks || booking.inclusions || booking.exclusions || booking.audit_remarks || booking.notes) && (
+                    {(booking.particulars || booking.remarks || booking.inclusions || booking.exclusions || booking.audit_remarks || booking.notes || canWrite) && (
                         <>
                             <PanelDivider />
                             <PanelSection title="Notes & Coverage">
@@ -297,106 +368,88 @@ export function BookingContent({
                                 {booking.exclusions    && <PanelField label="Exclusions"    value={booking.exclusions} />}
                                 {booking.remarks       && <PanelField label="Remarks"       value={booking.remarks} />}
                                 {booking.audit_remarks && <PanelField label="Audit Remarks" value={booking.audit_remarks} />}
-                                {booking.notes         && <PanelField label="Notes"         value={<p style={{ margin: 0, whiteSpace: 'pre-wrap', fontSize: 'var(--font-size-small)' }}>{booking.notes}</p>} />}
+                                {/* Ormoc notes — inline autosave */}
+                                {bookingIsOrmoc && canWrite && (
+                                    <div className="flex flex-col" style={{ gap: 'var(--space-1)' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                            <span className="font-body font-semibold" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--color-text-muted)' }}>Notes</span>
+                                            {notesSaved === 'saving' && <span style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)', opacity: 0.6 }}>Saving…</span>}
+                                            {notesSaved === 'saved'  && <span style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-success)' }}>Saved ✓</span>}
+                                        </div>
+                                        <textarea
+                                            key={booking.id}
+                                            defaultValue={booking.notes ?? ''}
+                                            onChange={handleNotesChange}
+                                            placeholder="Add a note…"
+                                            rows={4}
+                                            style={{
+                                                width       : '100%',
+                                                resize      : 'vertical',
+                                                background  : 'var(--color-surface-raised)',
+                                                border      : '1px solid var(--color-border)',
+                                                borderRadius: 'var(--radius-md)',
+                                                padding     : 'var(--space-2)',
+                                                fontSize    : 'var(--font-size-small)',
+                                                color       : 'var(--color-text)',
+                                                fontFamily  : 'inherit',
+                                                lineHeight  : 1.6,
+                                                outline     : 'none',
+                                                boxSizing   : 'border-box',
+                                            }}
+                                        />
+                                    </div>
+                                )}
+                                {bookingIsOrmoc && !canWrite && booking.notes && (
+                                    <PanelField label="Notes" value={<p style={{ margin: 0, whiteSpace: 'pre-wrap', fontSize: 'var(--font-size-small)' }}>{booking.notes}</p>} />
+                                )}
                             </PanelSection>
                         </>
                     )}
 
-                    {/* ── Actions ───────────────────────────────────────── */}
-                    {canWrite && !booking.forwarded_to_accounting && (
+                    {/* ── Ormoc-only actions ────────────────────────────── */}
+                    {canWrite && !booking.forwarded_to_accounting && bookingIsOrmoc && (
                         <>
                             <PanelDivider />
-                            <PanelSection title="Actions">
-                                <PanelActions>
-                                    <Select
-                                        label="Update Status"
-                                        value={statusForm.data.status}
-                                        onChange={changeStatus}
-                                        options={Object.entries(statuses).map(([v, l]) => ({ value: v, label: l }))}
-                                    />
-
-                                    {/* Ormoc-only actions */}
-                                    {bookingIsOrmoc && (
-                                        <>
-                                            <Button variant="ghost" size="sm" onClick={() => setNotesModal(true)} style={{ width: '100%' }}>
-                                                {booking.notes ? 'Edit Notes' : 'Add Notes'}
-                                            </Button>
-                                            {!booking.escalated_to_head_office && (
-                                                <Button
-                                                    variant="secondary"
-                                                    size="sm"
-                                                    icon={ArrowUpRight}
-                                                    onClick={() => router.post(route('reservation.escalate', booking.id), {}, { preserveScroll: true })}
-                                                    style={{ width: '100%' }}
-                                                >
-                                                    Escalate to Head Office
-                                                </Button>
-                                            )}
-                                            {!booking.po_sent_to_mariposa ? (
-                                                <Button
-                                                    variant="secondary"
-                                                    size="sm"
-                                                    icon={ExternalLink}
-                                                    onClick={() => router.post(route('reservation.mariposa', booking.id), {}, { preserveScroll: true })}
-                                                    style={{ width: '100%' }}
-                                                >
-                                                    Mark PO Sent to Mariposa
-                                                </Button>
-                                            ) : (
-                                                <Badge variant="neutral">PO Sent to Mariposa</Badge>
-                                            )}
-                                        </>
-                                    )}
-
-                                    {/* Forward to Accounting — all branches */}
-                                    {booking.status === 'confirmed' && (
-                                        <Button
-                                            variant="primary"
-                                            size="sm"
-                                            icon={Send}
-                                            onClick={() => router.post(route('reservation.forward-accounting', booking.id), {}, { preserveScroll: true })}
-                                            style={{ width: '100%' }}
-                                        >
-                                            Forward to Accounting
-                                        </Button>
-                                    )}
-
-                                    <PanelDivider />
-                                    <Button variant="danger" size="sm" icon={Trash2} onClick={() => setDeleteDialog(true)} style={{ width: '100%' }}>
-                                        Remove Booking
+                            <PanelActions>
+                                {!booking.escalated_to_head_office && (
+                                    <Button
+                                        variant="primary"
+                                        size="sm"
+                                        icon={ArrowUpRight}
+                                        onClick={() => router.post(route('reservation.escalate', booking.id), {}, { preserveScroll: true })}
+                                        style={{ width: '100%' }}
+                                    >
+                                        Escalate to Head Office
                                     </Button>
-                                </PanelActions>
-                            </PanelSection>
+                                )}
+                                {!booking.po_sent_to_mariposa ? (
+                                    <Button
+                                        variant="primary"
+                                        size="sm"
+                                        icon={ExternalLink}
+                                        onClick={() => router.post(route('reservation.mariposa', booking.id), {}, { preserveScroll: true })}
+                                        style={{ width: '100%' }}
+                                    >
+                                        Mark PO Sent to Mariposa
+                                    </Button>
+                                ) : (
+                                    <Badge variant="neutral">PO Sent to Mariposa</Badge>
+                                )}
+                            </PanelActions>
+                        </>
+                    )}
+
+                    {/* ── Remove Booking ────────────────────────────────── */}
+                    {canWrite && (
+                        <>
+                            <PanelDivider />
+                            <Button variant="danger" size="sm" icon={Trash2} onClick={() => setDeleteDialog(true)} style={{ width: '100%' }}>
+                                Remove Booking
+                            </Button>
                         </>
                     )}
                 </PanelColRight>
             </PanelColumns>
-
-            {/* ── Notes modal (Ormoc) ──────────────────────────────────────── */}
-            <Modal
-                open={notesModal}
-                onClose={() => setNotesModal(false)}
-                title="Notes"
-                footer={
-                    <>
-                        <Button variant="ghost" onClick={() => setNotesModal(false)}>Cancel</Button>
-                        <Button
-                            variant="primary"
-                            loading={notesForm.processing}
-                            onClick={() => notesForm.post(route('reservation.update-notes', booking.id), { onSuccess: () => setNotesModal(false) })}
-                        >
-                            Save
-                        </Button>
-                    </>
-                }
-            >
-                <Textarea
-                    label="Notes"
-                    rows={5}
-                    value={notesForm.data.notes}
-                    onChange={(e) => notesForm.setData('notes', e.target.value)}
-                />
-            </Modal>
 
             {/* ── Acknowledge escalation modal ─────────────────────────────── */}
             <Modal
