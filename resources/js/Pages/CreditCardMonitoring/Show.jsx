@@ -48,7 +48,7 @@ export function CreditCardContent({ payment, statuses, approvalStatuses, canWrit
             person : payment.checker?.name,
             at     : payment.checked_at,
             action : canCheck && !payment.checked_at
-                ? <Button variant="secondary" size="sm" icon={CheckCircle2} onClick={() => setCheckOpen(true)} style={{ width: '100%' }}>Check Payment</Button>
+                ? <Button variant="primary" size="sm" icon={CheckCircle2} onClick={() => setCheckOpen(true)} style={{ width: '100%' }}>Check Payment</Button>
                 : null,
         },
         {

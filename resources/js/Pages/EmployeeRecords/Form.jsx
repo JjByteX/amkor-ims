@@ -47,7 +47,7 @@ function UniformEditor({ records, onChange }) {
                 </div>
             ))}
             <div>
-                <Button type="button" variant="secondary" size="sm" icon={Plus} onClick={addRow}>Add Item</Button>
+                <Button type="button" variant="primary" size="sm" icon={Plus} onClick={addRow}>Add Item</Button>
             </div>
         </div>
     );

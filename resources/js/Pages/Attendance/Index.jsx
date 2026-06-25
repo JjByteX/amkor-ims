@@ -635,7 +635,7 @@ export default function AttendanceIndex({
                                     </FilterField>
                                 )}
                                 {hasActiveFilters && (
-                                    <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                                    <Button variant="ghost" onClick={clearFilters} style={{ backgroundColor: 'var(--color-card)', border: 'var(--border-container)', color: 'var(--color-text)' }}>Clear</Button>
                                 )}
                             </FilterStrip>
                         }

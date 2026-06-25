@@ -267,11 +267,13 @@ export default function MarketingExpenses({
             ),
         },
         {
-            key: 'amount',
+            key  : 'amount',
             label: 'Amount',
+            align: 'right',
             render: (row) => (
-                <span className="font-body" style={{ fontSize: 'var(--font-size-small)', fontWeight: 600, color: 'var(--color-text)' }}>
-                    {row.currency !== 'PHP' ? `${row.currency} ` : ''}{PHP(row.amount)}
+                <span className="font-body tabular-nums" style={{ fontSize: 'var(--font-size-small)', fontWeight: 600, color: 'var(--color-text)', display: 'block', textAlign: 'right' }}>
+                    {row.currency === 'PHP' ? '₱' : row.currency === 'USD' ? '$' : row.currency === 'JPY' ? '¥' : row.currency + ' '}
+                    {Number(row.amount ?? 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
             ),
         },
@@ -460,7 +462,7 @@ export default function MarketingExpenses({
                                 />
                             </FilterField>
                             {hasActiveFilters && (
-                                <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                                <Button variant="ghost" onClick={clearFilters} style={{ backgroundColor: 'var(--color-card)', border: 'var(--border-container)', color: 'var(--color-text)' }}>Clear</Button>
                             )}
                         </FilterStrip>
                     }

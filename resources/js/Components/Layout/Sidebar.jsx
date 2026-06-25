@@ -390,7 +390,7 @@ function ProfileMenu({ triggerRef, onClose, dark, onToggleDark, onLogout, border
         const MENU_WIDTH = 216;
         setStyle({
             position    : 'fixed',
-            left        : rect.left,
+            left        : rect.left + 12,
             width       : MENU_WIDTH,
             bottom      : window.innerHeight - rect.top + 8,
             zIndex      : 99999,
@@ -437,7 +437,7 @@ function ProfileMenu({ triggerRef, onClose, dark, onToggleDark, onLogout, border
                 <>
                     <div
                         style={{
-                            padding     : '4px 12px 6px',
+                            padding     : '4px 12px 6px 16px',
                             fontSize    : '10px',
                             fontWeight  : 600,
                             letterSpacing: '0.04em',
@@ -453,14 +453,14 @@ function ProfileMenu({ triggerRef, onClose, dark, onToggleDark, onLogout, border
                             onClick={() => handleBranchChange(branch.id)}
                             className={[
                                 'w-full flex items-center gap-3',
-                                'h-10 px-3',
+                                'h-10',
                                 'font-body',
                                 activeBranch?.id === branch.id
                                     ? 'text-[var(--color-primary)] bg-[var(--color-primary-soft,rgba(var(--color-primary-rgb,99,102,241),0.08))]'
                                     : 'text-[var(--color-text)] hover:bg-black/5 dark:hover:bg-white/6',
                                 'transition-colors duration-0',
                             ].join(' ')}
-                            style={{ fontSize: '13px', borderRadius: 'var(--radius-md)', fontWeight: activeBranch?.id === branch.id ? 600 : 500 }}
+                            style={{ fontSize: '13px', borderRadius: 'var(--radius-md)', fontWeight: activeBranch?.id === branch.id ? 600 : 500, paddingLeft: '16px', paddingRight: '12px' }}
                         >
                             <ChevronsUpDown size={14} className="shrink-0 text-gray-400" />
                             <span className="truncate">{branch.name}</span>
@@ -484,12 +484,12 @@ function ProfileMenu({ triggerRef, onClose, dark, onToggleDark, onLogout, border
                 onClick={() => { onToggleDark(); onClose(); }}
                 className={[
                     'w-full flex items-center gap-3',
-                    'h-10 px-3',
+                    'h-10',
                     'font-body text-[var(--color-text)]',
                     'hover:bg-black/5 dark:hover:bg-white/6',
                     'transition-colors duration-0',
                 ].join(' ')}
-                style={{ fontSize: '13px', borderRadius: 'var(--radius-md)', fontWeight: 500 }}
+                style={{ fontSize: '13px', borderRadius: 'var(--radius-md)', fontWeight: 500, paddingLeft: '16px', paddingRight: '12px' }}
             >
                 {dark
                     ? <Sun  size={15} className="shrink-0 text-gray-400" />
@@ -504,12 +504,12 @@ function ProfileMenu({ triggerRef, onClose, dark, onToggleDark, onLogout, border
                 onClick={onLogout}
                 className={[
                     'w-full flex items-center gap-3',
-                    'h-10 px-3',
+                    'h-10',
                     'font-body text-[var(--color-error)]',
                     'hover:bg-red-50 dark:hover:bg-red-900/15',
                     'transition-colors duration-0',
                 ].join(' ')}
-                style={{ fontSize: '13px', borderRadius: 'var(--radius-md)', fontWeight: 500 }}
+                style={{ fontSize: '13px', borderRadius: 'var(--radius-md)', fontWeight: 500, paddingLeft: '16px', paddingRight: '12px' }}
             >
                 <LogOut size={15} className="shrink-0" />
                 <span>Sign out</span>
@@ -753,6 +753,12 @@ export default function Sidebar({ dark = false, onToggleDark }) {
                                 style={{ fontSize: '11px', color: '#9CA3AF' }}
                             >
                                 {roleLabel}
+                                {activeBranch?.name && (
+                                    <>
+                                        <span style={{ margin: '0 5px' }}>•</span>
+                                        {activeBranch.name}
+                                    </>
+                                )}
                             </p>
                         </div>
                     )}

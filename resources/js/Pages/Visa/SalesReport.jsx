@@ -112,7 +112,7 @@ function Tip({ active, payload, label }) {
                     <span style={{ color: 'var(--color-text-muted)' }}>{p.name}:</span>
                     <span style={{ fontWeight: 600, color: 'var(--color-text)' }}>
                         {typeof p.value === 'number'
-                            ? 'PHP ' + fmt(p.value)
+                            ? '₱' + fmt(p.value)
                             : p.value}
                     </span>
                 </div>
@@ -187,9 +187,9 @@ function AgentTable({ rows, agentTotals }) {
                                     {at.agent_code || '—'}
                                 </td>
                                 <td style={{ ...tdR, fontWeight: 700 }}>{at.count}</td>
-                                <td style={{ ...tdR, fontWeight: 700 }}>₱ {fmt(at.total_sp)}</td>
-                                <td style={{ ...tdR, fontWeight: 700 }}>₱ {fmt(at.total_np)}</td>
-                                <td style={{ ...tdR, fontWeight: 700, color: 'var(--color-success)' }}>₱ {fmt(at.total_income)}</td>
+                                <td style={{ ...tdR, fontWeight: 700 }}>₱{fmt(at.total_sp)}</td>
+                                <td style={{ ...tdR, fontWeight: 700 }}>₱{fmt(at.total_np)}</td>
+                                <td style={{ ...tdR, fontWeight: 700, color: 'var(--color-success)' }}>₱{fmt(at.total_income)}</td>
                             </tr>
 
                             {/* Drill-down by visa type */}
@@ -200,9 +200,9 @@ function AgentTable({ rows, agentTotals }) {
                                         {r.visa_type || 'Unspecified'}
                                     </td>
                                     <td style={tdR}>{r.count}</td>
-                                    <td style={tdR}>₱ {fmt(r.total_sp)}</td>
-                                    <td style={tdR}>₱ {fmt(r.total_np)}</td>
-                                    <td style={{ ...tdR, color: 'var(--color-success)' }}>₱ {fmt(r.total_income)}</td>
+                                    <td style={tdR}>₱{fmt(r.total_sp)}</td>
+                                    <td style={tdR}>₱{fmt(r.total_np)}</td>
+                                    <td style={{ ...tdR, color: 'var(--color-success)' }}>₱{fmt(r.total_income)}</td>
                                 </tr>
                             ))}
                         </>
@@ -276,13 +276,13 @@ export default function VisaSalesReport({
                 {/* ── Stat cards ─────────────────────────────────────────── */}
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
                     <StatCard label="Applications" value={grandTotals?.count ?? 0} tone="primary" icon={BarChart2} />
-                    <StatCard label="Total SP"     value={`₱ ${fmt(grandTotals?.total_sp)}`}     tone="info" />
-                    <StatCard label="Total NP"     value={`₱ ${fmt(grandTotals?.total_np)}`}     tone="warning" />
-                    <StatCard label="Total Income" value={`₱ ${fmt(grandTotals?.total_income)}`} tone="success" icon={TrendingUp} />
+                    <StatCard label="Total SP"     value={`₱${fmt(grandTotals?.total_sp)}`}     tone="info" />
+                    <StatCard label="Total NP"     value={`₱${fmt(grandTotals?.total_np)}`}     tone="warning" />
+                    <StatCard label="Total Income" value={`₱${fmt(grandTotals?.total_income)}`} tone="success" icon={TrendingUp} />
                     {target > 0 && (
                         <StatCard
                             label="Target"
-                            value={`₱ ${fmt(target)}`}
+                            value={`₱${fmt(target)}`}
                             sub={`${progress}% achieved`}
                             tone={progress >= 100 ? 'success' : progress >= 70 ? 'primary' : 'warning'}
                             icon={Target}

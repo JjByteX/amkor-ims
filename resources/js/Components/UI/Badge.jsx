@@ -1,22 +1,53 @@
 /**
  * Badge — inline status/label chip.
  *
+ * Uses solid CSS-var colors (same style as the Visa agent code pills)
+ * so they look correct in both light and dark mode without Tailwind
+ * dark-mode hacks.
+ *
  * Corner radius driven by --radius-md token (8px).
- * Change the token in app.css → all badges update.
  *
  * Props:
- *   variant  : 'success' | 'warning' | 'error' | 'info' | 'neutral'  (default: 'neutral')
+ *   variant  : 'success' | 'warning' | 'error' | 'info' | 'neutral' | 'primary'
  *   children : ReactNode
  *   className: string
  */
+
+const VARIANT_STYLES = {
+    // ── Branding green — completed / confirmed / approved / paid / active
+    primary : {
+        background: 'var(--color-primary)',
+        color     : '#fff',
+    },
+    // Same as primary — alias so existing 'success' mappings get the green pill
+    success : {
+        background: 'var(--color-primary)',
+        color     : '#fff',
+    },
+    // Amber — pending / in-progress
+    warning : {
+        background: 'var(--color-warning)',
+        color     : '#fff',
+    },
+    // Red — denied / cancelled / overdue / unpaid
+    error   : {
+        background: 'var(--color-error)',
+        color     : '#fff',
+    },
+    // Blue — on process / sent / info states
+    info    : {
+        background: 'var(--color-info)',
+        color     : '#fff',
+    },
+    // Muted — refunded / draft / inactive / neutral states
+    neutral : {
+        background: 'var(--color-text-muted)',
+        color     : '#fff',
+    },
+};
+
 export default function Badge({ variant = 'neutral', children, className = '' }) {
-    const variants = {
-        success : 'bg-green-100  text-green-800  dark:bg-green-900/30  dark:text-green-400',
-        warning : 'bg-amber-100  text-amber-800  dark:bg-amber-900/30  dark:text-amber-400',
-        error   : 'bg-red-100    text-red-800    dark:bg-red-900/30    dark:text-red-400',
-        info    : 'bg-blue-100   text-blue-800   dark:bg-blue-900/30   dark:text-blue-400',
-        neutral : 'bg-gray-100   text-gray-700   dark:bg-gray-700      dark:text-gray-300',
-    };
+    const style = VARIANT_STYLES[variant] ?? VARIANT_STYLES.neutral;
 
     return (
         <span
@@ -25,17 +56,19 @@ export default function Badge({ variant = 'neutral', children, className = '' })
                 'font-semibold',
                 'font-body',
                 'whitespace-nowrap',
-                variants[variant] ?? variants.neutral,
                 className,
             ].join(' ')}
             style={{
-                fontSize      : 'var(--badge-font-size)',
-                borderRadius  : 'var(--radius-md)',
-                lineHeight    : 1,
-                paddingLeft   : 'var(--badge-px)',
-                paddingRight  : 'var(--badge-px)',
-                paddingTop    : 'var(--badge-py)',
-                paddingBottom : 'var(--badge-py)',
+                fontSize     : 'var(--badge-font-size)',
+                borderRadius : 'var(--radius-md)',
+                lineHeight   : 1,
+                paddingLeft  : 'var(--badge-px)',
+                paddingRight : 'var(--badge-px)',
+                paddingTop   : 'var(--badge-py)',
+                paddingBottom: 'var(--badge-py)',
+                background   : style.background,
+                color        : style.color,
+                width        : 'fit-content',
             }}
         >
             {children}

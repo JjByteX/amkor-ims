@@ -11,6 +11,7 @@ import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
 import Modal from '../../Components/UI/Modal';
 import Textarea from '../../Components/UI/Textarea';
+import ApprovalStepper from '../../Components/Shared/ApprovalStepper';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -42,52 +43,6 @@ function DetailRow({ label, value }) {
             <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)' }}>
                 {value || '—'}
             </span>
-        </div>
-    );
-}
-
-// ── Approval timeline ─────────────────────────────────────────────────────────
-
-function ApprovalTimeline({ material, statuses }) {
-    const steps = [
-        { key: 'draft',     label: 'Created',     by: material.created_by_user?.name,    at: material.created_at },
-        { key: 'submitted', label: 'Submitted',   by: material.submitted_by_user?.name,  at: null },
-        { key: 'approved',  label: 'Approved',    by: material.approved_by_user?.name,   at: material.approved_at },
-        { key: 'published', label: 'Published',   by: material.published_by_user?.name,  at: material.published_at },
-    ];
-
-    const statusOrder = ['draft', 'submitted', 'approved', 'published', 'archived'];
-    const currentIdx  = statusOrder.indexOf(material.status);
-
-    return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-            {steps.map((step, i) => {
-                const reached = statusOrder.indexOf(step.key) <= currentIdx || (material.status === 'archived' && i < 2);
-                return (
-                    <div key={step.key} style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-2)' }}>
-                        <div style={{
-                            width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
-                            background: reached ? 'var(--color-primary)' : 'var(--color-bg)',
-                            border: reached ? 'none' : '1.5px solid var(--color-text)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            opacity: reached ? 1 : 0.3,
-                            marginTop: 2,
-                        }}>
-                            <CheckCircle size={14} color={reached ? '#fff' : 'var(--color-text)'} />
-                        </div>
-                        <div>
-                            <div className="font-body" style={{ fontSize: 'var(--font-size-small)', fontWeight: 600, color: 'var(--color-text)', opacity: reached ? 1 : 0.4 }}>
-                                {step.label}
-                            </div>
-                            {reached && step.by && (
-                                <div className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)', opacity: 0.5 }}>
-                                    {step.by}{step.at ? ` · ${fmtDt(step.at)}` : ''}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                );
-            })}
         </div>
     );
 }
@@ -164,7 +119,7 @@ export default function MarketingShow({
 
                             {/* Edit — only marketer, only on draft/archived */}
                             {canCreate && (status === 'draft' || status === 'archived') && (
-                                <Button variant="secondary" icon={Edit2} onClick={() => router.get(route('marketing.edit', material.id))}>
+                                <Button variant="primary" icon={Edit2} onClick={() => router.get(route('marketing.edit', material.id))}>
                                     Edit
                                 </Button>
                             )}
@@ -173,25 +128,6 @@ export default function MarketingShow({
                             {canCreate && status === 'draft' && (
                                 <Button icon={Send} onClick={handleSubmit}>
                                     Submit for Review
-                                </Button>
-                            )}
-
-                            {/* Approve / Reject — reviewer, submitted only */}
-                            {canReview && status === 'submitted' && (
-                                <>
-                                    <Button variant="secondary" icon={XCircle} onClick={() => setRejectOpen(true)}>
-                                        Send Back
-                                    </Button>
-                                    <Button icon={CheckCircle} onClick={handleApprove}>
-                                        Approve
-                                    </Button>
-                                </>
-                            )}
-
-                            {/* Publish — marketer, approved only */}
-                            {canCreate && status === 'approved' && (
-                                <Button icon={Globe} onClick={handlePublish}>
-                                    Mark as Published
                                 </Button>
                             )}
 
@@ -327,7 +263,41 @@ export default function MarketingShow({
                                 <span className="font-heading font-semibold" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)' }}>
                                     Workflow
                                 </span>
-                                <ApprovalTimeline material={material} statuses={statuses} />
+                                <ApprovalStepper fmtDt={fmtDt} steps={[
+                                    {
+                                        label : 'Created',
+                                        done  : true,
+                                        person: material.created_by_user?.name,
+                                        at    : material.created_at,
+                                    },
+                                    {
+                                        label : 'Submitted',
+                                        done  : ['submitted', 'approved', 'published', 'archived'].includes(status),
+                                        person: material.submitted_by_user?.name,
+                                        at    : null,
+                                    },
+                                    {
+                                        label : 'Approved',
+                                        done  : ['approved', 'published', 'archived'].includes(status),
+                                        person: material.approved_by_user?.name,
+                                        at    : material.approved_at,
+                                        action: canReview && status === 'submitted'
+                                            ? <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
+                                                <Button size="sm" icon={CheckCircle} onClick={handleApprove}>Approve</Button>
+                                                <Button variant="ghost" size="sm" icon={XCircle} onClick={() => setRejectOpen(true)}>Send Back</Button>
+                                              </div>
+                                            : null,
+                                    },
+                                    {
+                                        label : 'Published',
+                                        done  : status === 'published',
+                                        person: material.published_by_user?.name,
+                                        at    : material.published_at,
+                                        action: canCreate && status === 'approved'
+                                            ? <Button size="sm" icon={Globe} onClick={handlePublish}>Mark as Published</Button>
+                                            : null,
+                                    },
+                                ]} />
                             </div>
                         </Card>
 

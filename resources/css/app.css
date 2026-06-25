@@ -101,8 +101,8 @@
     --color-overlay: rgba(0, 0, 0, 0.06); /* dim backdrop behind panels/modals */
 
     /* --- Component Dimensions --- */
-    --height-btn:              36px;
-    --height-btn-sm:           32px;
+    --height-btn:              40px;
+    --height-btn-sm:           36px;
     --height-input:            40px;
     --height-table-row:        52px;
     --height-table-header:     44px;

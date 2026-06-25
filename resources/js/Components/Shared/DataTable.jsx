@@ -282,7 +282,7 @@ export default function DataTable({
                                                 dispatchSort(effectiveKey);
                                                 setPage(1);
                                             } : undefined}
-                                            className={`${isActionsCol ? 'text-center' : 'text-left'} font-semibold font-body whitespace-nowrap`}
+                                            className="font-semibold font-body whitespace-nowrap"
                                             style={{
                                                 fontSize     : '12px',
                                                 width        : isActionsCol ? '1%' : col.width,
@@ -295,13 +295,13 @@ export default function DataTable({
                                                 paddingRight : 16,
                                                 overflow     : 'hidden',
                                                 whiteSpace   : 'nowrap',
+                                                textAlign    : isActionsCol ? 'center' : (col.align ?? 'left'),
                                             }}
                                         >
-                                            <span className={`${isActionsCol ? 'flex justify-center' : 'inline-flex'} items-center`} style={{ gap: 4 }}>
+                                            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: isActionsCol ? 'center' : col.align === 'right' ? 'flex-end' : 'flex-start', width: '100%', gap: 4 }}>
+                                                {col.align === 'right' && isSortable && <SortIcon active={isActive} dir={sortState.dir} />}
                                                 {displayLabel}
-                                                {isSortable && (
-                                                    <SortIcon active={isActive} dir={sortState.dir} />
-                                                )}
+                                                {col.align !== 'right' && isSortable && <SortIcon active={isActive} dir={sortState.dir} />}
                                             </span>
                                         </th>
                                     );
@@ -340,7 +340,7 @@ export default function DataTable({
                                                         style={{
                                                             fontSize    : 'var(--font-size-small)',
                                                             color       : 'var(--color-text)',
-                                                            textAlign   : isActionsCell ? 'center' : 'left',
+                                                            textAlign   : isActionsCell ? 'center' : (col.align ?? 'left'),
                                                             width       : isActionsCell ? '1%' : undefined,
                                                             whiteSpace  : isActionsCell ? 'nowrap' : undefined,
                                                             paddingLeft : 16,

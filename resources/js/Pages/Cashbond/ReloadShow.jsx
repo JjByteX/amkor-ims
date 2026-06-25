@@ -72,7 +72,7 @@ export function ReloadContent({ reload, approvalStatuses, canWrite, canCheck, ca
             person : reload.checker?.name,
             at     : reload.checked_at,
             action : canCheck && !reload.checked_at
-                ? <Button variant="secondary" size="sm" icon={CheckCircle2} onClick={() => setCheckModal(true)} style={{ width: '100%' }}>Mark as Checked</Button>
+                ? <Button variant="primary" size="sm" icon={CheckCircle2} onClick={() => setCheckModal(true)} style={{ width: '100%' }}>Mark as Checked</Button>
                 : null,
         },
         {
@@ -90,7 +90,7 @@ export function ReloadContent({ reload, approvalStatuses, canWrite, canCheck, ca
             person : reload.releaser?.name,
             at     : reload.released_at,
             action : canWrite && !reload.released_at && reload.approved_at
-                ? <Button variant="secondary" size="sm" icon={Send} onClick={() => setReleaseModal(true)} style={{ width: '100%' }}>Mark as Deposited</Button>
+                ? <Button variant="primary" size="sm" icon={Send} onClick={() => setReleaseModal(true)} style={{ width: '100%' }}>Mark as Deposited</Button>
                 : null,
         },
         {

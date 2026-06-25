@@ -511,12 +511,8 @@ class VisaController extends Controller
             ];
         })->values();
 
-        // Monthly target (from visa_targets)
-        $target = (float) VisaTarget::query()
-            ->where('year', $year)
-            ->where('month', $month)
-            ->when($agent, fn ($q) => $q->where('agent_code', $agent))
-            ->sum('target_amount');
+        // Monthly target (from visa_targets — column is income_target, falls back to ₱700k default)
+        $target = VisaTarget::targetFor($year, $month);
 
         return Inertia::render('Visa/SalesReport', [
             'rows'         => $rows->values(),

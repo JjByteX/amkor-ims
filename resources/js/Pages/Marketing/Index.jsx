@@ -161,18 +161,6 @@ function MarketingPanelContent({ data }) {
                     </>
                 )}
 
-                <PanelDivider />
-
-                <PanelSection title="Actions">
-                    <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => router.get(route('marketing.show', material.id))}
-                        style={{ width: '100%' }}
-                    >
-                        Open Full Page
-                    </Button>
-                </PanelSection>
             </PanelColRight>
         </PanelColumns>
     );
@@ -246,7 +234,7 @@ export default function MarketingIndex({
                             <div className="font-body" style={{ fontSize: 'var(--font-size-small)', fontWeight: 600, color: 'var(--color-text)' }}>
                                 {row.title}
                             </div>
-                            <div className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)', opacity: 0.5 }}>
+                            <div className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>
                                 {materialTypes[row.material_type] ?? row.material_type}
                                 {row.platform ? ` · ${row.platform}` : ''}
                             </div>
@@ -295,7 +283,7 @@ export default function MarketingIndex({
             key: 'created_at',
             label: 'Created',
             render: (row) => (
-                <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text)', opacity: 0.6 }}>
+                <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>
                     {fmt(row.created_at)}
                 </span>
             ),
@@ -437,7 +425,7 @@ export default function MarketingIndex({
                                 />
                             </FilterField>
                             {hasActiveFilters && (
-                                <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                                <Button variant="ghost" onClick={clearFilters} style={{ backgroundColor: 'var(--color-card)', border: 'var(--border-container)', color: 'var(--color-text)' }}>Clear</Button>
                             )}
                         </FilterStrip>
                     }

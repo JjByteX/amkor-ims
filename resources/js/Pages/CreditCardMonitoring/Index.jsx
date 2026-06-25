@@ -74,7 +74,7 @@ export default function CreditCardIndex({ payments, cards, summary, filters, sta
             key: 'payment_no',
             label: 'Ref No.',
             render: row => (
-                <span className="font-body font-semibold" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-primary)' }}>
+                <span className="font-body font-semibold text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-small)' }}>
                     {row.payment_no}
                 </span>
             ),
@@ -88,7 +88,7 @@ export default function CreditCardIndex({ payments, cards, summary, filters, sta
                         {row.credit_card?.card_name ?? '—'}
                     </div>
                     {row.credit_card?.last_four && (
-                        <div className="font-body text-gray-400" style={{ fontSize: 'var(--font-size-small)' }}>
+                        <div className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>
                             •••• {row.credit_card.last_four}
                         </div>
                     )}
@@ -98,6 +98,7 @@ export default function CreditCardIndex({ payments, cards, summary, filters, sta
         {
             key: 'amount',
             label: 'Amount',
+            align: 'right',
             render: row => <CurrencyDisplay amount={row.amount} currency="PHP" />,
         },
         {
@@ -255,7 +256,7 @@ export default function CreditCardIndex({ payments, cards, summary, filters, sta
                                 />
                             </FilterField>
                             {hasActiveFilters && (
-                                <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                                <Button variant="ghost" onClick={clearFilters} style={{ backgroundColor: 'var(--color-card)', border: 'var(--border-container)', color: 'var(--color-text)' }}>Clear</Button>
                             )}
                         </FilterStrip>
                     }

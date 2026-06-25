@@ -1,21 +1,21 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { router, useForm, usePage } from '@inertiajs/react';
 import {
-    Send, FileCheck, ClipboardCheck,
-    AlertCircle, CheckCircle2, Clock, Hash, Trash2,
+    Send, FileCheck,
+    Hash, Trash2,
 } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import DetailPanel, {PanelActions, PanelCol, PanelColRight, PanelColumns, PanelDivider, PanelField, PanelFieldRow, PanelFullRow, PanelMeta, PanelMetaItem, PanelSection} from '../../Components/Shared/DetailPanel';
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
 import Input from '../../Components/UI/Input';
-import Textarea from '../../Components/UI/Textarea';
 import Select from '../../Components/UI/Select';
 import Modal from '../../Components/UI/Modal';
 import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
 import ConfirmDialog from '../../Components/Shared/ConfirmDialog';
 import ContactLinkPanel from '../../Components/Shared/ContactLinkPanel';
 import RelatedTransactionsPanel from '../../Components/Shared/RelatedTransactionsPanel';
+import ApprovalStepper from '../../Components/Shared/ApprovalStepper';
 
 const STATUS_VARIANT = {
     pending   : 'warning',
@@ -27,38 +27,44 @@ const STATUS_VARIANT = {
     refunded  : 'neutral',
 };
 
-function StepRow({ done, label }) {
-    return (
-        <div className="flex items-center gap-2 font-body" style={{ fontSize: 'var(--font-size-small)' }}>
-            {done
-                ? <CheckCircle2 size={14} style={{ color: 'var(--color-success)', flexShrink: 0 }} />
-                : <Clock size={14} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />}
-            <span style={{ color: done ? 'var(--color-success)' : 'var(--color-text-muted)' }}>{label}</span>
-        </div>
-    );
-}
 
 export function VisaContent({ application, statuses, paymentModes, canWrite, canEndorse, contactsSearchUrl, relatedTransactions }) {
 
     const { url } = usePage();
     const isPanel = url?.includes('panel=1');
 
-    const [statusModal,  setStatusModal ] = useState(false);
-    const [notesModal,   setNotesModal  ] = useState(false);
     const [orModal,      setOrModal     ] = useState(false);
     const [deleteDialog, setDeleteDialog] = useState(false);
     const [deleting,     setDeleting    ] = useState(false);
 
-    const statusForm = useForm({ status: application.status });
-    function submitStatus(e) {
-        e.preventDefault();
-        statusForm.post(route('visa.update-status', application.id), { onSuccess: () => setStatusModal(false) });
+    // ── Inline autosave notes ──────────────────────────────────────────────────
+    // We use a ref for the draft value instead of useState so we never fight
+    // Inertia's prop staleness. The textarea gets a key so it hard-resets on
+    // every mount (panel open), reading the current prop value fresh each time.
+    const [notesSaved,  setNotesSaved ] = useState(null); // null | 'saving' | 'saved'
+    const notesTimer  = useRef(null);
+    const notesDraft  = useRef(application.notes ?? '');  // tracks current textarea value
+
+    const saveNotes = useCallback((value) => {
+        router.post(route('visa.update-notes', application.id), { notes: value }, {
+            preserveScroll: true,
+            onSuccess: () => setNotesSaved('saved'),
+            onError:   () => setNotesSaved(null),
+        });
+    }, [application.id]);
+
+    function handleNotesChange(e) {
+        const value = e.target.value;
+        notesDraft.current = value;
+        setNotesSaved('saving');
+        clearTimeout(notesTimer.current);
+        notesTimer.current = setTimeout(() => saveNotes(value), 600);
     }
 
-    const notesForm = useForm({ notes: application.notes ?? '' });
-    function submitNotes(e) {
-        e.preventDefault();
-        notesForm.post(route('visa.update-notes', application.id), { onSuccess: () => setNotesModal(false) });
+    const statusForm = useForm({ status: application.status });
+    function changeStatus(e) {
+        statusForm.setData('status', e.target.value);
+        router.post(route('visa.update-status', application.id), { status: e.target.value }, { preserveScroll: true });
     }
 
     const orForm = useForm({ or_number: '' });
@@ -176,7 +182,58 @@ export function VisaContent({ application, statuses, paymentModes, canWrite, can
                         />
                     </PanelSection>
 
-                    {application.notes && (
+                    {/* ── Update Status ────────────────────────────────── */}
+                    {canWrite && (
+                        <>
+                            <PanelDivider />
+                            <PanelActions>
+                                <Select
+                                    label="Update Status"
+                                    value={statusForm.data.status}
+                                    onChange={changeStatus}
+                                    options={statusOptions}
+                                />
+                            </PanelActions>
+                        </>
+                    )}
+
+                    {/* ── Notes (inline autosave) ──────────────────────── */}
+                    {canWrite && (
+                        <>
+                            <PanelDivider />
+                            <div className="flex flex-col" style={{ gap: 'var(--space-2)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <span className="font-body font-semibold" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--color-text-muted)' }}>
+                                        Notes
+                                    </span>
+                                    {notesSaved === 'saving' && <span style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)', opacity: 0.6 }}>Saving…</span>}
+                                    {notesSaved === 'saved'  && <span style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-success)' }}>Saved ✓</span>}
+                                </div>
+                                <textarea
+                                    key={application.id}
+                                    defaultValue={application.notes ?? ''}
+                                    onChange={handleNotesChange}
+                                    placeholder="Add a note…"
+                                    rows={4}
+                                    style={{
+                                        width        : '100%',
+                                        resize       : 'vertical',
+                                        background   : 'var(--color-surface-raised)',
+                                        border       : '1px solid var(--color-border)',
+                                        borderRadius : 'var(--radius-md)',
+                                        padding      : 'var(--space-2)',
+                                        fontSize     : 'var(--font-size-small)',
+                                        color        : 'var(--color-text)',
+                                        fontFamily   : 'inherit',
+                                        lineHeight   : 1.6,
+                                        outline      : 'none',
+                                        boxSizing    : 'border-box',
+                                    }}
+                                />
+                            </div>
+                        </>
+                    )}
+                    {!canWrite && application.notes && (
                         <>
                             <PanelDivider />
                             <div
@@ -196,43 +253,37 @@ export function VisaContent({ application, statuses, paymentModes, canWrite, can
                         </>
                     )}
 
-                    {canWrite && (
-                        <>
-                            <PanelDivider />
-                            <PanelActions>
-                                <Button variant="secondary" icon={ClipboardCheck} onClick={() => setStatusModal(true)} style={{ width: '100%' }}>
-                                    Update Status
-                                </Button>
-                                <Button variant="secondary" icon={AlertCircle} onClick={() => setNotesModal(true)} style={{ width: '100%' }}>
-                                    {application.notes ? 'Edit Note' : 'Add Note'}
-                                </Button>
-                                {!application.payment_request_sent && application.payment_due_date && (
-                                    <Button variant="primary" icon={Send} loading={sendingRequest} onClick={sendPaymentRequest} style={{ width: '100%' }}>
-                                        Send Payment Request
-                                    </Button>
-                                )}
-                                {application.payment_request_sent && !application.or_number && (
-                                    <Button variant="secondary" icon={Hash} onClick={() => setOrModal(true)} style={{ width: '100%' }}>
-                                        Record OR Number
-                                    </Button>
-                                )}
-                                {canEndorse && (
-                                    <Button variant="primary" icon={FileCheck} loading={endorsing} onClick={endorseOr} style={{ width: '100%' }}>
-                                        Endorse OR to Disbursement
-                                    </Button>
-                                )}
-                                <Button variant="danger" icon={Trash2} onClick={() => setDeleteDialog(true)} style={{ width: '100%' }}>
-                                    Remove Application
-                                </Button>
-                            </PanelActions>
-                        </>
-                    )}
-
                     <PanelDivider />
-                    <PanelSection>
-                        <StepRow done={!!application.payment_request_sent} label="Payment request sent" />
-                        <StepRow done={!!application.or_number}            label="OR received" />
-                        <StepRow done={!!application.or_endorsed_at}       label="OR endorsed to Disbursement" />
+                    <PanelSection title="Workflow">
+                        <ApprovalStepper fmtDt={fmtDate} steps={[
+                            {
+                                label : 'Payment Request Sent',
+                                done  : !!application.payment_request_sent,
+                                person: null,
+                                at    : application.payment_request_sent_at,
+                                action: canWrite && !application.payment_request_sent && application.payment_due_date
+                                    ? <Button variant="primary" size="sm" icon={Send} loading={sendingRequest} onClick={sendPaymentRequest}>Send Payment Request</Button>
+                                    : null,
+                            },
+                            {
+                                label : 'OR Received',
+                                done  : !!application.or_number,
+                                person: null,
+                                at    : application.or_received_at,
+                                action: canWrite && application.payment_request_sent && !application.or_number
+                                    ? <Button variant="primary" size="sm" icon={Hash} onClick={() => setOrModal(true)}>Record OR Number</Button>
+                                    : null,
+                            },
+                            {
+                                label : 'OR Endorsed',
+                                done  : !!application.or_endorsed_at,
+                                person: application.or_endorsed_by?.name,
+                                at    : application.or_endorsed_at,
+                                action: canEndorse && application.or_number && !application.or_endorsed_at
+                                    ? <Button variant="primary" size="sm" icon={FileCheck} loading={endorsing} onClick={endorseOr}>Endorse OR to Disbursement</Button>
+                                    : null,
+                            },
+                        ]} />
                     </PanelSection>
                 </PanelColRight>
             </PanelColumns>
@@ -288,33 +339,6 @@ export function VisaContent({ application, statuses, paymentModes, canWrite, can
             </PanelFullRow>
 
             {/* Modals */}
-            <Modal open={statusModal} onClose={() => setStatusModal(false)} title="Update Status">
-                <form onSubmit={submitStatus} className="flex flex-col gap-[var(--space-2)]">
-                    <Select label="New Status" options={statusOptions}
-                        value={statusForm.data.status}
-                        onChange={(e) => statusForm.setData('status', e.target.value)}
-                        error={statusForm.errors.status}
-                    />
-                    <div className="flex justify-end gap-2">
-                        <Button variant="ghost" type="button" onClick={() => setStatusModal(false)}>Cancel</Button>
-                        <Button variant="primary" type="submit" loading={statusForm.processing}>Save</Button>
-                    </div>
-                </form>
-            </Modal>
-
-            <Modal open={notesModal} onClose={() => setNotesModal(false)} title="Notes">
-                <form onSubmit={submitNotes} className="flex flex-col gap-[var(--space-2)]">
-                    <Textarea label="Notes" rows={5}
-                        value={notesForm.data.notes}
-                        onChange={(e) => notesForm.setData('notes', e.target.value)}
-                        error={notesForm.errors.notes}
-                    />
-                    <div className="flex justify-end gap-2">
-                        <Button variant="ghost" type="button" onClick={() => setNotesModal(false)}>Cancel</Button>
-                        <Button variant="primary" type="submit" loading={notesForm.processing}>Save Notes</Button>
-                    </div>
-                </form>
-            </Modal>
 
             <Modal open={orModal} onClose={() => setOrModal(false)} title="Record OR Number">
                 <form onSubmit={submitOr} className="flex flex-col gap-[var(--space-2)]">

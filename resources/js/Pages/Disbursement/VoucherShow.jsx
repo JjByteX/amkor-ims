@@ -49,7 +49,7 @@ export function VoucherContent({
             person : voucher.checker?.name,
             at     : voucher.checked_at,
             action : canCheck && voucher.approval_status === 'pending'
-                ? <Button variant="secondary" size="sm" icon={CheckCircle} loading={submitting} onClick={() => doPost('disbursement.vouchers.check')} style={{ width: '100%' }}>Mark Checked</Button>
+                ? <Button variant="primary" size="sm" icon={CheckCircle} loading={submitting} onClick={() => doPost('disbursement.vouchers.check')} style={{ width: '100%' }}>Mark Checked</Button>
                 : null,
         },
         {
@@ -114,7 +114,7 @@ export function VoucherContent({
                     </PanelSection>
 
                     {canWrite && voucher.approval_status === 'pending' && (
-                        <Button variant="secondary" icon={Edit2}
+                        <Button variant="primary" icon={Edit2}
                             onClick={() => router.get(route('disbursement.vouchers.edit', voucher.id))}
                             style={{ width: '100%' }}>
                             Edit Voucher

@@ -14,6 +14,7 @@ import Select from '../../Components/UI/Select';
 import Badge from '../../Components/UI/Badge';
 import ConfirmDialog from '../../Components/Shared/ConfirmDialog';
 import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
+import ApprovalStepper from '../../Components/Shared/ApprovalStepper';
 import DetailPanel, { TableWithPanel, useDetailPanel, PanelSection, PanelField, PanelFieldRow, PanelDivider, PanelColumns, PanelCol, PanelColRight } from '../../Components/Shared/DetailPanel';
 
 const STATUS_VARIANT = {
@@ -68,35 +69,12 @@ function BillPanelContent({ data }) {
                 <PanelDivider />
 
                 <PanelSection title="Approval Chain">
-                    {/* Check */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <Badge variant={bill.checked_at ? 'info' : 'warning'}>{bill.checked_at ? 'Checked' : 'Awaiting Check'}</Badge>
-                        {bill.checked_at && (
-                            <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>
-                                {bill.checker?.name ?? '—'} · {fmtDt(bill.checked_at)}
-                            </span>
-                        )}
-                    </div>
-
-                    {/* Approve */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <Badge variant={bill.approved_at ? 'success' : 'warning'}>{bill.approved_at ? 'Approved' : 'Awaiting Approval'}</Badge>
-                        {bill.approved_at && (
-                            <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>
-                                {bill.approver?.name ?? '—'} · {fmtDt(bill.approved_at)}
-                            </span>
-                        )}
-                    </div>
-
-                    {/* Release */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <Badge variant={bill.released_at ? 'neutral' : 'warning'}>{bill.released_at ? 'Paid / Released' : 'Awaiting Payment'}</Badge>
-                        {bill.released_at && (
-                            <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>
-                                {bill.releaser?.name ?? '—'} · {fmtDt(bill.released_at)}
-                            </span>
-                        )}
-                    </div>
+                    <ApprovalStepper fmtDt={fmtDt} steps={[
+                        { label: 'Prepared',        done: true,               person: bill.created_by?.name, at: bill.created_at },
+                        { label: 'Checked',         done: !!bill.checked_at,  person: bill.checker?.name,    at: bill.checked_at },
+                        { label: 'Approved',        done: !!bill.approved_at, person: bill.approver?.name,   at: bill.approved_at },
+                        { label: 'Paid / Released', done: !!bill.released_at, person: bill.releaser?.name,   at: bill.released_at },
+                    ]} />
                 </PanelSection>
 
                 {bill.audit_remarks && (
@@ -108,18 +86,6 @@ function BillPanelContent({ data }) {
                     </>
                 )}
 
-                <PanelDivider />
-
-                <PanelSection title="Actions">
-                    <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => router.visit(route('bills.show', bill.id))}
-                        style={{ width: '100%' }}
-                    >
-                        Open Full Page
-                    </Button>
-                </PanelSection>
             </PanelColRight>
         </PanelColumns>
     );
@@ -178,7 +144,7 @@ export default function BillsIndex({ bills, summary, filters, billTypes, statuse
                 <div>
                     <div className="font-body font-semibold text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-small)' }}>{row.name}</div>
                     {row.provider && (
-                        <div className="font-body text-gray-400" style={{ fontSize: 'var(--font-size-small)' }}>{row.provider}</div>
+                        <div className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>{row.provider}</div>
                     )}
                 </div>
             ),
@@ -193,6 +159,7 @@ export default function BillsIndex({ bills, summary, filters, billTypes, statuse
         },
         {
             key: 'amount', label: 'Amount',
+            align: 'right',
             render: (row) => <CurrencyDisplay amount={row.amount} currency="PHP" />,
         },
         {
@@ -318,7 +285,7 @@ export default function BillsIndex({ bills, summary, filters, billTypes, statuse
                                 />
                             </FilterField>
                             {hasActiveFilters && (
-                                <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                                <Button variant="ghost" onClick={clearFilters} style={{ backgroundColor: 'var(--color-card)', border: 'var(--border-container)', color: 'var(--color-text)' }}>Clear</Button>
                             )}
                         </FilterStrip>
                     }

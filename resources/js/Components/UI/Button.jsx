@@ -48,14 +48,13 @@ export default function Button({
 
     const variants = {
         primary   : 'bg-[var(--color-primary)] border-[var(--color-primary)] text-white hover:bg-[var(--color-primary-dark)] hover:border-[var(--color-primary-dark)]',
-        secondary : 'bg-white dark:bg-transparent border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-white',
         ghost     : 'bg-transparent border-transparent text-[var(--color-text)] hover:bg-black/5 dark:hover:bg-white/10',
         danger    : 'bg-[var(--color-error)] border-[var(--color-error)] text-white hover:opacity-90',
     };
 
     const height   = size === 'sm' ? 'var(--height-btn-sm)' : 'var(--height-btn)';
     const fontSize = size === 'sm' ? 'var(--font-size-small)' : 'var(--font-size-small)';
-    const minWidth = hasContent ? (size === 'sm' ? 72 : 88) : height;
+    const minWidth = hasContent ? (size === 'sm' ? 84 : 100) : height;
 
     // Normalise icon: accept both a component reference and a pre-rendered element
     let iconNode = null;
@@ -92,18 +91,13 @@ export default function Button({
                 // icon doesn't sit flush against the button edge (Tailwind classes
                 // may not be compiled for dynamically-added values).
                 ...(hasContent && hasIcon ? { paddingLeft: '20px', paddingRight: '20px' } : {}),
-                '--tw-ring-color': 'var(--color-primary)',
+                outline      : 'none',
                 ...style,
             }}
             onFocus={(e) => {
-                e.currentTarget.style.outline = '2px solid var(--color-primary)';
-                e.currentTarget.style.outlineOffset = '2px';
-                e.currentTarget.style.boxShadow = 'none';
                 onFocus?.(e);
             }}
             onBlur={(e) => {
-                e.currentTarget.style.outline = 'none';
-                e.currentTarget.style.boxShadow = style.boxShadow ?? 'none';
                 onBlur?.(e);
             }}
             {...rest}

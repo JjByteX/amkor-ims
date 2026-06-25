@@ -19,15 +19,15 @@ import ConfirmDialog from '../../Components/Shared/ConfirmDialog';
 import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
 
 const STATUS_VARIANT = {
-    current : 'info',
+    current : 'neutral',
     overdue : 'error',
     paid    : 'success',
 };
 
 const APPROVAL_VARIANT = {
     pending      : 'warning',
-    coo_approved : 'info',
-    gsm_approved : 'info',
+    coo_approved : 'warning',
+    gsm_approved : 'warning',
     approved     : 'success',
     rejected     : 'error',
 };
@@ -104,7 +104,7 @@ export default function ARIndex({
                 >
                     {row.agent_code}
                 </span>
-            ) : <span className="text-gray-400" style={{ fontSize: 'var(--font-size-small)' }}>—</span>,
+            ) : <span style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>—</span>,
         },
         {
             key: 'customer_name', label: 'Customer',
@@ -114,7 +114,7 @@ export default function ARIndex({
                         {row.customer_name}
                     </div>
                     {row.corporate_account && (
-                        <div className="font-body text-gray-400" style={{ fontSize: 'var(--font-size-small)' }}>
+                        <div className="font-body" style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>
                             {row.corporate_account}
                         </div>
                     )}
@@ -122,17 +122,17 @@ export default function ARIndex({
             ),
         },
         {
-            key: 'collectible_amount_php', label: 'Amount (PHP)',
+            key: 'collectible_amount_php', label: 'Amount (PHP)', align: 'right',
             render: (row) => <CurrencyDisplay amount={row.collectible_amount_php} currency="PHP" />,
         },
         {
-            key: 'balance_php', label: 'Balance (PHP)',
+            key: 'balance_php', label: 'Balance (PHP)', align: 'right',
             render: (row) => (
                 <span style={{
                     color      : parseFloat(row.balance_php) > 0 ? 'var(--color-error)' : 'var(--color-success)',
-                    fontSize   : 'var(--font-size-small)',
-                    fontFamily : 'var(--font-body)',
                     fontWeight : 600,
+                    display    : 'block',
+                    textAlign  : 'right',
                 }}>
                     <CurrencyDisplay amount={row.balance_php} currency="PHP" />
                 </span>
@@ -147,7 +147,7 @@ export default function ARIndex({
                         <span className="ml-1 text-[var(--color-error)]">({row.days_outstanding}d)</span>
                     )}
                 </span>
-            ) : <span className="text-gray-400" style={{ fontSize: 'var(--font-size-small)' }}>—</span>,
+            ) : <span style={{ fontSize: 'var(--font-size-small)', color: 'var(--color-text-muted)' }}>—</span>,
         },
         {
             key: 'status', label: 'Status',
@@ -288,7 +288,7 @@ export default function ARIndex({
                                 />
                             </FilterField>
                             {hasActiveFilters && (
-                                <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                                <Button variant="ghost" onClick={clearFilters} style={{ backgroundColor: 'var(--color-card)', border: 'var(--border-container)', color: 'var(--color-text)' }}>Clear</Button>
                             )}
                         </FilterStrip>
                     }

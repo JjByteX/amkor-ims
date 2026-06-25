@@ -74,7 +74,7 @@ export default function BillsShow({ bill, billTypes, statuses, approvalStatuses,
             person : bill.checker?.name,
             at     : bill.checked_at,
             action : canCheck && !bill.checked_at
-                ? <Button variant="secondary" size="sm" icon={CheckCircle2} onClick={() => setCheckModal(true)} style={{ width: '100%' }}>Mark Checked</Button>
+                ? <Button variant="primary" size="sm" icon={CheckCircle2} onClick={() => setCheckModal(true)} style={{ width: '100%' }}>Mark Checked</Button>
                 : null,
         },
         {
@@ -92,7 +92,7 @@ export default function BillsShow({ bill, billTypes, statuses, approvalStatuses,
             person : bill.releaser?.name,
             at     : bill.released_at,
             action : canWrite && !bill.released_at && bill.approved_at
-                ? <Button variant="secondary" size="sm" icon={Send} onClick={() => setReleaseModal(true)} style={{ width: '100%' }}>Mark as Paid</Button>
+                ? <Button variant="primary" size="sm" icon={Send} onClick={() => setReleaseModal(true)} style={{ width: '100%' }}>Mark as Paid</Button>
                 : null,
         },
     ];
@@ -119,7 +119,7 @@ export default function BillsShow({ bill, billTypes, statuses, approvalStatuses,
                     </Button>
                     <div className="flex gap-2 flex-wrap">
                         {canWrite && !isApproved && (
-                            <Button variant="secondary" icon={Pencil} onClick={() => router.visit(route('bills.edit', bill.id))}>Edit</Button>
+                            <Button variant="primary" icon={Pencil} onClick={() => router.visit(route('bills.edit', bill.id))}>Edit</Button>
                         )}
                         {canWrite && (
                             <Button variant="danger" icon={Trash2} onClick={() => setDeleteDialog(true)}>Remove</Button>
