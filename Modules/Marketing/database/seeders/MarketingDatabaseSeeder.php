@@ -12,7 +12,7 @@ class MarketingDatabaseSeeder extends Seeder
         $now = now();
 
         $marketing = DB::table('users')->where('email', 'marketing@amkor.ph')->value('id');
-        $coo = DB::table('users')->where('email', 'coo@amkor.ph')->value('id');
+        $coo = DB::table('users')->where('email', 'marianne@amkor.ph')->value('id');
 
         // ── Marketing Materials ─────────────────────────────────────────────
         $materials = [

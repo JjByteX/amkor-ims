@@ -11,8 +11,8 @@ class CreditCardMonitoringDatabaseSeeder extends Seeder
     {
         $now = now();
 
-        $accounting = DB::table('users')->where('email', 'accounting@amkor.ph')->value('id');
-        $coo        = DB::table('users')->where('email', 'coo@amkor.ph')->value('id');
+        $accounting = DB::table('users')->where('email', 'accounting1@amkor.ph')->value('id');
+        $coo        = DB::table('users')->where('email', 'marianne@amkor.ph')->value('id');
 
         // ── 1. Master cards ───────────────────────────────────────────────────
         DB::table('credit_cards')->delete();
