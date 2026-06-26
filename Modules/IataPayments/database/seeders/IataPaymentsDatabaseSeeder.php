@@ -13,8 +13,8 @@ class IataPaymentsDatabaseSeeder extends Seeder
         $qcMain = DB::table('branches')->where('code', 'QC_MAIN')->value('id');
 
         $dalle      = DB::table('users')->where('email', 'dalle@amkor.ph')->value('id');
-        $accounting = DB::table('users')->where('email', 'accounting@amkor.ph')->value('id');
-        $coo        = DB::table('users')->where('email', 'coo@amkor.ph')->value('id');
+        $accounting = DB::table('users')->where('email', 'accounting1@amkor.ph')->value('id');
+        $coo        = DB::table('users')->where('email', 'marianne@amkor.ph')->value('id');
 
         $contactBdo = DB::table('contacts')->where('name', 'BDO Unibank')->where('currency', 'PHP')->value('id');
 

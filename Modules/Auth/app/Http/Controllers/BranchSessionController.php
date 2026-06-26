@@ -58,6 +58,11 @@ class BranchSessionController extends Controller
         // new records under Ormoc. This matches how staff actually think about it.
         $request->session()->put('active_branch_id', $branch->id);
 
+        // Also persist to the DB so the choice survives session resets
+        // (logout, timeout, new browser tab). HandleInertiaRequests reads
+        // this column as the fallback when no session value is present.
+        $request->user()->update(['active_branch_id' => $branch->id]);
+
         return back()->with('flash', [
             'type'    => 'success',
             'message' => "Switched to {$branch->name}.",

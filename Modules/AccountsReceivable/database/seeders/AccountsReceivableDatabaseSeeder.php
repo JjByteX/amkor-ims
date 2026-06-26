@@ -14,9 +14,9 @@ class AccountsReceivableDatabaseSeeder extends Seeder
         $visaCentre = DB::table('branches')->where('code', 'VISA_CENTRE')->value('id');
         $ormoc      = DB::table('branches')->where('code', 'ORMOC')->value('id');
 
-        $accounting = DB::table('users')->where('email', 'accounting@amkor.ph')->value('id');
-        $coo        = DB::table('users')->where('email', 'coo@amkor.ph')->value('id');
-        $gsm        = DB::table('users')->where('email', 'gsm@amkor.ph')->value('id');
+        $accounting = DB::table('users')->where('email', 'accounting1@amkor.ph')->value('id');
+        $coo        = DB::table('users')->where('email', 'marianne@amkor.ph')->value('id');
+        $gsm        = DB::table('users')->where('email', 'rochelle@amkor.ph')->value('id');
         $jhona      = DB::table('users')->where('email', 'jhona@amkor.ph')->value('id');
 
         DB::table('collectibles')->delete();
@@ -113,7 +113,7 @@ class AccountsReceivableDatabaseSeeder extends Seeder
 
             array_merge($base, [
                 'department'             => 'resa',
-                'agent_code'             => 'JHONA',
+                'agent_code'             => 'JR',
                 'date'                   => '2026-03-08',
                 'customer_name'          => 'BDO Unibank Inc.',
                 'corporate_account'      => 'BDO Unibank Inc.',
@@ -210,7 +210,7 @@ class AccountsReceivableDatabaseSeeder extends Seeder
 
             array_merge($base, [
                 'department'             => 'resa',
-                'agent_code'             => 'JHONA',
+                'agent_code'             => 'JR',
                 'date'                   => '2026-05-05',
                 'customer_name'          => 'Globe Telecom Inc.',
                 'corporate_account'      => 'Globe Telecom Inc.',
@@ -277,7 +277,7 @@ class AccountsReceivableDatabaseSeeder extends Seeder
             // ══════════════════════════════════════════════════════════════════
             array_merge($base, [
                 'department'             => 'visa',
-                'agent_code'             => 'JHONA',
+                'agent_code'             => 'JR',
                 'date'                   => '2026-01-05',
                 'customer_name'          => 'Carlos Mendoza',
                 'terms'                  => 'Cash on application',
@@ -329,7 +329,7 @@ class AccountsReceivableDatabaseSeeder extends Seeder
 
             array_merge($base, [
                 'department'             => 'visa',
-                'agent_code'             => 'JHONA',
+                'agent_code'             => 'JR',
                 'date'                   => '2026-02-18',
                 'customer_name'          => 'Ana Reyes',
                 'terms'                  => 'Cash on application',
@@ -383,7 +383,7 @@ class AccountsReceivableDatabaseSeeder extends Seeder
 
             array_merge($base, [
                 'department'             => 'visa',
-                'agent_code'             => 'JHONA',
+                'agent_code'             => 'JR',
                 'date'                   => '2026-05-12',
                 'customer_name'          => 'Beatrice Lim',
                 'terms'                  => 'Cash on application',
@@ -425,7 +425,7 @@ class AccountsReceivableDatabaseSeeder extends Seeder
             // ══════════════════════════════════════════════════════════════════
             array_merge($base, [
                 'department'             => 'ormoc',
-                'agent_code'             => 'LENY',
+                'agent_code'             => 'AM',
                 'date'                   => '2026-01-10',
                 'customer_name'          => 'Rolando Diaz',
                 'terms'                  => 'Cash on booking',
@@ -452,7 +452,7 @@ class AccountsReceivableDatabaseSeeder extends Seeder
 
             array_merge($base, [
                 'department'             => 'ormoc',
-                'agent_code'             => 'LENY',
+                'agent_code'             => 'AM',
                 'date'                   => '2026-02-05',
                 'customer_name'          => 'Edgar Salas',
                 'terms'                  => 'Net 15',
@@ -478,7 +478,7 @@ class AccountsReceivableDatabaseSeeder extends Seeder
 
             array_merge($base, [
                 'department'             => 'ormoc',
-                'agent_code'             => 'LENY',
+                'agent_code'             => 'AM',
                 'date'                   => '2026-04-08',
                 'customer_name'          => 'Pacita Villanueva',
                 'terms'                  => 'Cash on booking',
@@ -499,7 +499,7 @@ class AccountsReceivableDatabaseSeeder extends Seeder
 
             array_merge($base, [
                 'department'             => 'ormoc',
-                'agent_code'             => 'LENY',
+                'agent_code'             => 'AM',
                 'date'                   => '2026-05-28',
                 'customer_name'          => 'Ormoc City Government',
                 'corporate_account'      => 'Ormoc City Government',

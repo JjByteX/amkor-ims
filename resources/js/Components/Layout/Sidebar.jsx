@@ -146,8 +146,9 @@ const NAV_SECTIONS = [
                     'business_development_manager',
                     'visa_documentation_supervisor',
                     'visa_documentation_officer',
+                    // Only branch supervisor sees Sales Summary — per workflow doc,
+                    // individual Ormoc sales officers don't review summary reports.
                     'branch_supervisor',
-                    'branch_sales_officer',
                 ],
             },
         ],
@@ -216,6 +217,10 @@ const NAV_SECTIONS = [
                 href : '/cashbond',
                 icon : <ShieldCheck size={20} />,
                 label: 'Cashbond Monitoring',
+                // Cashbond portals (AirAsia, Jetstar, SupercatB2B, Airswift,
+                // Cebuana Lhuillier) are managed and reloaded exclusively by
+                // QC Disbursement (Dalle). Ormoc uses the bonds but does not
+                // monitor or reload them — per Amkor workflow doc.
                 roles: [
                     'president',
                     'chief_operating_officer',
@@ -227,8 +232,6 @@ const NAV_SECTIONS = [
                     'sales_reservation_officer',
                     'sales_ticketing_officer',
                     'group_sales_officer',
-                    'branch_supervisor',
-                    'branch_sales_officer',
                 ],
             },
             {
@@ -309,6 +312,10 @@ const NAV_SECTIONS = [
                     'chief_operating_officer',
                     'finance_admin_supervisor',
                     'administrative_assistant',
+                    // Ormoc branch supervisor (Anjelly) manages 3 direct reports
+                    // (Louie, Rhea, Kay) — needs read access to their records
+                    // per org chart. Edit/create remains QC HR only.
+                    'branch_supervisor',
                 ],
             },
             {

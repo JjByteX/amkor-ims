@@ -12,8 +12,8 @@ class DisbursementDatabaseSeeder extends Seeder
         $now    = now();
         $qcMain = DB::table('branches')->where('code', 'QC_MAIN')->value('id');
 
-        $accounting = DB::table('users')->where('email', 'accounting@amkor.ph')->value('id');
-        $coo        = DB::table('users')->where('email', 'coo@amkor.ph')->value('id');
+        $accounting = DB::table('users')->where('email', 'accounting1@amkor.ph')->value('id');
+        $coo        = DB::table('users')->where('email', 'marianne@amkor.ph')->value('id');
 
         DB::table('disbursement_entries')->delete();
         DB::table('vouchers')->delete();

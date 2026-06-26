@@ -59,12 +59,21 @@ class HandleInertiaRequests extends Middleware
                 // query cache or just the single cheap SELECT — two rows only).
                 $branchList = Branch::active()->orderBy('name')->get(['id', 'name', 'code']);
 
-                // Determine active branch from session; fall back to QC Main
-                // (the first branch alphabetically, which will be QC Main).
-                $activeBranchId = $request->session()->get(
-                    'active_branch_id',
-                    $branchList->first()?->id
-                );
+                // Determine active branch from session; fall back to the
+                // user's last saved choice (DB), then to QC Main by code.
+                // Never fall back to alphabetical first — that would land
+                // on Ormoc before QC Main and confuse HQ staff on every
+                // session reset.
+                $activeBranchId = $request->session()->get('active_branch_id')
+                    ?? $user->active_branch_id
+                    ?? $branchList->firstWhere('code', 'QC_MAIN')?->id
+                    ?? $branchList->first()?->id;
+
+                // Seed the session from DB so subsequent requests don't
+                // hit this fallback chain again in the same session.
+                if (! $request->session()->has('active_branch_id')) {
+                    $request->session()->put('active_branch_id', $activeBranchId);
+                }
 
                 $activeBranch = $branchList->firstWhere('id', $activeBranchId)
                     ?->only(['id', 'name', 'code']);

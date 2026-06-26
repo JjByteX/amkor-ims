@@ -80,7 +80,7 @@ export default function NavItem({ href, icon, label, activeOn = [], inactiveOn =
 
     /* ── Icon — fixed slot, never moves ─────────────────────────────────────── */
     const iconSpan = (color) => (
-        <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center', color }}>
+        <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center', color, pointerEvents: 'none' }}>
             {icon}
         </span>
     );
@@ -90,23 +90,31 @@ export default function NavItem({ href, icon, label, activeOn = [], inactiveOn =
         const isHighlighted = isActive || childActive;
         return (
             <li>
-                <Link
-                    prefetch
+                {/* span is a native DOM node — ref is guaranteed to resolve,
+                    matching exactly how the profile avatar tooltip works
+                    (triggerRef on a native <button>). display:block so it
+                    fills the li and getBoundingClientRect() covers the link. */}
+                <span
                     ref={anchorRef}
-                    href={href ?? '#'}
-                    className={['flex items-center w-full nav-item-hoverable', isHighlighted ? 'nav-item-active' : ''].join(' ')}
-                    style={{
-                        ...baseItemStyle,
-                        paddingRight  : '14px',
-                        background    : isHighlighted ? 'var(--color-primary)' : 'transparent',
-                        color         : isHighlighted ? '#ffffff' : 'var(--color-text-muted)',
-                        textDecoration: 'none',
-                    }}
+                    style={{ display: 'block' }}
                     onMouseEnter={() => setTipVisible(true)}
                     onMouseLeave={() => setTipVisible(false)}
                 >
-                    {iconSpan(isHighlighted ? '#ffffff' : 'var(--color-text-muted)')}
-                </Link>
+                    <Link
+                        prefetch
+                        href={href ?? '#'}
+                        className={['flex items-center w-full nav-item-hoverable', isHighlighted ? 'nav-item-active' : ''].join(' ')}
+                        style={{
+                            ...baseItemStyle,
+                            paddingRight  : '14px',
+                            background    : isHighlighted ? 'var(--color-primary)' : 'transparent',
+                            color         : isHighlighted ? '#ffffff' : 'var(--color-text-muted)',
+                            textDecoration: 'none',
+                        }}
+                    >
+                        {iconSpan(isHighlighted ? '#ffffff' : 'var(--color-text-muted)')}
+                    </Link>
+                </span>
                 {tipVisible && <Tooltip label={label} anchorRef={anchorRef} />}
             </li>
         );

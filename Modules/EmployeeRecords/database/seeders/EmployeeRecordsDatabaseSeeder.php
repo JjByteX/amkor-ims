@@ -12,6 +12,7 @@ class EmployeeRecordsDatabaseSeeder extends Seeder
         $now = now();
 
         $qcMain = DB::table('branches')->where('code', 'QC_MAIN')->value('id');
+        $ormoc  = DB::table('branches')->where('code', 'ORMOC')->value('id');
 
         $employees = [
             [
@@ -122,8 +123,60 @@ class EmployeeRecordsDatabaseSeeder extends Seeder
                 'updated_by' => DB::table('users')->where('email', 'jrt@amkor.ph')->value('id'),
                 'created_at' => $now, 'updated_at' => $now,
             ],
-            // EMP-010 placeholder removed — Anjelly Miroy, Louie Bacalso, Rhea Dedace,
-            // and Kay Ann Parrilla are created by John Vic through the Add Employee form.
+            // EMP-010 — Anjelly Miroy, Branch Supervisor (Ormoc)
+            // Records created here by seeder; in production these are
+            // managed by John Vic / Judy Ann at QC Main.
+            [
+                'first_name' => 'Anjelly', 'last_name' => 'Miroy', 'middle_name' => null,
+                'suffix' => null, 'date_of_birth' => '1991-08-14', 'gender' => 'Female', 'civil_status' => 'Single',
+                'employee_code' => 'EMP-010', 'position' => 'Branch Supervisor', 'department' => 'Branch',
+                'branch_id' => $ormoc, 'employment_status' => 'regular', 'date_hired' => '2021-06-01', 'regularization_date' => '2021-12-01',
+                'tin_number' => '288-111-222-000', 'work_email' => 'anjelly@amkor.ph', 'mobile_number' => '09201234580',
+                'sil_total' => 15, 'sil_used' => 3, 'data_privacy_consent' => true, 'data_privacy_consent_date' => '2026-01-15',
+                'user_id' => DB::table('users')->where('email', 'anjelly@amkor.ph')->value('id'),
+                'created_by' => DB::table('users')->where('email', 'judyann@amkor.ph')->value('id'),
+                'updated_by' => DB::table('users')->where('email', 'judyann@amkor.ph')->value('id'),
+                'created_at' => $now, 'updated_at' => $now,
+            ],
+            // EMP-013 — Louie Jay Bacalso, Sales & Reservation Officer (Ormoc)
+            [
+                'first_name' => 'Louie Jay', 'last_name' => 'Bacalso', 'middle_name' => null,
+                'suffix' => null, 'date_of_birth' => '1994-03-07', 'gender' => 'Male', 'civil_status' => 'Single',
+                'employee_code' => 'EMP-013', 'position' => 'Sales & Reservation Officer', 'department' => 'Branch',
+                'branch_id' => $ormoc, 'employment_status' => 'regular', 'date_hired' => '2022-01-10', 'regularization_date' => '2022-07-10',
+                'tin_number' => '288-333-444-000', 'work_email' => 'ormoc1@amkor.ph', 'mobile_number' => '09201234581',
+                'sil_total' => 15, 'sil_used' => 2, 'data_privacy_consent' => true, 'data_privacy_consent_date' => '2026-01-15',
+                'user_id' => DB::table('users')->where('email', 'ormoc1@amkor.ph')->value('id'),
+                'created_by' => DB::table('users')->where('email', 'judyann@amkor.ph')->value('id'),
+                'updated_by' => DB::table('users')->where('email', 'judyann@amkor.ph')->value('id'),
+                'created_at' => $now, 'updated_at' => $now,
+            ],
+            // EMP-014 — Rhea Mae Dedace, Sales & Reservation Officer (Ormoc)
+            [
+                'first_name' => 'Rhea Mae', 'last_name' => 'Dedace', 'middle_name' => null,
+                'suffix' => null, 'date_of_birth' => '1995-11-22', 'gender' => 'Female', 'civil_status' => 'Single',
+                'employee_code' => 'EMP-014', 'position' => 'Sales & Reservation Officer', 'department' => 'Branch',
+                'branch_id' => $ormoc, 'employment_status' => 'regular', 'date_hired' => '2022-03-15', 'regularization_date' => '2022-09-15',
+                'tin_number' => '288-555-666-000', 'work_email' => 'ormoc2@amkor.ph', 'mobile_number' => '09201234582',
+                'sil_total' => 15, 'sil_used' => 1, 'data_privacy_consent' => true, 'data_privacy_consent_date' => '2026-01-15',
+                'user_id' => DB::table('users')->where('email', 'ormoc2@amkor.ph')->value('id'),
+                'created_by' => DB::table('users')->where('email', 'judyann@amkor.ph')->value('id'),
+                'updated_by' => DB::table('users')->where('email', 'judyann@amkor.ph')->value('id'),
+                'created_at' => $now, 'updated_at' => $now,
+            ],
+            // EMP-015 — Kay Ann Mavel Parrilla, Sales & Reservation Officer (Ormoc)
+            [
+                'first_name' => 'Kay Ann Mavel', 'last_name' => 'Parrilla', 'middle_name' => null,
+                'suffix' => null, 'date_of_birth' => '1996-05-30', 'gender' => 'Female', 'civil_status' => 'Single',
+                'employee_code' => 'EMP-015', 'position' => 'Sales & Reservation Officer', 'department' => 'Branch',
+                'branch_id' => $ormoc, 'employment_status' => 'regular', 'date_hired' => '2022-06-01', 'regularization_date' => '2022-12-01',
+                'tin_number' => '288-777-888-000', 'work_email' => 'ormoc3@amkor.ph', 'mobile_number' => '09201234583',
+                'sil_total' => 15, 'sil_used' => 0, 'data_privacy_consent' => true, 'data_privacy_consent_date' => '2026-01-15',
+                'user_id' => DB::table('users')->where('email', 'ormoc3@amkor.ph')->value('id'),
+                'created_by' => DB::table('users')->where('email', 'judyann@amkor.ph')->value('id'),
+                'updated_by' => DB::table('users')->where('email', 'judyann@amkor.ph')->value('id'),
+                'created_at' => $now, 'updated_at' => $now,
+            ],
             [
                 'first_name' => 'Maria Alexandria', 'last_name' => 'De Quiros', 'middle_name' => null,
                 'suffix' => null, 'date_of_birth' => '1993-01-25', 'gender' => 'Female', 'civil_status' => 'Single',
