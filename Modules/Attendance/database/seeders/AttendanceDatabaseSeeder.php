@@ -34,6 +34,11 @@ class AttendanceDatabaseSeeder extends Seeder
             ['emp_code' => 'EMP-008', 'user_email' => 'johnvic@amkor.ph',     'branch_code' => 'QC_MAIN'],
             ['emp_code' => 'EMP-011', 'user_email' => 'alex@amkor.ph',        'branch_code' => 'QC_MAIN'],
             ['emp_code' => 'EMP-012', 'user_email' => 'jhoanna@amkor.ph',     'branch_code' => 'QC_MAIN'],
+            // Ormoc Branch
+            ['emp_code' => 'EMP-010', 'user_email' => 'anjelly@amkor.ph',     'branch_code' => 'ORMOC'],
+            ['emp_code' => 'EMP-013', 'user_email' => 'ormoc1@amkor.ph',      'branch_code' => 'ORMOC'],
+            ['emp_code' => 'EMP-014', 'user_email' => 'ormoc2@amkor.ph',      'branch_code' => 'ORMOC'],
+            ['emp_code' => 'EMP-015', 'user_email' => 'ormoc3@amkor.ph',      'branch_code' => 'ORMOC'],
         ];
 
         $dates = ['2026-06-02', '2026-06-03', '2026-06-04', '2026-06-05', '2026-06-06'];
