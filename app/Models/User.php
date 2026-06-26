@@ -23,6 +23,7 @@ class User extends Authenticatable
         'email',
         'password',
         'branch_id',
+        'active_branch_id',
         'agent_code',
         'is_active',
         'must_change_password',
@@ -55,6 +56,15 @@ class User extends Authenticatable
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    /**
+     * The branch an all-access role has chosen as their active context.
+     * Null for all other roles (they always operate under their own branch).
+     */
+    public function activeBranch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class, 'active_branch_id');
     }
 
     /**

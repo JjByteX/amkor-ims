@@ -9,25 +9,31 @@ class AttendanceDatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $now = now();
-        $qcMain = DB::table('branches')->where('code', 'QC_MAIN')->value('id');
-        $visaCentre = DB::table('branches')->where('code', 'VISA_CENTRE')->value('id');
-        $ormoc = DB::table('branches')->where('code', 'ORMOC')->value('id');
+        $now     = now();
+        $qcMain  = DB::table('branches')->where('code', 'QC_MAIN')->value('id');
+        $ormoc   = DB::table('branches')->where('code', 'ORMOC')->value('id');
 
-        $hradmin = DB::table('users')->where('email', 'hradmin@amkor.ph')->value('id');
+        // Judy Ann Gregorio is the HR/Admin person who records attendance
+        $hradmin = DB::table('users')->where('email', 'judyann@amkor.ph')->value('id');
 
+        // Employee list must match exactly:
+        // - user_email  → users.email  (from AuthDatabaseSeeder)
+        // - emp_code    → employees.employee_code (from EmployeeRecordsDatabaseSeeder)
+        // - branch_code → branches.code
+        // Note: EMP-009 (Liaison Officer) shares dalle@amkor.ph — that's correct
+        // per the seeder. EMP-010 was never inserted in EmployeeRecordsDatabaseSeeder
+        // (skipped) so it is not listed here either.
         $employees = [
-            ['code' => 'EMP-001', 'user_email' => 'jrt@amkor.ph', 'branch_code' => 'QC_MAIN'],
-            ['code' => 'EMP-002', 'user_email' => 'dalle@amkor.ph', 'branch_code' => 'QC_MAIN'],
-            ['code' => 'EMP-003', 'user_email' => 'jhona@amkor.ph', 'branch_code' => 'QC_MAIN'],
-            ['code' => 'EMP-004', 'user_email' => 'coo@amkor.ph', 'branch_code' => 'QC_MAIN'],
-            ['code' => 'EMP-005', 'user_email' => 'gsm@amkor.ph', 'branch_code' => 'QC_MAIN'],
-            ['code' => 'EMP-006', 'user_email' => 'accounting@amkor.ph', 'branch_code' => 'QC_MAIN'],
-            ['code' => 'EMP-007', 'user_email' => 'auditor@amkor.ph', 'branch_code' => 'QC_MAIN'],
-            ['code' => 'EMP-008', 'user_email' => 'hradmin@amkor.ph', 'branch_code' => 'QC_MAIN'],
-            ['code' => 'EMP-010', 'user_email' => 'ormoc@amkor.ph', 'branch_code' => 'ORMOC'],
-            ['code' => 'EMP-011', 'user_email' => 'visa@amkor.ph', 'branch_code' => 'VISA_CENTRE'],
-            ['code' => 'EMP-012', 'user_email' => 'marketing@amkor.ph', 'branch_code' => 'QC_MAIN'],
+            ['emp_code' => 'EMP-001', 'user_email' => 'jrt@amkor.ph',        'branch_code' => 'QC_MAIN'],
+            ['emp_code' => 'EMP-002', 'user_email' => 'dalle@amkor.ph',       'branch_code' => 'QC_MAIN'],
+            ['emp_code' => 'EMP-003', 'user_email' => 'jhona@amkor.ph',       'branch_code' => 'QC_MAIN'],
+            ['emp_code' => 'EMP-004', 'user_email' => 'marianne@amkor.ph',    'branch_code' => 'QC_MAIN'],
+            ['emp_code' => 'EMP-005', 'user_email' => 'rochelle@amkor.ph',    'branch_code' => 'QC_MAIN'],
+            ['emp_code' => 'EMP-006', 'user_email' => 'accounting1@amkor.ph', 'branch_code' => 'QC_MAIN'],
+            ['emp_code' => 'EMP-007', 'user_email' => 'judyann@amkor.ph',     'branch_code' => 'QC_MAIN'],
+            ['emp_code' => 'EMP-008', 'user_email' => 'johnvic@amkor.ph',     'branch_code' => 'QC_MAIN'],
+            ['emp_code' => 'EMP-011', 'user_email' => 'alex@amkor.ph',        'branch_code' => 'QC_MAIN'],
+            ['emp_code' => 'EMP-012', 'user_email' => 'jhoanna@amkor.ph',     'branch_code' => 'QC_MAIN'],
         ];
 
         $dates = ['2026-06-02', '2026-06-03', '2026-06-04', '2026-06-05', '2026-06-06'];
@@ -37,9 +43,14 @@ class AttendanceDatabaseSeeder extends Seeder
         $records = [];
 
         foreach ($employees as $emp) {
-            $userId = DB::table('users')->where('email', $emp['user_email'])->value('id');
-            $empId = DB::table('employees')->where('employee_code', $emp['code'])->value('id');
+            $userId  = DB::table('users')->where('email', $emp['user_email'])->value('id');
+            $empId   = DB::table('employees')->where('employee_code', $emp['emp_code'])->value('id');
             $branchId = DB::table('branches')->where('code', $emp['branch_code'])->value('id');
+
+            // Skip if the user or employee record wasn't seeded
+            if (! $userId || ! $empId) {
+                continue;
+            }
 
             foreach ($dates as $date) {
                 $status = $statuses[array_rand($statuses)];
