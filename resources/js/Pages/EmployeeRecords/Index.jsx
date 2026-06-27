@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import DetailPanel, { TableWithPanel, useDetailPanel } from '../../Components/Shared/DetailPanel';
-import { EmployeeContent } from './Show';
+import { PanelQuickView } from './Show';
 
 import {
     Plus, Search, Users, UserCheck, Clock, UserX,
@@ -18,6 +18,7 @@ import Badge from '../../Components/UI/Badge';
 import DataTable from '../../Components/Shared/DataTable';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
+import SegmentedControl from '../../Components/UI/SegmentedControl';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -41,6 +42,7 @@ export default function EmployeeIndex({
     statuses,
     departments,
     canManage,
+    canViewSalary,
 }) {
     const { flash } = usePage().props;
     const [searchInput, setSearchInput] = useState(filters.search ?? '');
@@ -140,12 +142,15 @@ export default function EmployeeIndex({
         },
         {
             key: 'sil',
-            label: 'SIL',
+            label: 'SIL Balance',
             render: (row) => {
                 const remaining = Math.max(0, (row.sil_total ?? 5) - (row.sil_used ?? 0));
+                const color = remaining === 0 ? 'var(--color-error)'
+                    : remaining <= 2 ? 'var(--color-warning)'
+                    : 'var(--color-success)';
                 return (
-                    <span className="font-body text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-small)' }}>
-                        {remaining} / {row.sil_total ?? 5}
+                    <span className="font-body" style={{ fontSize: 'var(--font-size-small)', color }}>
+                        {remaining} / {row.sil_total ?? 5} days
                     </span>
                 );
             },
@@ -166,6 +171,20 @@ export default function EmployeeIndex({
         },
     ];
 
+    if (canViewSalary) {
+        columns.splice(columns.length - 1, 0, {
+            key: 'salary',
+            label: 'Salary',
+            render: (row) => (
+                <span className="font-body text-[var(--color-text)]" style={{ fontSize: 'var(--font-size-small)' }}>
+                    {row.salary_increase_amount
+                        ? `₱ ${Number(row.salary_increase_amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
+                        : '—'}
+                </span>
+            ),
+        });
+    }
+
     return (
         <AppShell>
             <PageStack>
@@ -184,7 +203,7 @@ export default function EmployeeIndex({
                 )}
 
                 <PageHeader
-                    title="Employee Records"
+                    title="Employees"
                     subtitle={`${employees.total ?? 0} employee${employees.total !== 1 ? 's' : ''}`}
                     actions={
                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
@@ -226,75 +245,75 @@ export default function EmployeeIndex({
                     <StatCard icon={UserX} label="Inactive" value={stats.inactive} tone="error" />
                 </StatGrid>
 
-                                <TableWithPanel
+                <TableWithPanel
                     panelOpen={showPanel}
                     panel={
                         <DetailPanel
-                open={showPanel}
-                onClose={() => { setShowPanel(false); panel.close(); }}
-                loading={panel.loading}
-                error={panel.error}
-                title={d?.employee?.display_name ?? ''}
-                subtitle={d?.employee ? `${d.employee.employee_code ?? 'No code'} · ${d.employee.position} · ${d.employee.tenure}` : ''}
-                badges={d?.employee && (
-                <>
-                    <Badge variant={STATUS_VARIANT[d.employee.employment_status] ?? 'neutral'}>
-                        {d.statuses?.[d.employee.employment_status] ?? d.employee.employment_status}
-                    </Badge>
-                    {d.employee.regularization_due && <Badge variant="warning">Reg. Due</Badge>}
-                </>
-            )}
-            >
-                {d?.employee && <EmployeeContent employee={d.employee} statuses={d.statuses} departments={d.departments} canManage={d.canManage} />}
-            </DetailPanel>
+                            open={showPanel}
+                            onClose={() => { setShowPanel(false); panel.close(); }}
+                            loading={panel.loading}
+                            error={panel.error}
+                            title={d?.employee?.display_name ?? ''}
+                            subtitle={d?.employee ? `${d.employee.employee_code ?? 'No code'} · ${d.employee.position} · ${d.employee.tenure}` : ''}
+                            badges={d?.employee && (
+                                <>
+                                    <Badge variant={STATUS_VARIANT[d.employee.employment_status] ?? 'neutral'}>
+                                        {d.statuses?.[d.employee.employment_status] ?? d.employee.employment_status}
+                                    </Badge>
+                                    {d.employee.regularization_due && <Badge variant="warning">Reg. Due</Badge>}
+                                </>
+                            )}
+                        >
+                            {d?.employee && <PanelQuickView employee={d.employee} statuses={d.statuses} canManage={d.canManage} />}
+                        </DetailPanel>
                     }
                 >
                     <DataTable
                         panelOpen={showPanel}
                         selectedKey={panel.id}
-                    columns={columns}
-                    rows={employees.data ?? []}
-                    pagination={employees}
-                    onPageChange={(page) =>
-                        router.get(route('employees.index'), { ...filters, search: searchInput, page }, { preserveState: true })
-                    }
-                    toolbar={
-                        <FilterStrip>
-                            <FilterField grow>
-                                <Input
-                                    placeholder="Name, code, position..."
-                                    value={searchInput}
-                                    onChange={(e) => setSearchInput(e.target.value)}
-                                    onKeyDown={handleSearchKey}
-                                    icon={Search}
-                                />
-                            </FilterField>
-                            <FilterField>
-                                <Select
-                                    options={[
-                                        { value: '', label: 'All Statuses' },
-                                        ...Object.entries(statuses).map(([v, l]) => ({ value: v, label: l })),
+                        columns={columns}
+                        rows={employees.data ?? []}
+                        pagination={employees}
+                        onPageChange={(page) =>
+                            router.get(route('employees.index'), { ...filters, search: searchInput, page }, { preserveState: true })
+                        }
+                        toolbar={
+                            <FilterStrip>
+                                <SegmentedControl
+                                    tabs={[
+                                        { key: '',             label: 'All',          count: stats.total        },
+                                        { key: 'active',       label: 'Active',       count: stats.active       },
+                                        { key: 'probationary', label: 'Probationary', count: stats.probationary },
+                                        { key: 'inactive',     label: 'Inactive',     count: stats.inactive     },
                                     ]}
-                                    value={filters.status ?? ''}
-                                    onChange={(e) => applyFilter({ status: e.target.value || undefined, page: 1 })}
+                                    activeKey={filters.status ?? ''}
+                                    onChange={(key) => applyFilter({ status: key || undefined, page: 1 })}
                                 />
-                            </FilterField>
-                            <FilterField width={190}>
-                                <Select
-                                    options={[
-                                        { value: '', label: 'All Departments' },
-                                        ...Object.entries(departments).map(([v, l]) => ({ value: v, label: l })),
-                                    ]}
-                                    value={filters.dept ?? ''}
-                                    onChange={(e) => applyFilter({ dept: e.target.value || undefined, page: 1 })}
-                                />
-                            </FilterField>
-                            {hasActiveFilters && (
-                                <Button variant="ghost" onClick={clearFilters} style={{ backgroundColor: 'var(--color-card)', border: 'var(--border-container)', color: 'var(--color-text)' }}>Clear</Button>
-                            )}
-                        </FilterStrip>
-                    }
-                />
+                                <FilterField grow>
+                                    <Input
+                                        placeholder="Name, code, position..."
+                                        value={searchInput}
+                                        onChange={(e) => setSearchInput(e.target.value)}
+                                        onKeyDown={handleSearchKey}
+                                        icon={Search}
+                                    />
+                                </FilterField>
+                                <FilterField width={190}>
+                                    <Select
+                                        options={[
+                                            { value: '', label: 'All Departments' },
+                                            ...Object.entries(departments).map(([v, l]) => ({ value: v, label: l })),
+                                        ]}
+                                        value={filters.dept ?? ''}
+                                        onChange={(e) => applyFilter({ dept: e.target.value || undefined, page: 1 })}
+                                    />
+                                </FilterField>
+                                {hasActiveFilters && (
+                                    <Button variant="ghost" onClick={clearFilters} style={{ backgroundColor: 'var(--color-card)', border: 'var(--border-container)', color: 'var(--color-text)' }}>Clear</Button>
+                                )}
+                            </FilterStrip>
+                        }
+                    />
                 </TableWithPanel>
             
         </PageStack>

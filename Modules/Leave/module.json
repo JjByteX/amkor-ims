@@ -1,0 +1,11 @@
+{
+    "name": "Leave",
+    "alias": "leave",
+    "description": "Leave Requests module — filing, approval, and history.",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Leave\\Providers\\LeaveServiceProvider"
+    ],
+    "files": []
+}

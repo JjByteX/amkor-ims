@@ -202,6 +202,16 @@ class Employee extends Model
         return $this->hasMany(UniformIssuance::class, 'employee_id');
     }
 
+    public function leaveRequests(): HasMany
+    {
+        return $this->hasMany(\Modules\Leave\Models\LeaveRequest::class, 'employee_id');
+    }
+
+    public function overtimeRequests(): HasMany
+    {
+        return $this->hasMany(\Modules\Overtime\Models\OvertimeRequest::class, 'employee_id');
+    }
+
     // ── Accessors ─────────────────────────────────────────────────────────────
 
     public function getFullNameAttribute(): string
@@ -293,6 +303,14 @@ class Employee extends Model
     {
         if (! $status) {
             return $query;
+        }
+
+        if ($status === 'active') {
+            return $query->whereIn('employment_status', ['probationary', 'regular']);
+        }
+
+        if ($status === 'inactive') {
+            return $query->whereIn('employment_status', ['resigned', 'terminated']);
         }
 
         return $query->where('employment_status', $status);

@@ -13,6 +13,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Attendance\Http\Requests\StoreAttendanceRequest;
 use Modules\Attendance\Models\AttendanceRecord;
+use Modules\EmployeeRecords\Models\Employee;
 
 class AttendanceController extends Controller
 {
@@ -45,17 +46,18 @@ class AttendanceController extends Controller
         $isHr = in_array($role, self::VIEW_ALL, true);
         $isTeamScoped = in_array($role, self::TEAM_SCOPE_ROLES, true);
 
-        // Employees can only see their own records
+        // Non-HR/supervisor users are redirected to their dedicated personal view
         if (! $isHr && ! $isTeamScoped) {
-            return $this->selfView($request);
+            return redirect()->route('attendance.me');
         }
 
-        $month    = (int) $request->get('month', now()->month);
-        $year     = (int) $request->get('year', now()->year);
-        $empId    = $request->get('employee_id');
-        $branchId = $request->get('branch_id');
-        $status   = $request->get('status');
-        $search   = $request->get('search');
+        $month      = (int) $request->get('month', now()->month);
+        $year       = (int) $request->get('year', now()->year);
+        $empId      = $request->get('employee_id');
+        $branchId   = $request->get('branch_id');
+        $status     = $request->get('status');
+        $search     = $request->get('search');
+        $department = $request->get('department'); // 4.6
 
         $query = AttendanceRecord::with(['user', 'branch', 'recordedBy'])
             ->forMonth($year, $month)
@@ -70,6 +72,16 @@ class AttendanceController extends Controller
 
         if ($search) {
             $query->whereHas('user', fn ($q) => $q->where(DB::raw('LOWER(name)'), 'like', '%'.strtolower($search).'%'));
+        }
+
+        // 4.6 — Department filter: join through employees table via user_id
+        if ($department) {
+            $query->whereExists(function ($sub) use ($department) {
+                $sub->select(DB::raw(1))
+                    ->from('employees')
+                    ->whereColumn('employees.user_id', 'attendance_records.user_id')
+                    ->where('employees.department', $department);
+            });
         }
 
         // FIX #2: Branch/team scoping per Module 15
@@ -126,19 +138,79 @@ class AttendanceController extends Controller
         $branches  = Branch::orderBy('name')->get(['id', 'name', 'code']);
         $employees = User::orderBy('name')->get(['id', 'name']);
 
+        // 4.5 — Team stat rows: today snapshot + MTD + time metrics
+        $today = today()->toDateString();
+
+        // Apply same role/branch scope as main query
+        $scopedBase = AttendanceRecord::forMonth($year, $month);
+        $scopedToday = AttendanceRecord::whereDate('work_date', $today);
+        foreach ([$scopedBase, $scopedToday] as $q) {
+            if (in_array($role, ['president', 'chief_operating_officer', 'finance_admin_supervisor', 'administrative_assistant'], true)) {
+                // full company view
+            } elseif ($role === 'general_sales_manager') {
+                $salesRoles = ['sales_reservation_officer', 'sales_ticketing_officer', 'group_sales_officer', 'general_sales_manager'];
+                $q->whereHas('user', fn ($uq) => $uq->whereHas('roles', fn ($r) => $r->whereIn('name', $salesRoles)));
+            } elseif ($role === 'business_development_manager') {
+                $bdmRoles = ['business_development_manager', 'sales_marketing_officer'];
+                $q->whereHas('user', fn ($uq) => $uq->whereHas('roles', fn ($r) => $r->whereIn('name', $bdmRoles)));
+            } elseif ($role === 'visa_documentation_supervisor') {
+                $visaRoles = ['visa_documentation_supervisor', 'liaison_officer_visa', 'visa_documentation_officer'];
+                $q->whereHas('user', fn ($uq) => $uq->whereHas('roles', fn ($r) => $r->whereIn('name', $visaRoles)));
+            } elseif ($role === 'branch_supervisor') {
+                $q->forBranch($user->branch_id);
+            }
+            if ($branchId) { $q->forBranch((int) $branchId); }
+        }
+
+        $teamStats = [
+            // Today
+            'today_present'  => (clone $scopedToday)->where('status', 'present')->count(),
+            'today_late'     => (clone $scopedToday)->where('minutes_late', '>', 0)->count(),
+            'today_absent'   => (clone $scopedToday)->where('status', 'absent')->count(),
+            'today_on_leave' => (clone $scopedToday)->whereIn('status', ['on_leave', 'on_sil', 'birthday_leave'])->count(),
+            // MTD
+            'mtd_present'    => (clone $scopedBase)->where('status', 'present')->count(),
+            'mtd_absent'     => (clone $scopedBase)->where('status', 'absent')->count(),
+            'mtd_half_day'   => (clone $scopedBase)->where('status', 'half_day')->count(),
+            'mtd_on_leave'   => (clone $scopedBase)->whereIn('status', ['on_leave', 'on_sil', 'birthday_leave'])->count(),
+            // Time metrics (sums in minutes)
+            'sum_overtime'   => (clone $scopedBase)->sum('minutes_overtime'),
+            'sum_late'       => (clone $scopedBase)->sum('minutes_late'),
+            'sum_overbreak'  => (clone $scopedBase)->sum('minutes_overbreak'),
+            'sum_undertime'  => (clone $scopedBase)->sum('minutes_undertime'),
+        ];
+
+        // 4.6 — Department list for the filter dropdown
+        $departments = collect(Employee::DEPARTMENTS)
+            ->map(fn ($label, $value) => ['value' => $value, 'label' => $label])
+            ->values()
+            ->all();
+
         return Inertia::render('Attendance/Index', [
             'records'     => $records,
             'stats'       => $stats,
-            'filters'     => compact('month', 'year', 'empId', 'branchId', 'status', 'search'),
+            'teamStats'   => $teamStats,
+            'filters'     => compact('month', 'year', 'empId', 'branchId', 'status', 'search', 'department'),
             'todayRecord' => $todayRecord,
             'statuses'    => AttendanceRecord::STATUSES,
             'leaveTypes'  => AttendanceRecord::LEAVE_TYPES,
             'branches'    => $branches,
+            'departments' => $departments,
             'employees'   => $employees,
             'canManage'   => $this->canManage($request),
             'currentUser' => ['id' => $user->id, 'name' => $user->name],
             'now'         => now()->toIso8601String(),
         ]);
+    }
+
+
+    // ════════════════════════════════════════════════════════════════════════
+    // ME — public route for personal self-service (/hr/attendance/me)
+    // ════════════════════════════════════════════════════════════════════════
+
+    public function me(Request $request): Response
+    {
+        return $this->selfView($request);
     }
 
     // ════════════════════════════════════════════════════════════════════════
