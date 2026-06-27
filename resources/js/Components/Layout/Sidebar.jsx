@@ -9,10 +9,12 @@ import {
     ChartNoAxesCombined,
     CreditCard, Landmark, WalletCards, ShieldCheck, ReceiptText, Building2, Files,
     UsersRound, CalendarClock, Megaphone,
-    Bell, BellDot, ContactRound, ClipboardCheck,
+    Bell, BellDot, ContactRound, ClipboardCheck, UserCheck,
     Sun, Moon, LogOut, ChevronsUpDown,
+    CalendarOff, Timer,
 } from 'lucide-react';
 import NavItem from './NavItem';
+import NavGroup from './NavGroup';
 import AmkorLogo from '../UI/AmkorLogo';
 import Tooltip from './Tooltip';
 
@@ -301,31 +303,73 @@ const NAV_SECTIONS = [
         label: 'Admin',
         items: [
             {
-                // M14 — HR & Employee Records
-                key       : 'hr',
-                href      : '/hr',
-                icon      : <UsersRound size={20} />,
-                label     : 'HR & Records',
-                inactiveOn: ['/hr/attendance'],
-                roles     : [
-                    'president',
-                    'chief_operating_officer',
-                    'finance_admin_supervisor',
-                    'administrative_assistant',
-                    // Ormoc branch supervisor (Anjelly) manages 3 direct reports
-                    // (Louie, Rhea, Kay) — needs read access to their records
-                    // per org chart. Edit/create remains QC HR only.
-                    'branch_supervisor',
-                ],
-            },
-            {
-                // M15 — Attendance (all roles can clock in/out and view own)
-                key     : 'attendance',
-                href    : '/attendance',
-                activeOn: ['/hr/attendance'],
-                icon    : <CalendarClock size={20} />,
-                label   : 'Attendance',
+                key     : 'hr-group',
+                type    : 'group',
+                icon    : <UsersRound size={20} />,
+                label   : 'Human Resources',
                 roles   : 'all',
+                children: [
+                    {
+                        key     : 'employees',
+                        href    : '/hr/employees',
+                        icon    : <ContactRound size={16} />,
+                        label   : 'Employees',
+                        roles: [
+                            'president',
+                            'chief_operating_officer',
+                            'finance_admin_supervisor',
+                            'administrative_assistant',
+                            // Ormoc branch supervisor (Anjelly) manages 3 direct reports
+                            // (Louie, Rhea, Kay) — needs read access to their records
+                            // per org chart. Edit/create remains QC HR only.
+                            'branch_supervisor',
+                        ],
+                    },
+                    {
+                        // Team attendance view — HR/supervisor roles only
+                        key       : 'attendance',
+                        href      : '/attendance',
+                        activeOn  : ['/hr/attendance'],
+                        inactiveOn: ['/hr/attendance/me'],
+                        icon      : <CalendarClock size={16} />,
+                        label     : 'Attendance',
+                        roles     : [
+                            'president',
+                            'chief_operating_officer',
+                            'finance_admin_supervisor',
+                            'administrative_assistant',
+                            'general_sales_manager',
+                            'branch_supervisor',
+                            'visa_documentation_supervisor',
+                            'business_development_manager',
+                        ],
+                    },
+                    {
+                        // Personal attendance / self-service — all users
+                        key  : 'my-attendance',
+                        href : '/hr/attendance/me',
+                        icon : <UserCheck size={16} />,
+                        label: 'My Attendance',
+                        roles: 'all',
+                    },
+                    {
+                        key       : 'leave',
+                        href      : '/leave',
+                        activeOn  : ['/hr/leave'],
+                        inactiveOn: [],
+                        icon      : <CalendarOff size={16} />,
+                        label     : 'Leave Requests',
+                        roles     : 'all',
+                    },
+                    {
+                        key      : 'overtime',
+                        href     : '/overtime',
+                        activeOn : ['/hr/overtime'],
+                        icon     : <Timer size={16} />,
+                        label    : 'Overtime',
+                        roles    : 'all',
+                    },
+                ],
             },
             {
                 // M13 — Marketing
@@ -583,9 +627,20 @@ export default function Sidebar({ dark = false, onToggleDark }) {
 
     const navSections = NAV_SECTIONS.map((section) => ({
         ...section,
-        items: section.items.filter(
-            (item) => item.roles === 'all' || item.roles.includes(role)
-        ),
+        items: section.items
+            .map((item) => {
+                if (item.type === 'group') {
+                    const children = item.children.filter(
+                        (child) => child.roles === 'all' || child.roles.includes(role)
+                    );
+                    return { ...item, children };
+                }
+                return item;
+            })
+            .filter((item) => {
+                if (item.type === 'group') return item.children.length > 0;
+                return item.roles === 'all' || item.roles.includes(role);
+            }),
     })).filter((section) => section.items.length > 0);
 
     const borderColor = 'var(--color-border)';
@@ -696,15 +751,25 @@ export default function Sidebar({ dark = false, onToggleDark }) {
                                 style={{ gap: 'var(--nav-item-gap)' }}
                             >
                                 {section.items.map((item) => (
-                                    <NavItem
-                                        key={item.key}
-                                        href={item.href}
-                                        activeOn={item.activeOn}
-                                        inactiveOn={item.inactiveOn}
-                                        icon={item.icon}
-                                        label={item.label}
-                                        collapsed={collapsed}
-                                    />
+                                    item.type === 'group' ? (
+                                        <NavGroup
+                                            key={item.key}
+                                            icon={item.icon}
+                                            label={item.label}
+                                            children={item.children}
+                                            collapsed={collapsed}
+                                        />
+                                    ) : (
+                                        <NavItem
+                                            key={item.key}
+                                            href={item.href}
+                                            activeOn={item.activeOn}
+                                            inactiveOn={item.inactiveOn}
+                                            icon={item.icon}
+                                            label={item.label}
+                                            collapsed={collapsed}
+                                        />
+                                    )
                                 ))}
                             </motion.ul>
                         </li>

@@ -1,0 +1,11 @@
+{
+    "name": "Overtime",
+    "alias": "overtime",
+    "description": "Overtime Requests module — filing, approval, and history.",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Overtime\\Providers\\OvertimeServiceProvider"
+    ],
+    "files": []
+}

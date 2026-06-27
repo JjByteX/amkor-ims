@@ -34,6 +34,7 @@ Route::middleware(['auth'])->prefix('hr/attendance')->name('attendance.')->group
 
     // ── Self-service (all users) ──────────────────────────────────────────
     Route::get('/', [AttendanceController::class, 'index'])->name('index');
+    Route::get('/me', [AttendanceController::class, 'me'])->name('me');
     Route::post('/clock-in', [AttendanceController::class, 'clockIn'])->name('clock-in');
     Route::post('/clock-out', [AttendanceController::class, 'clockOut'])->name('clock-out');
 

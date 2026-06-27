@@ -13,13 +13,17 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Http\JsonResponse;
 use Modules\EmployeeRecords\Http\Requests\StoreEmployeeRequest;
+use Modules\Leave\Models\LeaveRequest;
 use Modules\EmployeeRecords\Models\Employee;
+use Modules\Attendance\Models\AttendanceRecord;
 
 class EmployeeRecordsController extends Controller
 {
     private const MANAGE_ROLES = ['president', 'finance_admin_supervisor'];
 
     private const VIEW_ROLES = ['president', 'chief_operating_officer', 'finance_admin_supervisor', 'administrative_assistant'];
+
+    private const SALARY_VIEW_ROLES = ['president', 'chief_operating_officer', 'finance_admin_supervisor'];
 
     private const OWN_RECORD_ROLES = [
         'accounting_assistant',
@@ -140,6 +144,7 @@ class EmployeeRecordsController extends Controller
             'statuses'          => Employee::EMPLOYMENT_STATUSES,
             'departments'       => Employee::DEPARTMENTS,
             'canManage'         => $this->canManage($request),
+            'canViewSalary'     => $this->canViewSalary($request),
             // Gap 8 — passed only for all-access roles; null otherwise.
             // The filter strip uses this to render a Branch <Select> when not null.
             // Active branch is already in the shared prop activeBranch from
@@ -185,10 +190,55 @@ class EmployeeRecordsController extends Controller
         }
 
         return Inertia::render('EmployeeRecords/Show', [
-            'employee'    => $payload,
-            'statuses'    => Employee::EMPLOYMENT_STATUSES,
-            'departments' => Employee::DEPARTMENTS,
-            'canManage'   => $this->canManage($request),
+            'employee'      => $payload,
+            'statuses'      => Employee::EMPLOYMENT_STATUSES,
+            'departments'   => Employee::DEPARTMENTS,
+            'canManage'     => $this->canManage($request),
+            'canViewSalary' => $this->canViewSalary($request),
+            'attendance'    => function () use ($request, $employee) {
+                if ($request->get('tab') !== 'attendance') return null;
+                $month = (int) $request->get('month', now()->month);
+                $year  = (int) $request->get('year',  now()->year);
+                $records = AttendanceRecord::forEmployee($employee->id)
+                    ->forMonth($year, $month)
+                    ->orderBy('work_date')
+                    ->get();
+                return [
+                    'month'   => $month,
+                    'year'    => $year,
+                    'records' => $records,
+                    'stats'   => [
+                        'present'   => $records->whereIn('status', ['present', 'present_regular_holiday', 'present_special_holiday'])->count(),
+                        'absent'    => $records->where('status', 'absent')->count(),
+                        'late'      => $records->where('minutes_late', '>', 0)->count(),
+                        'ot'        => $records->where('minutes_overtime', '>', 0)->count(),
+                        'undertime' => $records->where('minutes_undertime', '>', 0)->count(),
+                        'overbreak' => $records->where('minutes_overbreak', '>', 0)->count(),
+                    ],
+                    'statuses' => AttendanceRecord::STATUSES,
+                    'recent'   => AttendanceRecord::forEmployee($employee->id)
+                        ->whereNotNull('time_in')
+                        ->orderByDesc('work_date')
+                        ->limit(10)
+                        ->get(),
+                ];
+            },
+            'leaveRequests' => function () use ($request, $employee) {
+                if ($request->get('tab') !== 'leaves') return null;
+                return $employee->leaveRequests()
+                    ->orderByDesc('date_from')
+                    ->limit(20)
+                    ->get()
+                    ->map(fn ($r) => [
+                        'id'               => $r->id,
+                        'leave_type'       => $r->leave_type,
+                        'leave_type_label' => \Modules\Leave\Models\LeaveRequest::LEAVE_TYPES[$r->leave_type] ?? $r->leave_type,
+                        'date_from'        => $r->date_from?->toDateString(),
+                        'date_to'          => $r->date_to?->toDateString(),
+                        'days_requested'   => $r->days_requested,
+                        'status'           => $r->status,
+                    ]);
+            },
         ]);
     }
 
@@ -390,5 +440,10 @@ class EmployeeRecordsController extends Controller
     private function canManage(Request $request): bool
     {
         return in_array($request->user()?->getRoleNames()->first() ?? '', self::MANAGE_ROLES, true);
+    }
+
+    private function canViewSalary(Request $request): bool
+    {
+        return in_array($request->user()?->getRoleNames()->first() ?? '', self::SALARY_VIEW_ROLES, true);
     }
 }
