@@ -9,7 +9,7 @@ import { LogIn, LogOut } from 'lucide-react';
 import Card from '../UI/Card';
 import Button from '../UI/Button';
 import Badge from '../UI/Badge';
-import Modal from '../UI/Modal';
+import Modal, { ModalCancelButton } from '../UI/Modal';
 
 const fmtTime = (t) => {
     if (!t) return '—';
@@ -128,7 +128,7 @@ export default function ClockWidget({ todayRecord, currentUser, now }) {
                 title={showConfirm === 'in' ? 'Confirm Clock In' : 'Confirm Clock Out'}
                 footer={
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-1)' }}>
-                        <Button variant="ghost" onClick={() => setShowConfirm(null)}>Cancel</Button>
+                        <ModalCancelButton onClick={() => setShowConfirm(null)} />
                         <Button
                             variant={showConfirm === 'in' ? 'primary' : 'danger'}
                             icon={showConfirm === 'in' ? LogIn : LogOut}

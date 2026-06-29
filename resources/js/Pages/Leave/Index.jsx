@@ -15,7 +15,7 @@ import Badge from '@/Components/UI/Badge';
 import Button from '@/Components/UI/Button';
 import SlideOver from '@/Components/UI/SlideOver';
 import SessionPicker from '@/Components/UI/SessionPicker';
-import Modal from '@/Components/UI/Modal';
+import Modal, { ModalCancelButton } from '@/Components/UI/Modal';
 import Select from '@/Components/UI/Select';
 import Textarea from '@/Components/UI/Textarea';
 import DatePicker from '@/Components/UI/DatePicker';
@@ -285,7 +285,7 @@ function RejectModal({ open, onClose, onConfirm, processing }) {
             title="Reject Leave Request"
             footer={
                 <>
-                    <Button variant="ghost" size="sm" onClick={onClose} disabled={processing}>Cancel</Button>
+                    <ModalCancelButton size="sm" onClick={onClose} disabled={processing} />
                     <Button variant="danger" size="sm" loading={processing} onClick={handleConfirm}>Reject</Button>
                 </>
             }
@@ -567,6 +567,8 @@ function HrView({ requests, pendingCount, branches, employees, leaveTypes, filte
                     keyField="id"
                     pagination={requests?.meta ?? requests}
                     onPageChange={(page) => applyFilters({ page })}
+                    autoPageSize
+                    onPageSizeChange={(n) => applyFilters({ per_page: n, page: 1 })}
                     onRowClick={(row) => {
                         const el = highlightRef.current[row.id];
                         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });

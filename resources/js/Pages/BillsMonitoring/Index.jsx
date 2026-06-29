@@ -213,7 +213,6 @@ export default function BillsIndex({ bills, summary, filters, billTypes, statuse
 
                 <PageHeader
                     title="Bills & On-Ques Monitoring"
-                    subtitle={`${bills.total} bill${bills.total !== 1 ? 's' : ''}`}
                     actions={canWrite && (
                         <Button variant="primary" icon={Plus} onClick={() => router.visit(route('bills.create'))}>
                             Add Bill
@@ -259,6 +258,8 @@ export default function BillsIndex({ bills, summary, filters, billTypes, statuse
                     rows={bills.data}
                     pagination={bills}
                     onPageChange={(page) => applyFilter({ page })}
+                    autoPageSize
+                    onPageSizeChange={(n) => applyFilter({ per_page: n, page: 1 })}
                     toolbar={
                         <FilterStrip>
                             <FilterField grow>

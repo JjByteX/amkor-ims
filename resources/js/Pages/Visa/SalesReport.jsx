@@ -245,7 +245,6 @@ export default function VisaSalesReport({
             <PageStack>
                 <PageHeader
                     title="Visa Sales Report"
-                    subtitle={`${monthLabel} ${filters.year}${filters.agent ? ` · ${filters.agent}` : ''}`}
                 />
 
                 {/* ── Filters ────────────────────────────────────────────── */}

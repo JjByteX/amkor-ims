@@ -6,7 +6,7 @@ import PageHeader from '../../Components/Shared/PageHeader';
 import Card from '../../Components/UI/Card';
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
-import Modal from '../../Components/UI/Modal';
+import Modal, { ModalCancelButton } from '../../Components/UI/Modal';
 
 const DOC_VARIANT = {
     AR:  'success',
@@ -81,7 +81,6 @@ export default function BirShow({ transaction, documentTypes, sourceTypes, payme
 
                 <PageHeader
                     title={`${documentTypes[transaction.document_type] ?? transaction.document_type} — ${transaction.document_number ?? 'Unsaved'}`}
-                    subtitle={`${transaction.client_name} · ${fmt(transaction.transaction_date)}`}
                     actions={
                         <div className="flex items-center" style={{ gap: 'var(--space-1)' }}>
                             <Button
@@ -288,7 +287,7 @@ export default function BirShow({ transaction, documentTypes, sourceTypes, payme
                     Are you sure you want to delete <strong>{transaction.document_number}</strong>? This is a soft delete — the record is retained for audit purposes.
                 </p>
                 <div className="flex justify-end" style={{ gap: 'var(--space-1)' }}>
-                    <Button variant="ghost" onClick={() => setDeleteModal(false)}>Cancel</Button>
+                    <ModalCancelButton onClick={() => setDeleteModal(false)} />
                     <Button variant="danger" onClick={handleDelete} disabled={deleting} loading={deleting}>
                         Delete
                     </Button>

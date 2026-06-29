@@ -99,7 +99,8 @@ class EmployeeRecordsController extends Controller
                 : $request->session()->get('active_branch_id');
         }
 
-        $query = Employee::with(['branch', 'createdBy'])
+                $perPage = max(5, min(100, (int) $request->get('per_page', 25)));
+$query = Employee::with(['branch', 'createdBy'])
             ->search($search)
             ->forStatus($status)
             ->forDepartment($dept)
@@ -111,7 +112,7 @@ class EmployeeRecordsController extends Controller
             $query->forBranch($branch);
         }
 
-        $employees = $query->paginate(25)->withQueryString();
+        $employees = $query->paginate($perPage)->withQueryString();
 
         $statsQuery = Employee::query();
         if (! $isAllAccess) {
@@ -140,7 +141,7 @@ class EmployeeRecordsController extends Controller
             'employees'         => $employees,
             'stats'             => $stats,
             'regularizationDue' => $regularizationDue,
-            'filters'           => compact('search', 'status', 'dept', 'branch'),
+            'filters'           => compact('search', 'status', 'dept', 'branch') + ['per_page' => $perPage],
             'statuses'          => Employee::EMPLOYMENT_STATUSES,
             'departments'       => Employee::DEPARTMENTS,
             'canManage'         => $this->canManage($request),

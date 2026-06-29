@@ -45,7 +45,6 @@ export default function BillsCreate({ billTypes, paymentModes }) {
                     <PageHeader
                         breadcrumb={[{ label: 'Bills & On-Ques', href: route('bills.index') }]}
                         title="Add Bill"
-                        subtitle="Record a utility, membership, permit, or other recurring bill"
                         actions={
                             <>
                                 <FormCancelButton onClick={() => router.visit(route('bills.index'))} />

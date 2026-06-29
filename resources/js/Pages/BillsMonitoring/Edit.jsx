@@ -44,7 +44,6 @@ export default function BillsEdit({ bill, billTypes, paymentModes }) {
                     <PageHeader
                         breadcrumb={[{ label: 'Bills', href: route('bills.index') }]}
                         title="Edit Bill"
-                        subtitle={bill.name}
                         actions={
                             <>
                                 <FormCancelButton onClick={() => router.visit(route('bills.index'))} />

@@ -6,7 +6,7 @@ import PageHeader from '../../Components/Shared/PageHeader';
 import ApprovalStepper from '../../Components/Shared/ApprovalStepper';
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
-import Modal from '../../Components/UI/Modal';
+import Modal, { ModalCancelButton } from '../../Components/UI/Modal';
 import Input from '../../Components/UI/Input';
 import Textarea from '../../Components/UI/Textarea';
 import ConfirmDialog from '../../Components/Shared/ConfirmDialog';
@@ -129,7 +129,6 @@ export default function BillsShow({ bill, billTypes, statuses, approvalStatuses,
 
                 <PageHeader
                     title={bill.name}
-                    subtitle={`${billTypes[bill.bill_type] ?? bill.bill_type} · Due ${fmt(bill.due_date)}`}
                 />
 
                 <div className="flex gap-2 flex-wrap">
@@ -191,7 +190,7 @@ export default function BillsShow({ bill, billTypes, statuses, approvalStatuses,
                         value={checkForm.data.audit_remarks}
                         onChange={(e) => checkForm.setData('audit_remarks', e.target.value)} />
                     <div className="flex justify-end" style={{ gap: 'var(--space-1)' }}>
-                        <Button variant="ghost" type="button" onClick={() => setCheckModal(false)}>Cancel</Button>
+                        <ModalCancelButton type="button" onClick={() => setCheckModal(false)} />
                         <Button variant="primary" type="submit" loading={checkForm.processing} icon={CheckCircle2}>Confirm</Button>
                     </div>
                 </form>
@@ -205,7 +204,7 @@ export default function BillsShow({ bill, billTypes, statuses, approvalStatuses,
                         onChange={(e) => releaseForm.setData('payment_date', e.target.value)}
                         error={releaseForm.errors.payment_date} />
                     <div className="flex justify-end" style={{ gap: 'var(--space-1)' }}>
-                        <Button variant="ghost" type="button" onClick={() => setReleaseModal(false)}>Cancel</Button>
+                        <ModalCancelButton type="button" onClick={() => setReleaseModal(false)} />
                         <Button variant="primary" type="submit" loading={releaseForm.processing}>Confirm Payment</Button>
                     </div>
                 </form>

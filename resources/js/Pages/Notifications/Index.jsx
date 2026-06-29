@@ -86,7 +86,6 @@ export default function NotificationsIndex({ notifications, filters, unreadCount
             <PageStack>
                 <PageHeader
                     title="Notifications"
-                    subtitle={`${unreadCount} unread`}
                     actions={
                         <Button icon={CheckCheck} onClick={() => router.post(route('notifications.read-all'), {}, { preserveScroll: true })}>
                             Mark All Read
@@ -99,6 +98,8 @@ export default function NotificationsIndex({ notifications, filters, unreadCount
                     columns={columns}
                     pagination={notifications}
                     onPageChange={(page) => apply({ page })}
+                    autoPageSize
+                    onPageSizeChange={(n) => apply({ per_page: n, page: 1 })}
                     toolbar={
                         <FilterStrip>
                             {/* Status segmented control — goes first */}

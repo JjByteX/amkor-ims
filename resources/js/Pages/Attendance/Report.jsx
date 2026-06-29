@@ -192,7 +192,6 @@ export default function AttendanceReport({ summary, filters, branches, canExport
 
                 <PageHeader
                     title="Attendance Report"
-                    subtitle={`Monthly summary · ${MONTHS[month - 1]} ${year}`}
                     actions={
                         <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
                             <Button variant="ghost" icon={ArrowLeft} onClick={() => router.get(route('attendance.index'))}>

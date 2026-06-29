@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Reservation\Http\Controllers\ReservationController;
 use Modules\Reservation\Http\Controllers\AirlineRateController;
+use Modules\Reservation\Http\Controllers\TourPackageController;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,6 +29,11 @@ use Modules\Reservation\Http\Controllers\AirlineRateController;
 | Airline Rates:
 |   Manage : general_sales_manager, president, chief_operating_officer
 |   View   : all reservation + Ormoc roles
+|
+| Tour Packages:
+|   Manage : president, chief_operating_officer, general_sales_manager
+|   View   : all reservation + Ormoc roles
+|   Search : JSON endpoint used by booking form for autofill (GET tour-packages/search)
 */
 
 Route::middleware(['auth'])->group(function () {
@@ -60,8 +66,19 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('reservation/{booking}/link-contact', [ReservationController::class, 'unlinkContact'])->name('reservation.unlink-contact');
 
     // ── Airline Rates ────────────────────────────────────────────────────────
-    Route::get('airline-rates',                 [AirlineRateController::class, 'index'])->name('airline-rates.index');
-    Route::post('airline-rates',                [AirlineRateController::class, 'store'])->name('airline-rates.store');
-    Route::put('airline-rates/{airlineRate}',   [AirlineRateController::class, 'update'])->name('airline-rates.update');
-    Route::delete('airline-rates/{airlineRate}',[AirlineRateController::class, 'destroy'])->name('airline-rates.destroy');
+    // search must be declared before {airlineRate} for the same reason as tour packages.
+    Route::get('airline-rates/search',              [AirlineRateController::class, 'search'])->name('airline-rates.search');
+    Route::get('airline-rates',                     [AirlineRateController::class, 'index'])->name('airline-rates.index');
+    Route::post('airline-rates',                    [AirlineRateController::class, 'store'])->name('airline-rates.store');
+    Route::put('airline-rates/{airlineRate}',       [AirlineRateController::class, 'update'])->name('airline-rates.update');
+    Route::delete('airline-rates/{airlineRate}',    [AirlineRateController::class, 'destroy'])->name('airline-rates.destroy');
+
+    // ── Tour Packages ────────────────────────────────────────────────────────
+    // search must be declared before {tourPackage} so Laravel does not try
+    // to resolve the literal string "search" as a model ID.
+    Route::get('tour-packages/search',               [TourPackageController::class, 'search'])->name('tour-packages.search');
+    Route::get('tour-packages',                      [TourPackageController::class, 'index'])->name('tour-packages.index');
+    Route::post('tour-packages',                     [TourPackageController::class, 'store'])->name('tour-packages.store');
+    Route::put('tour-packages/{tourPackage}',         [TourPackageController::class, 'update'])->name('tour-packages.update');
+    Route::delete('tour-packages/{tourPackage}',      [TourPackageController::class, 'destroy'])->name('tour-packages.destroy');
 });

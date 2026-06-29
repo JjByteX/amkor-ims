@@ -12,7 +12,7 @@ import DetailPanel, {
 } from '../../Components/Shared/DetailPanel';
 import Badge from '../../Components/UI/Badge';
 import Button from '../../Components/UI/Button';
-import Modal from '../../Components/UI/Modal';
+import Modal, { ModalCancelButton } from '../../Components/UI/Modal';
 import Select from '../../Components/UI/Select';
 import Input from '../../Components/UI/Input';
 import ConfirmDialog from '../../Components/Shared/ConfirmDialog';
@@ -22,7 +22,7 @@ import RelatedTransactionsPanel from '../../Components/Shared/RelatedTransaction
 import ApprovalStepper from '../../Components/Shared/ApprovalStepper';
 
 const STATUS_VARIANT = { inquiry: 'neutral', quoted: 'info', confirmed: 'success', cancelled: 'error' };
-const money   = (v) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(Number(v ?? 0));
+const money   = (v, cur = 'PHP') => new Intl.NumberFormat('en-PH', { style: 'currency', currency: cur }).format(Number(v ?? 0));
 const fmt     = (d) => d ? new Date(d).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
 const fmtDt   = (d) => d ? new Date(d).toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : null;
 
@@ -202,16 +202,23 @@ export function BookingContent({
                 {/* ── RIGHT COLUMN ────────────────────────────────────────── */}
                 <PanelColRight>
                     {/* ── Financials ────────────────────────────────────── */}
-                    <PanelSection title="Financials">
-                        <PanelField label="Selling Price" value={<CurrencyDisplay amount={booking.selling_price ?? 0} currency="PHP" />} highlight />
+                    <PanelSection title={
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            Financials
+                            {booking.currency && booking.currency !== 'PHP' && (
+                                <Badge variant="info">{booking.currency}</Badge>
+                            )}
+                        </span>
+                    }>
+                        <PanelField label="Selling Price" value={<CurrencyDisplay amount={booking.selling_price ?? 0} currency={booking.currency ?? 'PHP'} />} highlight />
                         <PanelFieldRow>
-                            <PanelField label="Net Payable" value={<CurrencyDisplay amount={booking.net_payable ?? 0} currency="PHP" />} />
-                            <PanelField label="Income"      value={<CurrencyDisplay amount={booking.income      ?? 0} currency="PHP" />} />
+                            <PanelField label="Net Payable" value={<CurrencyDisplay amount={booking.net_payable ?? 0} currency={booking.currency ?? 'PHP'} />} />
+                            <PanelField label="Income"      value={<CurrencyDisplay amount={booking.income      ?? 0} currency={booking.currency ?? 'PHP'} />} />
                         </PanelFieldRow>
                         {!bookingIsOrmoc && (
                             <PanelFieldRow>
-                                <PanelField label="Excess"           value={booking.excess        != null ? money(booking.excess)        : null} />
-                                <PanelField label="Insurance (Nett)" value={booking.insurance_nett != null ? money(booking.insurance_nett) : null} />
+                                <PanelField label="Excess"           value={booking.excess        != null ? money(booking.excess,        booking.currency ?? 'PHP') : null} />
+                                <PanelField label="Insurance (Nett)" value={booking.insurance_nett != null ? money(booking.insurance_nett, booking.currency ?? 'PHP') : null} />
                             </PanelFieldRow>
                         )}
                         <PanelDivider />
@@ -458,7 +465,7 @@ export function BookingContent({
                 title={booking.escalation_acknowledged_at ? 'Update RESA Link' : 'Acknowledge Escalation'}
                 footer={
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-1)' }}>
-                        <Button variant="ghost" onClick={() => setAckModal(false)}>Cancel</Button>
+                        <ModalCancelButton onClick={() => setAckModal(false)} />
                         <Button
                             variant="primary"
                             icon={CheckCircle}

@@ -66,7 +66,8 @@ class AccountsPayableController extends Controller
         $currency = $request->get('currency');
         $month = $request->get('month');
 
-        $query = Payable::with(['contact', 'branch', 'createdBy', 'voucher'])
+                $perPage = max(5, min(100, (int) $request->get('per_page', 25)));
+$query = Payable::with(['contact', 'branch', 'createdBy', 'voucher'])
             ->latest('invoice_date');
 
         $query->search($search)
@@ -78,7 +79,7 @@ class AccountsPayableController extends Controller
             $query->forMonth((int) $y, (int) $m);
         }
 
-        $payables = $query->paginate(25)->withQueryString();
+        $payables = $query->paginate($perPage)->withQueryString();
 
         $summary = Payable::search($search)
             ->forStatus($status)
@@ -99,7 +100,7 @@ class AccountsPayableController extends Controller
         return Inertia::render('AccountsPayable/Index', [
             'payables' => $payables,
             'summary' => $summary,
-            'filters' => compact('search', 'status', 'currency', 'month'),
+            'filters' => compact('search', 'status', 'currency', 'month') + ['per_page' => $perPage],
             'statuses' => Payable::STATUSES,
             'currencies' => Payable::CURRENCIES,
             'approvalStatuses' => Payable::APPROVAL_STATUSES,

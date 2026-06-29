@@ -1,7 +1,10 @@
-import { useReducer, useMemo, useState, useLayoutEffect, useRef } from 'react';
+import { useReducer, useMemo, useState, useLayoutEffect, useRef, useEffect, useCallback } from 'react';
+import { router, usePage } from '@inertiajs/react';
+import useAutoPageSize from '../../hooks/useAutoPageSize';
 import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import LoadingSpinner from './LoadingSpinner';
 import EmptyState from './EmptyState';
+import TableSkeletonRows, { SkeletonBar } from './TableSkeletonRows';
 import { PANEL_CLOSE_MS } from './DetailPanel';
 
 /**
@@ -43,20 +46,43 @@ import { PANEL_CLOSE_MS } from './DetailPanel';
  * Left  : "Showing N of N records"
  * Right : ‹ Page N of N ›
  *
+ * AUTO PAGE SIZE
+ * ──────────────
+ * When autoPageSize=true the table measures its own available height on every
+ * resize and computes the optimal page size automatically. It fires
+ * onPageSizeChange(n) (debounced) so the parent can refetch with the new
+ * per_page. Pass autoPageSize={true} and onPageSizeChange to enable.
+ *
+ * LOADING / SETTLING
+ * ───────────────────
+ * Real rows are never shown mid-correction. The table shows skeleton rows
+ * (shaped from `columns`, so every table's skeleton matches its own layout)
+ * instead of real rows whenever:
+ *   - the `loading` prop is explicitly true, OR
+ *   - autoPageSize has detected the rendered row count doesn't match the
+ *     viewport and is about to (or has just) asked the parent to refetch
+ *     with the corrected per_page, OR
+ *   - any Inertia visit targeting this same route (search, filters, page
+ *     clicks) is currently in flight.
+ * This is all tracked internally — no extra wiring needed per page beyond
+ * the existing autoPageSize/onPageSizeChange props.
+ *
  * Props:
- *   columns         : Array<{ key, label, render?, width?, sortable?, sortKey? }>
- *   rows            : Array<object>
- *   loading         : bool
- *   empty           : ReactNode | string
- *   pageSize        : number               (default: 20; 0 = disable pagination)
- *   keyField        : string               (default: 'id')
- *   onRowClick      : fn(row)
- *   pagination      : object               (Laravel paginator meta)
- *   onPageChange    : fn(page)
- *   toolbar         : ReactNode
- *   className       : string
- *   panelOpen       : bool                 (freezes table width when true)
- *   panelColsToHide : number               (accepted but unused)
+ *   columns           : Array<{ key, label, render?, width?, sortable?, sortKey? }>
+ *   rows              : Array<object>
+ *   loading           : bool                 (force skeleton rows on, e.g. during an unrelated blocking op)
+ *   empty             : ReactNode | string
+ *   pageSize          : number               (default: 20; 0 = disable pagination)
+ *   keyField          : string               (default: 'id')
+ *   onRowClick        : fn(row)
+ *   pagination        : object               (Laravel paginator meta)
+ *   onPageChange      : fn(page)
+ *   toolbar           : ReactNode
+ *   className         : string
+ *   panelOpen         : bool                 (freezes table width when true)
+ *   panelColsToHide   : number               (accepted but unused)
+ *   autoPageSize      : bool                 (enable viewport-driven page size)
+ *   onPageSizeChange  : fn(n)                (called when computed page size changes)
  */
 
 // ── Sort state machine ────────────────────────────────────────────────────────
@@ -135,14 +161,71 @@ export default function DataTable({
     emptyTitle,
     emptyDescription,
     emptyIcon,
-    panelOpen       = false,
-    panelColsToHide = 2, // accepted but unused
+    panelOpen        = false,
+    panelColsToHide  = 2, // accepted but unused
     selectedKey,
+    autoPageSize     = false,   // enable viewport-driven page size
+    onPageSizeChange,           // fn(n) — called when computed page size changes
 }) {
     const [sortState, dispatchSort] = useReducer(sortReducer, sortInitial);
     const [page,      setPage     ] = useReducer((_, p) => p, 1);
 
     const isServerPaginated = !!pagination && !!onPageChange;
+
+    // ── Auto page size (viewport-driven) ──────────────────────────────────────
+    // When autoPageSize=true we measure our own outer div and compute how many
+    // rows fit. The computed size is used in place of the pageSize prop.
+    //
+    // lockNavigation() is called before every page change so the ResizeObserver
+    // does not mistake "fewer rows on page 2" for a genuine window resize and
+    // fire onPageSizeChange (which would reset the page back to 1).
+    const { containerRef: apsRef, autoPageSize: computedPageSize, lockNavigation, correcting } = useAutoPageSize({
+        onPageSizeChange,
+        hasToolbar      : !!toolbar,
+        hasPagination   : pageSize > 0,
+        // Seed with the per_page the server already returned so the hook does
+        // not fire an unnecessary refetch (and forced page: 1) on every mount,
+        // including back-navigation. When the first ResizeObserver measurement
+        // matches this value, onPageSizeChange is skipped entirely.
+        initialPageSize : pagination?.per_page ?? null,
+    });
+    // If autoPageSize mode is on, use the computed size; otherwise honour the
+    // pageSize prop as before.
+    const effectivePageSize = autoPageSize ? computedPageSize : pageSize;
+
+    // ── "Is this table's own data currently in flight?" ────────────────────────
+    // Separate from `correcting` above: that one is specific to the auto-size
+    // self-correction. This one catches everything else that refetches the
+    // SAME page in place — search, filters, page clicks — none of which
+    // otherwise have any loading indicator today. Scoped to visits whose
+    // target matches the current pathname so navigating *away* to a
+    // different page (or an unrelated fetch elsewhere, e.g. the detail
+    // panel) never lights this up.
+    const { url: currentPageUrl } = usePage();
+    const currentPathname = currentPageUrl.split('?')[0];
+    const [isFetching, setIsFetching] = useState(false);
+
+    useEffect(() => {
+        function isSameRoute(visit) {
+            try {
+                return new URL(String(visit?.url), window.location.origin).pathname === currentPathname;
+            } catch {
+                return false;
+            }
+        }
+        const removeStart  = router.on('start',  (e) => { if (isSameRoute(e.detail.visit)) setIsFetching(true); });
+        const removeFinish = router.on('finish', (e) => { if (isSameRoute(e.detail.visit)) setIsFetching(false); });
+        return () => {
+            removeStart();
+            removeFinish();
+        };
+    }, [currentPathname]);
+
+    // Only autoPageSize tables care about `correcting` (it's always false
+    // for the rest — see the hook's own guard). Either signal means: don't
+    // trust the rows currently in `paginated` to be final.
+    const isSettling   = autoPageSize ? (correcting || isFetching) : isFetching;
+    const showSkeleton = loading || isSettling;
 
     // ── Table freeze ──────────────────────────────────────────────────────────
     // On panel open: measure the scroll wrapper's current width and lock it as
@@ -200,30 +283,36 @@ export default function DataTable({
     const sourceRows  = sortedRows;
     const paginated   = isServerPaginated
         ? sourceRows
-        : (pageSize > 0 ? sourceRows.slice((page - 1) * pageSize, page * pageSize) : sourceRows);
+        : (effectivePageSize > 0 ? sourceRows.slice((page - 1) * effectivePageSize, page * effectivePageSize) : sourceRows);
     const totalPages  = isServerPaginated
         ? (pagination.last_page ?? 1)
-        : (pageSize > 0 ? Math.max(1, Math.ceil(sourceRows.length / pageSize)) : 1);
+        : (effectivePageSize > 0 ? Math.max(1, Math.ceil(sourceRows.length / effectivePageSize)) : 1);
     const currentPage = isServerPaginated ? (pagination.current_page ?? 1) : page;
 
     function handlePageChange(newPage) {
+        console.log('[DataTable] handlePageChange', newPage, '| autoPageSize:', autoPageSize, '| effectivePageSize:', effectivePageSize);
+        if (autoPageSize) {
+            console.log('[DataTable] calling lockNavigation()');
+            lockNavigation();
+        }
         if (isServerPaginated) onPageChange(newPage);
         else setPage(newPage);
     }
 
     const showingTo    = isServerPaginated
         ? (pagination.to    ?? sourceRows.length)
-        : Math.min(currentPage * pageSize, sourceRows.length);
+        : Math.min(currentPage * effectivePageSize, sourceRows.length);
     const showingTotal = isServerPaginated
         ? (pagination.total ?? sourceRows.length)
         : sourceRows.length;
 
-    const isEmpty = !loading && paginated.length === 0;
+    const isEmpty = !showSkeleton && paginated.length === 0;
 
     return (
-        <div className={`flex flex-col flex-1 min-h-0 ${className}`} style={{ gap: 'var(--table-pagination-gap)' }}>
+        <div ref={apsRef} className={`flex flex-col flex-1 min-h-0 ${className}`} style={{ gap: 'var(--table-pagination-gap)' }}>
 
             <div
+                data-aps-card
                 className="flex flex-col flex-1 min-h-0 w-full overflow-hidden bg-[var(--color-card)]"
                 style={{
                     borderRadius: 'var(--radius-md)',
@@ -234,6 +323,7 @@ export default function DataTable({
                 {/* Toolbar — compresses normally with the card, not frozen */}
                 {toolbar && (
                     <div
+                        data-aps-toolbar
                         className="shrink-0"
                         style={{
                             padding     : 'var(--space-2)',
@@ -251,7 +341,7 @@ export default function DataTable({
                     ref={tableScrollRef}
                     className="flex-1 min-h-0 overflow-x-auto"
                     style={{
-                        overflowY    : isEmpty || loading ? 'hidden' : 'auto',
+                        overflowY    : isEmpty || showSkeleton ? 'hidden' : 'auto',
                         display      : 'flex',
                         flexDirection: 'column',
                         minWidth     : frozenWidth ?? undefined,
@@ -309,7 +399,11 @@ export default function DataTable({
                             </tr>
                         </thead>
 
-                        {!isEmpty && !loading && (
+                        {showSkeleton ? (
+                            columns.length > 0 && (
+                                <TableSkeletonRows columns={columns} rowCount={effectivePageSize || pageSize || 10} />
+                            )
+                        ) : !isEmpty && (
                             <tbody>
                                 {paginated.map((row) => {
                                     const rowKey     = row[keyField] ?? JSON.stringify(row);
@@ -362,7 +456,9 @@ export default function DataTable({
                         )}
                     </table>
 
-                    {(isEmpty || loading) && (
+                    {/* Genuine empty state only — settling/loading now renders
+                        skeleton rows above instead of replacing the table. */}
+                    {isEmpty && (
                         <div
                             style={{
                                 flex          : 1,
@@ -372,37 +468,60 @@ export default function DataTable({
                                 transform     : 'translateY(-8px)',
                             }}
                         >
-                            {loading
-                                ? <LoadingSpinner size="md" />
-                                : (typeof empty === 'string'
-                                    ? <EmptyState title={emptyTitle ?? emptyMessage ?? empty} description={emptyDescription} icon={emptyIcon} />
-                                    : empty)
+                            {typeof empty === 'string'
+                                ? <EmptyState title={emptyTitle ?? emptyMessage ?? empty} description={emptyDescription} icon={emptyIcon} />
+                                : empty
                             }
+                        </div>
+                    )}
+
+                    {/* Fallback for the (practically unreachable) case where
+                        we're settling but don't even know the column shape
+                        yet — keeps a sane loading state instead of a blank
+                        table with empty <tr>s. */}
+                    {showSkeleton && columns.length === 0 && (
+                        <div
+                            style={{
+                                flex          : 1,
+                                display       : 'flex',
+                                alignItems    : 'center',
+                                justifyContent: 'center',
+                                transform     : 'translateY(-8px)',
+                            }}
+                        >
+                            <LoadingSpinner size="md" />
                         </div>
                     )}
                 </div>
             </div>
 
+
             {/* Pagination */}
-            {pageSize > 0 && (
+            {effectivePageSize > 0 && (
                 <div
                     className="flex items-center justify-between shrink-0"
                     style={{ paddingLeft: 'var(--space-1)', paddingRight: 'var(--space-1)' }}
                 >
-                    <p
-                        className="font-body text-[var(--color-text-muted)]"
-                        style={{ fontSize: 'var(--font-size-small)' }}
-                    >
-                        Showing{' '}
-                        <span style={{ color: 'var(--color-text)', fontWeight: 600 }}>{showingTo}</span>
-                        {' '}of{' '}
-                        <span style={{ color: 'var(--color-text)', fontWeight: 600 }}>{showingTotal}</span>
-                        {' '}records
-                    </p>
+                    {showSkeleton ? (
+                        <div style={{ width: 150 }}>
+                            <SkeletonBar widthPct={100} />
+                        </div>
+                    ) : (
+                        <p
+                            className="font-body text-[var(--color-text-muted)]"
+                            style={{ fontSize: 'var(--font-size-small)' }}
+                        >
+                            Showing{' '}
+                            <span style={{ color: 'var(--color-text)', fontWeight: 600 }}>{showingTo}</span>
+                            {' '}of{' '}
+                            <span style={{ color: 'var(--color-text)', fontWeight: 600 }}>{showingTotal}</span>
+                            {' '}records
+                        </p>
+                    )}
 
                     <div className="flex items-center" style={{ gap: 'var(--space-1)' }}>
                         <button
-                            disabled={currentPage === 1}
+                            disabled={showSkeleton || currentPage === 1}
                             onClick={() => handlePageChange(currentPage - 1)}
                             className="w-8 h-8 flex items-center justify-center text-[var(--color-text-muted)] hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                             style={{ borderRadius: 'var(--radius-md)' }}
@@ -410,17 +529,23 @@ export default function DataTable({
                         >
                             <ChevronLeft size={16} />
                         </button>
-                        <span
-                            className="font-body text-[var(--color-text-muted)]"
-                            style={{ fontSize: 'var(--font-size-small)', paddingLeft: 'var(--space-1)', paddingRight: 'var(--space-1)' }}
-                        >
-                            Page{' '}
-                            <span style={{ color: 'var(--color-text)', fontWeight: 600 }}>{currentPage}</span>
-                            {' '}of{' '}
-                            <span style={{ color: 'var(--color-text)', fontWeight: 600 }}>{totalPages}</span>
-                        </span>
+                        {showSkeleton ? (
+                            <div style={{ width: 90, paddingLeft: 'var(--space-1)', paddingRight: 'var(--space-1)' }}>
+                                <SkeletonBar widthPct={100} />
+                            </div>
+                        ) : (
+                            <span
+                                className="font-body text-[var(--color-text-muted)]"
+                                style={{ fontSize: 'var(--font-size-small)', paddingLeft: 'var(--space-1)', paddingRight: 'var(--space-1)' }}
+                            >
+                                Page{' '}
+                                <span style={{ color: 'var(--color-text)', fontWeight: 600 }}>{currentPage}</span>
+                                {' '}of{' '}
+                                <span style={{ color: 'var(--color-text)', fontWeight: 600 }}>{totalPages}</span>
+                            </span>
+                        )}
                         <button
-                            disabled={currentPage === totalPages}
+                            disabled={showSkeleton || currentPage === totalPages}
                             onClick={() => handlePageChange(currentPage + 1)}
                             className="w-8 h-8 flex items-center justify-center text-[var(--color-text-muted)] hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                             style={{ borderRadius: 'var(--radius-md)' }}

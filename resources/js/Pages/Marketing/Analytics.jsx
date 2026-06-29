@@ -136,7 +136,6 @@ export default function MarketingAnalytics({
 
                 <PageHeader
                     title="Marketing Analytics"
-                    subtitle={`Overview for ${year}`}
                     actions={
                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
                             <Button variant="ghost" icon={ArrowLeft} onClick={() => router.get(route('marketing.index'))}>

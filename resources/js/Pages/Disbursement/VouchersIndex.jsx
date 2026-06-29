@@ -157,7 +157,6 @@ export default function VouchersIndex({
 
                 <PageHeader
                     title="Cash &amp; Check Vouchers"
-                    subtitle="Disbursement vouchers — approval chain"
                     actions={
                         canWrite && (
                             <Button
@@ -224,6 +223,8 @@ export default function VouchersIndex({
                     rows={vouchers.data ?? []}
                     pagination={vouchers}
                     onPageChange={(page) => applyFilter({ page })}
+                    autoPageSize
+                    onPageSizeChange={(n) => applyFilter({ per_page: n, page: 1 })}
                     toolbar={
                         <FilterStrip>
                             <FilterField grow>

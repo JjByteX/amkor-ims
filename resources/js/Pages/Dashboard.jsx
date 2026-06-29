@@ -130,49 +130,53 @@ function Dashboard({ dashboardSections = [], loginActivity = [] }) {
                 <div style={{ minWidth: 0, height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', scrollbarWidth: 'thin' }}>
 
                     {/* KPI card grid — fills width, no trailing whitespace */}
-                    {resolvedWidgets.length > 0 ? (
-                        <div className="dash-kpi-grid" style={kpiGridStyle}>
-                            {resolvedWidgets.map((w, i) => {
-                                const Icon = ICONS[w.icon] ?? Gauge;
-                                const card = <DashKpiCard key={i} icon={Icon} widget={w} />;
-                                return w.href
-                                    ? <Link key={i} href={w.href} className="block no-underline">{card}</Link>
-                                    : <div key={i}>{card}</div>;
-                            })}
-                        </div>
-                    ) : (
-                        <Card>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                                <div style={{
-                                    width         : 'var(--dash-card-icon-size, 44px)',
-                                    height        : 'var(--dash-card-icon-size, 44px)',
-                                    borderRadius  : 'var(--dash-card-icon-br, 10px)',
-                                    background    : 'color-mix(in srgb, var(--color-primary) 9%, var(--color-card))',
-                                    color         : 'var(--color-primary)',
-                                    display       : 'flex',
-                                    alignItems    : 'center',
-                                    justifyContent: 'center',
-                                    flexShrink    : 0,
-                                }}>
-                                    <Gauge size={20} />
-                                </div>
-                                <div>
-                                    <h2 className="font-heading font-bold text-[var(--color-text)]" style={{ fontSize: 16 }}>
-                                        No dashboard data yet
-                                    </h2>
-                                    <p className="font-body text-[var(--color-text-muted)]" style={{ fontSize: 'var(--font-size-small)', marginTop: 3 }}>
-                                        Module summaries appear here once records exist.
-                                    </p>
-                                </div>
+                    <div style={{ flexShrink: 0 }}>
+                        {resolvedWidgets.length > 0 ? (
+                            <div className="dash-kpi-grid" style={kpiGridStyle}>
+                                {resolvedWidgets.map((w, i) => {
+                                    const Icon = ICONS[w.icon] ?? Gauge;
+                                    const card = <DashKpiCard key={i} icon={Icon} widget={w} />;
+                                    return w.href
+                                        ? <Link key={i} href={w.href} className="block no-underline">{card}</Link>
+                                        : <div key={i}>{card}</div>;
+                                })}
                             </div>
-                        </Card>
-                    )}
+                        ) : (
+                            <Card>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                                    <div style={{
+                                        width         : 'var(--dash-card-icon-size, 44px)',
+                                        height        : 'var(--dash-card-icon-size, 44px)',
+                                        borderRadius  : 'var(--dash-card-icon-br, 10px)',
+                                        background    : 'color-mix(in srgb, var(--color-primary) 9%, var(--color-card))',
+                                        color         : 'var(--color-primary)',
+                                        display       : 'flex',
+                                        alignItems    : 'center',
+                                        justifyContent: 'center',
+                                        flexShrink    : 0,
+                                    }}>
+                                        <Gauge size={20} />
+                                    </div>
+                                    <div>
+                                        <h2 className="font-heading font-bold text-[var(--color-text)]" style={{ fontSize: 16 }}>
+                                            No dashboard data yet
+                                        </h2>
+                                        <p className="font-body text-[var(--color-text-muted)]" style={{ fontSize: 'var(--font-size-small)', marginTop: 3 }}>
+                                            Module summaries appear here once records exist.
+                                        </p>
+                                    </div>
+                                </div>
+                            </Card>
+                        )}
+                    </div>
 
-                    {/* ── Charts ───────────────────────────────────────── */}
-                    <DashboardCharts
-                        charts={config.charts ?? []}
-                        dashboardSections={dashboardSections}
-                    />
+                    {/* ── Charts — stretches to fill remaining viewport height ── */}
+                    <div style={{ flex: '1 1 0', minHeight: 'var(--dash-charts-min-h, 280px)' }}>
+                        <DashboardCharts
+                            charts={config.charts ?? []}
+                            dashboardSections={dashboardSections}
+                        />
+                    </div>
 
                 </div>
             </div>

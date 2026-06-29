@@ -54,10 +54,11 @@ class DisbursementController extends Controller
             abort(403);
         }
 
-        $search = $request->get('search');
-        $type = $request->get('type');
+        $search  = $request->get('search');
+        $type    = $request->get('type');
         $approval = $request->get('approval_status');
-        $month = $request->get('month');
+        $month   = $request->get('month');
+        $perPage = max(5, min(100, (int) $request->get('per_page', 25)));
 
         $query = Voucher::with(['branch', 'createdBy', 'checker', 'approver'])
             ->latest('date');
@@ -76,7 +77,7 @@ class DisbursementController extends Controller
             $query->forMonth((int) $y, (int) $m);
         }
 
-        $vouchers = $query->paginate(25)->withQueryString();
+        $vouchers = $query->paginate($perPage)->withQueryString();
 
         $summary = Voucher::search($search)->forType($type)
             ->selectRaw('
@@ -89,7 +90,7 @@ class DisbursementController extends Controller
         return Inertia::render('Disbursement/VouchersIndex', [
             'vouchers' => $vouchers,
             'summary' => $summary,
-            'filters' => compact('search', 'type', 'approval', 'month'),
+            'filters' => compact('search', 'type', 'approval', 'month') + ['per_page' => $perPage],
             'types' => Voucher::TYPES,
             'approvalStatuses' => Voucher::APPROVAL_STATUSES,
             'canWrite' => $this->canPrepare($request),
@@ -350,6 +351,7 @@ class DisbursementController extends Controller
         $branch = $request->get('branch_id');
         $month = $request->get('month');
 
+        $perPage = max(5, min(100, (int) $request->get('per_page', 25)));
         $query = DisbursementEntry::with(['voucher', 'branch', 'createdBy'])
             ->latest('date');
 
@@ -367,7 +369,7 @@ class DisbursementController extends Controller
             $query->forMonth((int) $y, (int) $m);
         }
 
-        $entries = $query->paginate(25)->withQueryString();
+        $entries = $query->paginate($perPage)->withQueryString();
 
         $summary = DisbursementEntry::search($search)->forCategory($category)
             ->selectRaw('
@@ -378,7 +380,7 @@ class DisbursementController extends Controller
         return Inertia::render('Disbursement/LedgerIndex', [
             'entries' => $entries,
             'summary' => $summary,
-            'filters' => compact('search', 'category', 'branch', 'month'),
+            'filters' => compact('search', 'category', 'branch', 'month') + ['per_page' => $perPage],
             'categories' => DisbursementEntry::CATEGORIES,
             'fundTypes' => DisbursementEntry::FUND_TYPES,
             'canWrite' => $this->canPrepare($request),

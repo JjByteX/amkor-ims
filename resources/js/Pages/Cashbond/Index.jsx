@@ -140,7 +140,6 @@ export default function CashbondIndex({
 
                 <PageHeader
                     title="Cashbond Monitoring"
-                    subtitle="Portal balances and reload requests"
                     actions={canWrite && (
                         <Button variant="primary" icon={Plus} onClick={() => router.visit(route('cashbond.reloads.create'))}>
                             New Reload Request
@@ -224,6 +223,8 @@ export default function CashbondIndex({
                         rows={reloads.data ?? []}
                         pagination={reloads}
                         onPageChange={(page) => applyFilter({ page })}
+                        autoPageSize
+                        onPageSizeChange={(n) => applyFilter({ per_page: n, page: 1 })}
 
                         toolbar={
                             <FilterStrip>

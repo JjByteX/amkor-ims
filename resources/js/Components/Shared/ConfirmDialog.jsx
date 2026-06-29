@@ -1,4 +1,4 @@
-import Modal from '../UI/Modal';
+import Modal, { ModalCancelButton } from '../UI/Modal';
 import Button from '../UI/Button';
 
 /**
@@ -34,9 +34,9 @@ export default function ConfirmDialog({
             size="default"
             footer={
                 <>
-                    <Button variant="ghost" size="sm" onClick={onClose} disabled={loading}>
+                    <ModalCancelButton size="sm" onClick={onClose} disabled={loading}>
                         {cancelLabel}
-                    </Button>
+                    </ModalCancelButton>
                     <Button
                         variant={dangerous ? 'danger' : 'primary'}
                         size="sm"

@@ -204,7 +204,6 @@ export default function EmployeeIndex({
 
                 <PageHeader
                     title="Employees"
-                    subtitle={`${employees.total ?? 0} employee${employees.total !== 1 ? 's' : ''}`}
                     actions={
                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
                             <Button variant="primary" icon={Download} onClick={() => {}}>
@@ -276,6 +275,10 @@ export default function EmployeeIndex({
                         pagination={employees}
                         onPageChange={(page) =>
                             router.get(route('employees.index'), { ...filters, search: searchInput, page }, { preserveState: true })
+                        }
+                        autoPageSize
+                        onPageSizeChange={(n) =>
+                            router.get(route('employees.index'), { ...filters, search: searchInput, per_page: n, page: 1 }, { preserveState: true })
                         }
                         toolbar={
                             <FilterStrip>

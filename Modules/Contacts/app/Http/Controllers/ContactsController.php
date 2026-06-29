@@ -56,7 +56,8 @@ class ContactsController extends Controller
         $search = $request->get('search');
         $active = $request->get('active', 'all'); // all | active | inactive
 
-        $query = Contact::query()
+                $perPage = max(5, min(100, (int) $request->get('per_page', 20)));
+$query = Contact::query()
             ->where('type', $type)
             ->search($search)
             ->orderBy('name');
@@ -67,7 +68,7 @@ class ContactsController extends Controller
             $query->where('is_active', false);
         }
 
-        $contacts = $query->paginate(20)->withQueryString();
+        $contacts = $query->paginate($perPage)->withQueryString();
 
         return Inertia::render('Contacts/Index', [
             'contacts' => $contacts,
@@ -75,6 +76,7 @@ class ContactsController extends Controller
                 'type' => $type,
                 'search' => $search,
                 'active' => $active,
+                'per_page' => $perPage,
             ],
             'canWrite' => $this->canWrite($request),
             'typeCounts' => $this->typeCounts(),

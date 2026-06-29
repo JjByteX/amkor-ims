@@ -8,18 +8,21 @@ import { ChevronRight } from 'lucide-react';
  *   title       : string                 — current page name
  *   actions     : ReactNode              — rendered on the right (Buttons etc.)
  *   breadcrumb  : Array<{ label, href }> — optional ancestors, left-to-right
- *   inlineTitle : bool                   — injected by FormLayout; renders the
- *                                          title inline at the end of the breadcrumb
- *                                          row instead of as a large <h1> below it.
- *                                          Do not set this manually.
+ *   inlineTitle : bool                   — renders the title inline at the end
+ *                                          of the breadcrumb row instead of as
+ *                                          a large <h1> below it. Injected
+ *                                          automatically by FormLayout; set it
+ *                                          manually on standalone pages (not
+ *                                          wrapped in FormLayout) that still
+ *                                          want the compact single-row look.
  *   className   : string
  *
  * Normal (standalone index pages):
  *   Ormoc Branch          ← breadcrumb row (small, muted)
  *   New Booking           ← large h1 below
  *
- * Inside FormLayout (inlineTitle injected automatically):
- *   Ormoc Branch  ›  New Booking   [subtitle]    ← single compact row
+ * Inline (FormLayout, or inlineTitle set manually):
+ *   Ormoc Branch  ›  New Booking         ← single compact row
  */
 export default function PageHeader({
     title,

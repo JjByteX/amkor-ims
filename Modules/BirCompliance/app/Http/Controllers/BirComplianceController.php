@@ -56,7 +56,8 @@ class BirComplianceController extends Controller
 
         $role = $request->user()?->getRoleNames()->first();
 
-        $query = BirTransaction::with(['branch', 'createdBy'])
+                $perPage = max(5, min(100, (int) $request->get('per_page', 25)));
+$query = BirTransaction::with(['branch', 'createdBy'])
             ->forYear($year)
             ->forMonth($month ? (int) $month : null)
             ->forDocumentType($type)
@@ -69,7 +70,7 @@ class BirComplianceController extends Controller
             $query->forBranch((int) $branch);
         }
 
-        $transactions = $query->paginate(25)->withQueryString();
+        $transactions = $query->paginate($perPage)->withQueryString();
 
         $monthlySummary = BirTransaction::forYear($year)
             ->when(! in_array($role, ['president', 'chief_operating_officer', 'finance_admin_supervisor', 'administrative_assistant', 'general_sales_manager', 'accounting_assistant'], true), function ($q) use ($request) {
@@ -99,7 +100,7 @@ class BirComplianceController extends Controller
             'transactions' => $transactions,
             'monthlySummary' => $monthlySummary,
             'totals' => $totals,
-            'filters' => compact('year', 'month', 'type', 'search', 'branch'),
+            'filters' => compact('year', 'month', 'type', 'search', 'branch') + ['per_page' => $perPage],
             'documentTypes' => BirTransaction::DOCUMENT_TYPES,
             'months' => $this->monthNames(),
             'currentYear' => now()->year,

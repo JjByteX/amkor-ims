@@ -79,7 +79,8 @@ class CashbondController extends Controller
         $month    = $request->get('month');
         $search   = $request->get('search');
 
-        $query = CashbondReload::with(['portal', 'createdBy', 'checker', 'approver', 'releaser'])
+                $perPage = max(5, min(100, (int) $request->get('per_page', 25)));
+$query = CashbondReload::with(['portal', 'createdBy', 'checker', 'approver', 'releaser'])
             ->latest('request_date');
 
         $query->forPortal($portalId)->forApprovalStatus($approval);
@@ -96,13 +97,13 @@ class CashbondController extends Controller
             });
         }
 
-        $reloads = $balanceOnly ? null : $query->paginate(25)->withQueryString();
+        $reloads = $balanceOnly ? null : $query->paginate($perPage)->withQueryString();
 
         return Inertia::render('Cashbond/Index', [
             'portals'          => $portals,
             'reloads'          => $reloads,
             'summary'          => $summary,
-            'filters'          => compact('portalId', 'approval', 'month', 'search'),
+            'filters'          => compact('portalId', 'approval', 'month', 'search') + ['per_page' => $perPage],
             'approvalStatuses' => CashbondReload::APPROVAL_STATUSES,
             'canWrite'         => $this->canPrepare($request),
             'canCheck'         => $this->canCheck($request),

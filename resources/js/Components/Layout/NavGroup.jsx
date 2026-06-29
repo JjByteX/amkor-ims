@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { usePage, Link } from '@inertiajs/react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getStoredPageSize } from '../../lib/tablePageSize';
 
 /**
  * NavGroup — collapsible sidebar group with child NavItems.
@@ -168,11 +169,17 @@ export default function NavGroup({ icon, label, children = [], storageKey = 'amk
                             <ul className="flex flex-col" style={{ gap: 'var(--nav-item-gap)' }}>
                                 {children.map((child) => {
                                     const isChildActive = matchesChild(child);
+                                    // Each child is its own page with its own toolbar
+                                    // height, so look this up per-child, not once for
+                                    // the whole group.
+                                    const childPageSize = getStoredPageSize(child.href);
+                                    const navData = childPageSize ? { per_page: childPageSize } : undefined;
                                     return (
                                         <li key={child.key}>
                                             <Link
                                                 prefetch
                                                 href={child.href}
+                                                data={navData}
                                                 className="flex items-center w-full nav-item-hoverable"
                                                 style={{
                                                     ...baseItemStyle,
@@ -261,11 +268,16 @@ export default function NavGroup({ icon, label, children = [], storageKey = 'amk
                         {children.map((child) => {
                             const suppressed = (child.inactiveOn ?? []).some(matchesExact);
                             const isChildActive = matchesChild(child);
+                            // Each child is its own page with its own toolbar height,
+                            // so look this up per-child, not once for the whole group.
+                            const childPageSize = getStoredPageSize(child.href);
+                            const navData = childPageSize ? { per_page: childPageSize } : undefined;
                             return (
                                 <li key={child.key}>
                                     <Link
                                         prefetch
                                         href={child.href}
+                                        data={navData}
                                         className={['flex items-center w-full nav-item-hoverable', isChildActive ? 'nav-item-active' : ''].join(' ')}
                                         style={{
                                             ...baseItemStyle,

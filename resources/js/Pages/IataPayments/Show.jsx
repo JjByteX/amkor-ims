@@ -6,7 +6,7 @@ import DetailPanel, {PanelActions, PanelCol, PanelColRight, PanelColumns, PanelD
 import ApprovalStepper from '../../Components/Shared/ApprovalStepper';
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
-import Modal from '../../Components/UI/Modal';
+import Modal, { ModalCancelButton } from '../../Components/UI/Modal';
 import Input from '../../Components/UI/Input';
 import Textarea from '../../Components/UI/Textarea';
 import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
@@ -134,7 +134,7 @@ export function IataContent({ payment, statuses, approvalStatuses, canWrite, can
                         value={checkForm.data.audit_remarks}
                         onChange={(e) => checkForm.setData('audit_remarks', e.target.value)} />
                     <div className="flex justify-end gap-2">
-                        <Button variant="ghost" type="button" onClick={() => setCheckOpen(false)}>Cancel</Button>
+                        <ModalCancelButton type="button" onClick={() => setCheckOpen(false)} />
                         <Button variant="primary" type="submit" loading={checkForm.processing}>Confirm Check</Button>
                     </div>
                 </form>
@@ -147,7 +147,7 @@ export function IataContent({ payment, statuses, approvalStatuses, canWrite, can
                         Approve IATA payment of <strong><CurrencyDisplay amount={payment.amount} currency="PHP" /></strong> to <strong>{payment.operator_name}</strong>?
                     </p>
                     <div className="flex justify-end gap-2">
-                        <Button variant="ghost" type="button" onClick={() => setApproveOpen(false)}>Cancel</Button>
+                        <ModalCancelButton type="button" onClick={() => setApproveOpen(false)} />
                         <Button variant="primary" type="submit" loading={approveForm.processing}>Approve</Button>
                     </div>
                 </form>
@@ -170,7 +170,7 @@ export function IataContent({ payment, statuses, approvalStatuses, canWrite, can
                         </span>
                     </label>
                     <div className="flex justify-end gap-2">
-                        <Button variant="ghost" type="button" onClick={() => setReleaseOpen(false)}>Cancel</Button>
+                        <ModalCancelButton type="button" onClick={() => setReleaseOpen(false)} />
                         <Button variant="primary" type="submit" loading={releaseForm.processing}>Release</Button>
                     </div>
                 </form>
@@ -183,7 +183,7 @@ export function IataContent({ payment, statuses, approvalStatuses, canWrite, can
                         Send and record the payment notification for <strong>{payment.operator_name}</strong>?
                     </p>
                     <div className="flex justify-end gap-2">
-                        <Button variant="ghost" type="button" onClick={() => setNotifyOpen(false)}>Cancel</Button>
+                        <ModalCancelButton type="button" onClick={() => setNotifyOpen(false)} />
                         <Button variant="primary" type="submit" loading={notifyForm.processing}>Confirm</Button>
                     </div>
                 </form>

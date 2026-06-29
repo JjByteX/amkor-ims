@@ -5,7 +5,7 @@ import AppShell from '../../Components/Layout/AppShell';
 import DetailPanel, {PanelActions, PanelCol, PanelColRight, PanelColumns, PanelDivider, PanelField, PanelFieldRow, PanelMeta, PanelMetaItem, PanelSection} from '../../Components/Shared/DetailPanel';
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
-import Modal from '../../Components/UI/Modal';
+import Modal, { ModalCancelButton } from '../../Components/UI/Modal';
 import Input from '../../Components/UI/Input';
 import Textarea from '../../Components/UI/Textarea';
 import ConfirmDialog from '../../Components/Shared/ConfirmDialog';
@@ -209,7 +209,7 @@ export function ARContent({ collectible, departments, statuses, approvalStatuses
                         onChange={(e) => payment.setData('ar_number', e.target.value)}
                         error={payment.errors.ar_number} />
                     <div className="flex justify-end gap-2 mt-2">
-                        <Button variant="ghost" type="button" onClick={() => setPaymentModal(false)}>Cancel</Button>
+                        <ModalCancelButton type="button" onClick={() => setPaymentModal(false)} />
                         <Button variant="primary" type="submit" loading={payment.processing}>Save Payment</Button>
                     </div>
                 </form>
@@ -223,7 +223,7 @@ export function ARContent({ collectible, departments, statuses, approvalStatuses
                         onChange={(e) => refund.setData('audit_remarks', e.target.value)}
                         error={refund.errors.audit_remarks} />
                     <div className="flex justify-end gap-2 mt-2">
-                        <Button variant="ghost" type="button" onClick={() => setRefundModal(false)}>Cancel</Button>
+                        <ModalCancelButton type="button" onClick={() => setRefundModal(false)} />
                         <Button variant="danger" type="submit" loading={refund.processing}>Confirm Refund</Button>
                     </div>
                 </form>

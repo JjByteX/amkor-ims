@@ -30,17 +30,27 @@ import {
 } from 'recharts';
 import Card from '../UI/Card';
 
-/* ── Brand palette — matches app.css tokens as hex so Recharts can use them ── */
+/* ── Data palette — restrained, enterprise-grade, anchored to brand green ─── *
+ *                                                                              *
+ *  [0] #3F9800  Brand green   — primary series; dominant colour               *
+ *  [1] #1B7A8C  Ocean teal    — cool counterpart; desaturated                 *
+ *  [2] #A87D1C  Amber gold    — warm contrast; intentionally muted            *
+ *  [3] #5B6FA8  Steel blue    — professional neutral                          *
+ *  [4] #2E8C6B  Forest        — extended-series fallback                      *
+ *  [5] #8C5B8C  Dusty violet  — extended-series fallback                      *
+ *                                                                              *
+ *  All six share similar perceptual lightness (~L 30–44 %) so they never      *
+ *  fight each other for visual weight. Add new colours to this array only —   *
+ *  never hardcode hex values inside individual chart components.               *
+ * ─────────────────────────────────────────────────────────────────────────── */
 const PALETTE = [
-    '#3F9800', // primary green
-    '#38BDF8', // accent blue
-    '#F59E0B', // warning amber
-    '#3B82F6', // info blue
-    '#EF4444', // error red
-    '#22C55E', // success green
-    '#8B5CF6', // purple
-    '#EC4899', // pink
-];
+    '#3F9800', // brand green   — primary
+    '#92D5E6', // frosted blue    — cool
+    '#FFBF00', // amber gold    — warm
+    '#253D5B', // deep space blue    — neutral
+    '#2E8C6B', // forest        — extra
+    '#8C5B8C', // dusty violet  — extra
+];  
 
 const GRID_COLOR   = 'rgba(102,112,133,0.12)';
 const AXIS_COLOR   = '#667085';
@@ -105,16 +115,18 @@ function AmkorLegend({ payload }) {
 /* ── Empty state ───────────────────────────────────────────────────────────── */
 function ChartEmpty({ title }) {
     return (
-        <Card style={{ padding: 'var(--dash-card-pad, 20px)' }}>
+        <Card style={{ padding: 'var(--dash-card-pad, 20px)', height: '100%', display: 'flex', flexDirection: 'column' }}>
             <p style={{
                 fontFamily   : 'var(--font-heading)',
                 fontWeight   : 700,
                 fontSize     : 13,
                 color        : 'var(--color-text)',
                 marginBottom : 12,
+                flexShrink   : 0,
             }}>{title}</p>
             <div style={{
-                height        : 160,
+                flex          : '1 1 0',
+                minHeight     : 120,
                 display       : 'flex',
                 alignItems    : 'center',
                 justifyContent: 'center',
@@ -154,91 +166,97 @@ function normalise(raw) {
 }
 
 /* ── Bar chart ─────────────────────────────────────────────────────────────── */
-function DashBarChart({ data, seriesNames = [], title, height = 220, stacked = false }) {
+function DashBarChart({ data, seriesNames = [], title, stacked = false }) {
     return (
-        <div>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <p style={{
                 fontFamily  : 'var(--font-heading)',
                 fontWeight  : 700,
                 fontSize    : 13,
                 color       : 'var(--color-text)',
                 marginBottom: 14,
+                flexShrink  : 0,
             }}>{title}</p>
-            <ResponsiveContainer width="100%" height={height}>
-                <BarChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 4 }} barSize={stacked ? 18 : 12}>
-                    <CartesianGrid vertical={false} stroke={GRID_COLOR} />
-                    <XAxis
-                        dataKey="label"
-                        tick={{ fontSize: AXIS_FONT, fill: AXIS_COLOR, fontFamily: 'var(--font-body)' }}
-                        axisLine={false} tickLine={false}
-                    />
-                    <YAxis
-                        tick={{ fontSize: AXIS_FONT, fill: AXIS_COLOR, fontFamily: 'var(--font-body)' }}
-                        axisLine={false} tickLine={false}
-                        tickFormatter={v => v >= 1000 ? new Intl.NumberFormat('en-PH', { notation: 'compact', maximumFractionDigits: 1 }).format(v) : v}
-                        width={48}
-                    />
-                    <Tooltip content={<AmkorTooltip />} cursor={{ fill: 'rgba(102,112,133,0.06)' }} />
-                    <Legend content={<AmkorLegend />} />
-                    {seriesNames.map((name, i) => (
-                        <Bar
-                            key={name}
-                            dataKey={name}
-                            fill={PALETTE[i % PALETTE.length]}
-                            stackId={stacked ? 'stack' : undefined}
-                            radius={stacked ? [0, 0, 0, 0] : [3, 3, 0, 0]}
+            <div style={{ flex: '1 1 0', minHeight: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 4 }} barSize={stacked ? 18 : 12}>
+                        <CartesianGrid vertical={false} stroke={GRID_COLOR} />
+                        <XAxis
+                            dataKey="label"
+                            tick={{ fontSize: AXIS_FONT, fill: AXIS_COLOR, fontFamily: 'var(--font-body)' }}
+                            axisLine={false} tickLine={false}
                         />
-                    ))}
-                </BarChart>
-            </ResponsiveContainer>
+                        <YAxis
+                            tick={{ fontSize: AXIS_FONT, fill: AXIS_COLOR, fontFamily: 'var(--font-body)' }}
+                            axisLine={false} tickLine={false}
+                            tickFormatter={v => v >= 1000 ? new Intl.NumberFormat('en-PH', { notation: 'compact', maximumFractionDigits: 1 }).format(v) : v}
+                            width={48}
+                        />
+                        <Tooltip content={<AmkorTooltip />} cursor={{ fill: 'rgba(102,112,133,0.06)' }} />
+                        <Legend content={<AmkorLegend />} />
+                        {seriesNames.map((name, i) => (
+                            <Bar
+                                key={name}
+                                dataKey={name}
+                                fill={PALETTE[i % PALETTE.length]}
+                                stackId={stacked ? 'stack' : undefined}
+                                radius={stacked ? [0, 0, 0, 0] : [3, 3, 0, 0]}
+                            />
+                        ))}
+                    </BarChart>
+                </ResponsiveContainer>
+            </div>
         </div>
     );
 }
 
 /* ── Line / Area chart ─────────────────────────────────────────────────────── */
-function DashLineChart({ data, seriesNames = [], title, height = 220, isArea = false }) {
+function DashLineChart({ data, seriesNames = [], title, isArea = false }) {
     const ChartComp = isArea ? AreaChart : LineChart;
     const SeriesComp = isArea ? Area : Line;
     return (
-        <div>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <p style={{
                 fontFamily  : 'var(--font-heading)',
                 fontWeight  : 700,
                 fontSize    : 13,
                 color       : 'var(--color-text)',
                 marginBottom: 14,
+                flexShrink  : 0,
             }}>{title}</p>
-            <ResponsiveContainer width="100%" height={height}>
-                <ChartComp data={data} margin={{ top: 4, right: 4, left: 0, bottom: 4 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
-                    <XAxis
-                        dataKey="label"
-                        tick={{ fontSize: AXIS_FONT, fill: AXIS_COLOR, fontFamily: 'var(--font-body)' }}
-                        axisLine={false} tickLine={false}
-                    />
-                    <YAxis
-                        tick={{ fontSize: AXIS_FONT, fill: AXIS_COLOR, fontFamily: 'var(--font-body)' }}
-                        axisLine={false} tickLine={false}
-                        tickFormatter={v => v >= 1000 ? new Intl.NumberFormat('en-PH', { notation: 'compact', maximumFractionDigits: 1 }).format(v) : v}
-                        width={48}
-                    />
-                    <Tooltip content={<AmkorTooltip />} />
-                    <Legend content={<AmkorLegend />} />
-                    {seriesNames.map((name, i) => (
-                        <SeriesComp
-                            key={name}
-                            type="monotone"
-                            dataKey={name}
-                            stroke={PALETTE[i % PALETTE.length]}
-                            fill={isArea ? PALETTE[i % PALETTE.length] : undefined}
-                            fillOpacity={isArea ? 0.12 : undefined}
-                            strokeWidth={2}
-                            dot={false}
-                            activeDot={{ r: 4 }}
+            <div style={{ flex: '1 1 0', minHeight: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                    <ChartComp data={data} margin={{ top: 4, right: 4, left: 0, bottom: 4 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
+                        <XAxis
+                            dataKey="label"
+                            tick={{ fontSize: AXIS_FONT, fill: AXIS_COLOR, fontFamily: 'var(--font-body)' }}
+                            axisLine={false} tickLine={false}
                         />
-                    ))}
-                </ChartComp>
-            </ResponsiveContainer>
+                        <YAxis
+                            tick={{ fontSize: AXIS_FONT, fill: AXIS_COLOR, fontFamily: 'var(--font-body)' }}
+                            axisLine={false} tickLine={false}
+                            tickFormatter={v => v >= 1000 ? new Intl.NumberFormat('en-PH', { notation: 'compact', maximumFractionDigits: 1 }).format(v) : v}
+                            width={48}
+                        />
+                        <Tooltip content={<AmkorTooltip />} />
+                        <Legend content={<AmkorLegend />} />
+                        {seriesNames.map((name, i) => (
+                            <SeriesComp
+                                key={name}
+                                type="monotone"
+                                dataKey={name}
+                                stroke={PALETTE[i % PALETTE.length]}
+                                fill={isArea ? PALETTE[i % PALETTE.length] : undefined}
+                                fillOpacity={isArea ? 0.12 : undefined}
+                                strokeWidth={2}
+                                dot={false}
+                                activeDot={{ r: 4 }}
+                            />
+                        ))}
+                    </ChartComp>
+                </ResponsiveContainer>
+            </div>
         </div>
     );
 }
@@ -258,36 +276,39 @@ function renderCustomLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent
     );
 }
 
-function DashDonutChart({ data, title, height = 220 }) {
+function DashDonutChart({ data, title }) {
     return (
-        <div>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <p style={{
                 fontFamily  : 'var(--font-heading)',
                 fontWeight  : 700,
                 fontSize    : 13,
                 color       : 'var(--color-text)',
                 marginBottom: 14,
+                flexShrink  : 0,
             }}>{title}</p>
-            <ResponsiveContainer width="100%" height={height}>
-                <PieChart>
-                    <Pie
-                        data={data}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={height * 0.22}
-                        outerRadius={height * 0.38}
-                        dataKey="value"
-                        labelLine={false}
-                        label={renderCustomLabel}
-                    >
-                        {data.map((_, i) => (
-                            <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
-                        ))}
-                    </Pie>
-                    <Tooltip content={<AmkorTooltip />} />
-                    <Legend content={<AmkorLegend />} />
-                </PieChart>
-            </ResponsiveContainer>
+            <div style={{ flex: '1 1 0', minHeight: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                        <Pie
+                            data={data}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius="40%"
+                            outerRadius="70%"
+                            dataKey="value"
+                            labelLine={false}
+                            label={renderCustomLabel}
+                        >
+                            {data.map((_, i) => (
+                                <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
+                            ))}
+                        </Pie>
+                        <Tooltip content={<AmkorTooltip />} />
+                        <Legend content={<AmkorLegend />} />
+                    </PieChart>
+                </ResponsiveContainer>
+            </div>
         </div>
     );
 }
@@ -312,7 +333,7 @@ function ChartPanel({ chartConfig, sectionMap }) {
         : [];
 
     return (
-        <Card style={{ padding: 'var(--dash-card-pad, 20px)' }}>
+        <Card style={{ padding: 'var(--dash-card-pad, 20px)', height: '100%', display: 'flex', flexDirection: 'column' }}>
             {type === 'bar'  && <DashBarChart  data={data} seriesNames={seriesNames} title={title} stacked={seriesNames.length > 2} />}
             {type === 'line' && <DashLineChart  data={data} seriesNames={seriesNames} title={title} />}
             {type === 'area' && <DashLineChart  data={data} seriesNames={seriesNames} title={title} isArea />}
@@ -338,14 +359,16 @@ export default function DashboardCharts({ charts = [], dashboardSections = [] })
             style={{
                 display             : 'grid',
                 gridTemplateColumns : 'repeat(2, 1fr)',
+                gridAutoRows        : '1fr',
                 gap                 : 'var(--space-2)',
+                height              : '100%',
             }}
             className="dash-charts-grid"
         >
             {charts.map((cfg, i) => (
                 <div
                     key={i}
-                    style={{ gridColumn: cfg.span === 'full' ? '1 / -1' : 'span 1' }}
+                    style={{ gridColumn: cfg.span === 'full' ? '1 / -1' : 'span 1', minHeight: 0 }}
                 >
                     <ChartPanel chartConfig={cfg} sectionMap={sectionMap} />
                 </div>
@@ -356,9 +379,11 @@ export default function DashboardCharts({ charts = [], dashboardSections = [] })
                 @media (max-width: 860px) {
                     .dash-charts-grid {
                         grid-template-columns: 1fr !important;
+                        height: auto !important;
                     }
                     .dash-charts-grid > div {
                         grid-column: 1 / -1 !important;
+                        min-height: 260px !important;
                     }
                 }
             `}</style>

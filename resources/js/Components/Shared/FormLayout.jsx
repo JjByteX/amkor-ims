@@ -12,7 +12,7 @@ import Button from '../UI/Button';
  *
  * Layout model:
  *   ┌──────────────────────── full width ─────────────────────────────┐
- *   │  Ormoc Branch  ›  New Booking   [subtitle]                      │  ← inline breadcrumb row
+ *   │  Ormoc Branch  ›  New Booking                                    │  ← inline breadcrumb row
  *   └─────────────────────────────────────────────────────────────────┘
  *   ┌──────────── centered container (maxWidth, margin auto) ─────────┐
  *   │  [ Card A ]   [ Card B ]   [ Card C? ]                          │
@@ -156,20 +156,14 @@ export function FormActions({ children }) {
 
 /**
  * FormCancelButton — universal Cancel button.
- * Solid gray fill, no border, no icon.
+ * Uses the shared 'cancel' Button variant (solid card fill, outlined border).
  */
 export function FormCancelButton({ onClick, ...rest }) {
     return (
         <Button
             type="button"
-            variant="ghost"
+            variant="cancel"
             onClick={onClick}
-            style={{
-                backgroundColor: 'var(--color-card)',
-                border: 'var(--border-container)',
-                boxShadow: 'none',
-                color: 'var(--color-text)',
-            }}
             {...rest}
         >
             Cancel

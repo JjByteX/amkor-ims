@@ -73,9 +73,12 @@ export default function APIndex({
     const hasActiveFilters = filters.search || filters.status || filters.currency || filters.month;
 
     function applyFilter(overrides = {}) {
+        const params = { ...filters, search: searchInput, ...overrides };
+        console.log('[AP] applyFilter called', JSON.stringify(overrides), '| full params:', JSON.stringify(params));
+        console.log('[AP] filters prop at call time:', JSON.stringify(filters));
         router.get(
             route('ap.index'),
-            { ...filters, search: searchInput, ...overrides },
+            params,
             { preserveState: true, preserveScroll: true },
         );
     }
@@ -209,7 +212,6 @@ export default function APIndex({
 
                 <PageHeader
                     title="Accounts Payable"
-                    subtitle="Operator payables — PHP, USD, JPY"
                     actions={
                         canWrite && (
                             <Button
@@ -294,6 +296,8 @@ export default function APIndex({
                     rows={payables.data ?? []}
                     pagination={payables}
                     onPageChange={(page) => applyFilter({ page })}
+                    autoPageSize
+                    onPageSizeChange={(n) => { console.log("[AP] onPageSizeChange fired! n=", n, "filters:", JSON.stringify(filters)); applyFilter({ per_page: n, page: 1 }); }}
                     toolbar={
                         <FilterStrip>
                             <FilterField grow>

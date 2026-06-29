@@ -80,7 +80,6 @@ export default function APCreate({ currencies, paymentModes, statuses, suppliers
                     <PageHeader
                         breadcrumb={[{ label: 'Accounts Payable', href: route('ap.index') }]}
                         title="New Payable"
-                        subtitle="Record an operator payable — PHP, USD, or JPY"
                         actions={
                             <>
                                 <FormCancelButton onClick={() => router.get(route('ap.index'))} />

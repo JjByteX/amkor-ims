@@ -52,6 +52,7 @@ class StoreReservationBookingRequest extends FormRequest
 
             // Financials
             'selling_price'     => ['nullable', 'numeric', 'min:0'],
+            'currency'          => ['nullable', 'in:'.implode(',', array_keys(ReservationBooking::CURRENCIES))],
             'net_payable'       => ['nullable', 'numeric', 'min:0'],
             'income'            => ['nullable', 'numeric'],
             'excess'            => ['nullable', 'numeric'],

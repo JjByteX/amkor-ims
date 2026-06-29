@@ -81,7 +81,7 @@ class EventServiceProvider extends ServiceProvider
         ],
     ];
 
-    protected static $shouldDiscoverEvents = true;
+    protected static $shouldDiscoverEvents = false;
 
     protected function configureEmailVerification(): void {}
 }

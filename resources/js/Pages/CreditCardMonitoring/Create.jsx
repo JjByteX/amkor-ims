@@ -54,7 +54,6 @@ export default function CreditCardCreate({ cards }) {
                     <PageHeader
                         breadcrumb={[{ label: 'Credit Cards', href: route('credit-cards.index') }]}
                         title="Record Payment"
-                        subtitle="Log a credit card payment"
                         actions={
                             <>
                                 <FormCancelButton onClick={() => router.visit(route('credit-cards.index'))} />

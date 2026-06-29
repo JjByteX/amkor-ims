@@ -82,7 +82,6 @@ export default function SalesSummaryIndex({ rows, totals, departments, targets, 
             <PageStack>
                 <PageHeader
                     title="Sales Summary"
-                    subtitle="Aggregated operational sales across departments"
                     actions={canExport && <Button icon={Download} onClick={() => router.visit(route('sales.export', filters))}>Export</Button>}
                 />
 

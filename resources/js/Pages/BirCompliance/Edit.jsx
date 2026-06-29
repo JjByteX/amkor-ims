@@ -61,7 +61,6 @@ export default function BirEdit({ transaction, documentTypes, sourceTypes, payme
                     <PageHeader
                         breadcrumb={[{ label: 'BIR Compliance', href: route('bir.index') }]}
                         title={`Edit — ${transaction.document_number ?? 'Transaction'}`}
-                        subtitle={`${documentTypes[transaction.document_type] ?? transaction.document_type} · ${transaction.client_name}`}
                         actions={
                             <>
                                 <FormCancelButton onClick={() => router.get(route('bir.index'))} />

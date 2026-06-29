@@ -44,7 +44,6 @@ export default function CashbondReloadCreate({ portals }) {
                     <PageHeader
                         breadcrumb={[{ label: 'Cashbond', href: route('cashbond.index') }]}
                         title="New Reload Request"
-                        subtitle="Prepare a cashbond reload for audit and approval"
                         actions={
                             <>
                                 <FormCancelButton onClick={() => router.visit(route('cashbond.index'))} />

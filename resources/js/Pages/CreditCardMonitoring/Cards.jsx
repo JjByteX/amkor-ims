@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { router, usePage, useForm } from '@inertiajs/react';
-import { Plus, Pencil, CreditCard as CardIcon, ArrowLeft } from 'lucide-react';
+import { usePage, useForm } from '@inertiajs/react';
+import { Plus, Pencil, CreditCard as CardIcon } from 'lucide-react';
 import AppShell from '../../Components/Layout/AppShell';
 import PageHeader from '../../Components/Shared/PageHeader';
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
 import Card from '../../Components/UI/Card';
-import Modal from '../../Components/UI/Modal';
+import Modal, { ModalCancelButton } from '../../Components/UI/Modal';
 import Input from '../../Components/UI/Input';
 import Textarea from '../../Components/UI/Textarea';
 
@@ -110,7 +110,7 @@ function CardForm({ card, onClose }) {
                 rows={2}
             />
             <div className="flex justify-end" style={{ gap: 'var(--space-2)' }}>
-                <Button variant="ghost" onClick={onClose} type="button">Cancel</Button>
+                <ModalCancelButton onClick={onClose} type="button" />
                 <Button variant="primary" type="submit" loading={form.processing} disabled={form.processing}>
                     {card ? 'Save Changes' : 'Add Card'}
                 </Button>
@@ -141,27 +141,19 @@ export default function CreditCardCards({ cards, canWrite }) {
                 )}
 
                 <PageHeader
-                    title="Credit Cards"
-                    subtitle={`${cards.length} card${cards.length !== 1 ? 's' : ''} registered`}
+                    inlineTitle
+                    breadcrumb={[{ label: 'Credit Cards', href: route('credit-cards.index') }]}
+                    title="Manage Cards"
                     actions={
-                        <div className="flex" style={{ gap: 'var(--space-2)' }}>
+                        canWrite && (
                             <Button
-                                variant="ghost"
-                                icon={ArrowLeft}
-                                onClick={() => router.visit(route('credit-cards.index'))}
+                                variant="primary"
+                                icon={Plus}
+                                onClick={() => setShowAdd(true)}
                             >
-                                Payments
+                                Add Card
                             </Button>
-                            {canWrite && (
-                                <Button
-                                    variant="primary"
-                                    icon={Plus}
-                                    onClick={() => setShowAdd(true)}
-                                >
-                                    Add Card
-                                </Button>
-                            )}
-                        </div>
+                        )
                     }
                 />
 

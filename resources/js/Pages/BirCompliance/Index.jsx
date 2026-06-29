@@ -429,7 +429,6 @@ export default function BirIndex({
 
                 <PageHeader
                     title="BIR / Compliance"
-                    subtitle={`${transactions.total ?? 0} transaction${transactions.total !== 1 ? 's' : ''}`}
                     actions={
                         <div className="flex items-center" style={{ gap: 'var(--space-1)' }}>
                             <Button variant="primary" icon={Download} onClick={handleExport}>
@@ -486,6 +485,10 @@ export default function BirIndex({
                             pagination={transactions}
                             onPageChange={(page) =>
                                 router.get(route('bir.index'), { ...filters, search: searchInput, page }, { preserveState: true })
+                            }
+                            autoPageSize
+                            onPageSizeChange={(n) =>
+                                router.get(route('bir.index'), { ...filters, search: searchInput, per_page: n, page: 1 }, { preserveState: true })
                             }
                             toolbar={toolbar}
                         />

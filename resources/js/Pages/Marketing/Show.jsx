@@ -9,7 +9,7 @@ import PageHeader from '../../Components/Shared/PageHeader';
 import Card from '../../Components/UI/Card';
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
-import Modal from '../../Components/UI/Modal';
+import Modal, { ModalCancelButton } from '../../Components/UI/Modal';
 import Textarea from '../../Components/UI/Textarea';
 import ApprovalStepper from '../../Components/Shared/ApprovalStepper';
 
@@ -110,7 +110,6 @@ export default function MarketingShow({
 
                 <PageHeader
                     title={material.title}
-                    subtitle={`${materialTypes[material.material_type] ?? material.material_type}${material.platform ? ` · ${platforms[material.platform] ?? material.platform}` : ''}`}
                     actions={
                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)', flexWrap: 'wrap' }}>
                             <Button variant="ghost" icon={ArrowLeft} onClick={() => router.get(route('marketing.index'))}>
@@ -333,7 +332,7 @@ export default function MarketingShow({
                 title="Send Back for Revision"
                 footer={
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-1)' }}>
-                        <Button variant="ghost" onClick={() => setRejectOpen(false)}>Cancel</Button>
+                        <ModalCancelButton onClick={() => setRejectOpen(false)} />
                         <Button
                             variant="danger"
                             icon={XCircle}

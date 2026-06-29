@@ -56,7 +56,8 @@ class AirlineRateController extends Controller
     ];
 
     public function index(Request $request): Response
-    {
+    {    $perPage = max(5, min(100, (int) $request->get('per_page', 25)));
+
         $this->requireViewer($request);
 
         $filters = [
@@ -73,7 +74,7 @@ class AirlineRateController extends Controller
             ->betweenDates($filters['date_from'], $filters['date_to'])
             ->orderByDesc('effective_date')
             ->orderBy('airline')
-            ->paginate(25)
+            ->paginate($perPage)
             ->withQueryString();
 
         return Inertia::render('Reservation/AirlineRates/Index', [
@@ -116,6 +117,49 @@ class AirlineRateController extends Controller
         $airlineRate->delete();
 
         return back()->with('flash', ['type' => 'success', 'message' => 'Airline rate deleted.']);
+    }
+
+    /**
+     * JSON search endpoint — called by the booking form (Form.jsx) for
+     * ticketing bookings to populate the airline+route dropdown and
+     * auto-fill net payable from the stored rate.
+     *
+     * GET /airline-rates/search?q={term}
+     *   Returns a lightweight list of matching rates ordered by most recent
+     *   effective_date first, so staff always see the current rate at the top.
+     *
+     * Returns per entry:
+     *   id, airline, origin, destination, fare_class, rate, currency, effective_date
+     *
+     * The label shown in the dropdown is built on the frontend:
+     *   "{airline} {origin}→{destination} {fare_class} — {currency} {rate}"
+     */
+    public function search(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $this->requireViewer($request);
+
+        $term = $request->string('q')->toString() ?: null;
+
+        $rates = AirlineRate::query()
+            ->search($term)
+            ->orderByDesc('effective_date')
+            ->orderBy('airline')
+            ->orderBy('origin')
+            ->orderBy('destination')
+            ->limit(50)
+            ->get()
+            ->map(fn (AirlineRate $r) => [
+                'id'             => $r->id,
+                'airline'        => $r->airline,
+                'origin'         => $r->origin,
+                'destination'    => $r->destination,
+                'fare_class'     => $r->fare_class,
+                'rate'           => $r->rate,
+                'currency'       => $r->currency,
+                'effective_date' => $r->effective_date?->toDateString(),
+            ]);
+
+        return response()->json($rates);
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────

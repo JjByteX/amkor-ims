@@ -147,7 +147,8 @@ class LeaveController extends Controller
         $year       = $request->get('year', now()->year);
         $search     = $request->get('search');
 
-        $query = LeaveRequest::with(['employee.branch', 'approver', 'rejector'])
+                $perPage = max(5, min(100, (int) $request->get('per_page', 25)));
+$query = LeaveRequest::with(['employee.branch', 'approver', 'rejector'])
             ->orderBy('created_at', 'desc');
 
         // Branch supervisor: scope to own branch only
@@ -183,7 +184,7 @@ class LeaveController extends Controller
             });
         }
 
-        $requests = $query->paginate(25)->through(fn ($r) => $this->formatRequest($r));
+        $requests = $query->paginate($perPage)->through(fn ($r) => $this->formatRequest($r));
 
         $branches  = Branch::orderBy('name')->get(['id', 'name']);
         $employees = Employee::active()->orderBy('last_name')->get(['id', 'first_name', 'last_name', 'employee_code']);
@@ -206,7 +207,7 @@ class LeaveController extends Controller
             'branches'        => $branches,
             'employees'       => $employees,
             'leaveTypes'      => LeaveRequest::LEAVE_TYPES,
-            'filters'         => compact('status', 'branchId', 'employeeId', 'leaveType', 'month', 'year', 'search'),
+            'filters'         => compact('status', 'branchId', 'employeeId', 'leaveType', 'month', 'year', 'search') + ['per_page' => $perPage],
             'highlight'       => $request->get('highlight'),
         ]);
     }
