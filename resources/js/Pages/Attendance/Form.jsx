@@ -113,7 +113,6 @@ export default function AttendanceForm({ record, employees, branches, statuses, 
                 <FormLayout columns={2}>
                     <PageHeader
                         title={isEdit ? 'Edit Attendance Record' : 'Add Attendance Record'}
-                        subtitle="HR override — all changes are flagged in the audit trail"
                         actions={
                             <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
                                 <FormCancelButton onClick={() => router.get(route('attendance.index'))} />

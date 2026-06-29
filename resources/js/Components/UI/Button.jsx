@@ -50,6 +50,10 @@ export default function Button({
         primary   : 'bg-[var(--color-primary)] border-[var(--color-primary)] text-white hover:bg-[var(--color-primary-dark)] hover:border-[var(--color-primary-dark)]',
         ghost     : 'bg-transparent border-transparent text-[var(--color-text)] hover:bg-black/5 dark:hover:bg-white/10',
         danger    : 'bg-[var(--color-error)] border-[var(--color-error)] text-white hover:opacity-90',
+        // Universal Cancel style — outlined, card-colored fill, no shadow.
+        // Border comes from --border-container (a full shorthand) applied via
+        // inline style below, since it can't be expressed as a Tailwind border-color class.
+        cancel    : 'bg-[var(--color-card)] border-transparent text-[var(--color-text)] hover:bg-black/5 dark:hover:bg-white/10',
     };
 
     const height   = size === 'sm' ? 'var(--height-btn-sm)' : 'var(--height-btn)';
@@ -87,6 +91,10 @@ export default function Button({
                 boxShadow    : 'none',
                 gap          : '8px',
                 maxWidth     : '100%',
+                // Cancel variant uses the same outlined look as FormCancelButton —
+                // --border-container is a full border shorthand, applied here since
+                // it can't be expressed as a Tailwind border-color utility.
+                ...(variant === 'cancel' ? { border: 'var(--border-container)' } : {}),
                 // Extra horizontal breathing room when an icon is present so the
                 // icon doesn't sit flush against the button edge (Tailwind classes
                 // may not be compiled for dynamically-added values).

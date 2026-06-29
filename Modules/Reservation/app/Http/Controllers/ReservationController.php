@@ -97,7 +97,8 @@ class ReservationController extends Controller
         $type   = $request->string('booking_type')->toString();
         $month  = $request->string('month')->toString();
 
-        $query = ReservationBooking::with(['branch', 'createdBy'])
+                $perPage = max(5, min(100, (int) $request->get('per_page', 25)));
+$query = ReservationBooking::with(['branch', 'createdBy'])
             ->latest('date')
             ->search($search)
             ->forStatus($status)
@@ -130,7 +131,7 @@ class ReservationController extends Controller
         }
 
         return Inertia::render('Reservation/Index', [
-            'bookings'     => $query->paginate(25)->withQueryString(),
+            'bookings'     => $query->paginate($perPage)->withQueryString(),
             'summary'      => (clone $query)->toBase()->reorder()->selectRaw("
                 COUNT(*) as total,
                 COUNT(CASE WHEN status = 'confirmed' THEN 1 END) as confirmed,
@@ -139,7 +140,7 @@ class ReservationController extends Controller
                 COALESCE(SUM(income), 0) as income,
                 COALESCE(SUM(pax_count), 0) as pax
             ")->first(),
-            'filters'       => compact('search', 'status', 'agent', 'type', 'month'),
+            'filters'       => compact('search', 'status', 'agent', 'type', 'month') + ['per_page' => $perPage],
             'statuses'      => fn () => ReservationBooking::STATUSES,
             'serviceTypes'  => fn () => ReservationBooking::SERVICE_TYPES,
             'bookingTypes'  => fn () => ReservationBooking::BOOKING_TYPES,
@@ -159,15 +160,17 @@ class ReservationController extends Controller
         $branchCode = $request->user()?->branch?->code;
 
         return Inertia::render('Reservation/Form', [
-            'booking'          => null,
-            'statuses'         => ReservationBooking::STATUSES,
-            'serviceTypes'     => ReservationBooking::SERVICE_TYPES,
-            'bookingTypes'     => ReservationBooking::BOOKING_TYPES,
-            'paymentModes'     => ReservationBooking::PAYMENT_MODES,
-            'transactionTypes' => ReservationBooking::TRANSACTION_TYPES,
-            'agentCodes'       => ReservationBooking::agentCodesForBranch($branchCode),
-            'isOrmocBranch'    => $branchCode === 'ORMOC',
-            'contactsSearchUrl'=> route('contacts.search'),
+            'booking'               => null,
+            'statuses'              => ReservationBooking::STATUSES,
+            'serviceTypes'          => ReservationBooking::SERVICE_TYPES,
+            'bookingTypes'          => ReservationBooking::BOOKING_TYPES,
+            'paymentModes'          => ReservationBooking::PAYMENT_MODES,
+            'transactionTypes'      => ReservationBooking::TRANSACTION_TYPES,
+            'agentCodes'            => ReservationBooking::agentCodesForBranch($branchCode),
+            'isOrmocBranch'         => $branchCode === 'ORMOC',
+            'contactsSearchUrl'     => route('contacts.search'),
+            'tourPackageSearchUrl'  => route('tour-packages.search'),
+            'airlineRateSearchUrl'  => route('airline-rates.search'),
         ]);
     }
 
@@ -286,15 +289,17 @@ class ReservationController extends Controller
         $branchCode = $request->user()?->branch?->code;
 
         return Inertia::render('Reservation/Form', [
-            'booking'          => $booking,
-            'statuses'         => ReservationBooking::STATUSES,
-            'serviceTypes'     => ReservationBooking::SERVICE_TYPES,
-            'bookingTypes'     => ReservationBooking::BOOKING_TYPES,
-            'paymentModes'     => ReservationBooking::PAYMENT_MODES,
-            'transactionTypes' => ReservationBooking::TRANSACTION_TYPES,
-            'agentCodes'       => ReservationBooking::agentCodesForBranch($branchCode),
-            'isOrmocBranch'    => $branchCode === 'ORMOC',
-            'contactsSearchUrl'=> route('contacts.search'),
+            'booking'               => $booking,
+            'statuses'              => ReservationBooking::STATUSES,
+            'serviceTypes'          => ReservationBooking::SERVICE_TYPES,
+            'bookingTypes'          => ReservationBooking::BOOKING_TYPES,
+            'paymentModes'          => ReservationBooking::PAYMENT_MODES,
+            'transactionTypes'      => ReservationBooking::TRANSACTION_TYPES,
+            'agentCodes'            => ReservationBooking::agentCodesForBranch($branchCode),
+            'isOrmocBranch'         => $branchCode === 'ORMOC',
+            'contactsSearchUrl'     => route('contacts.search'),
+            'tourPackageSearchUrl'  => route('tour-packages.search'),
+            'airlineRateSearchUrl'  => route('airline-rates.search'),
         ]);
     }
 

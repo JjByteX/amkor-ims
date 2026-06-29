@@ -3,6 +3,7 @@ import { Link, usePage } from '@inertiajs/react';
 import { ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Tooltip from './Tooltip';
+import { getStoredPageSize } from '../../lib/tablePageSize';
 
 /**
  * NavItem — sidebar navigation link.
@@ -66,6 +67,15 @@ export default function NavItem({ href, icon, label, activeOn = [], inactiveOn =
 
     const [open, setOpen] = useState(childActive);
 
+    // Seed the destination's first request with the last confirmed
+    // auto-page-size measurement *for this specific route* (see
+    // hooks/useAutoPageSize.js and lib/tablePageSize.js) so it renders at
+    // the right row count immediately instead of flashing the server's
+    // default per_page and silently re-navigating a moment later. Keyed
+    // per-route because different pages have different toolbar heights.
+    const storedPageSize = getStoredPageSize(href);
+    const navData = storedPageSize ? { per_page: storedPageSize } : undefined;
+
     /* ── Portal tooltip state (collapsed only) ──────────────────────────────── */
     const [tipVisible, setTipVisible] = useState(false);
     const anchorRef = useRef(null);
@@ -103,6 +113,7 @@ export default function NavItem({ href, icon, label, activeOn = [], inactiveOn =
                     <Link
                         prefetch
                         href={href ?? '#'}
+                        data={navData}
                         className={['flex items-center w-full nav-item-hoverable', isHighlighted ? 'nav-item-active' : ''].join(' ')}
                         style={{
                             ...baseItemStyle,
@@ -127,6 +138,7 @@ export default function NavItem({ href, icon, label, activeOn = [], inactiveOn =
                 <Link
                     prefetch
                     href={href}
+                    data={navData}
                     className={['flex items-center w-full nav-item-hoverable', isActive ? 'nav-item-active' : ''].join(' ')}
                     style={{
                         ...baseItemStyle,

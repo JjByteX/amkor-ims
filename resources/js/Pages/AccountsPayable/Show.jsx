@@ -6,7 +6,7 @@ import DetailPanel, {PanelCol, PanelColRight, PanelColumns, PanelDivider, PanelF
 import ApprovalStepper from '../../Components/Shared/ApprovalStepper';
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
-import Modal from '../../Components/UI/Modal';
+import Modal, { ModalCancelButton } from '../../Components/UI/Modal';
 import Input from '../../Components/UI/Input';
 import Textarea from '../../Components/UI/Textarea';
 import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
@@ -183,7 +183,7 @@ export function APContent({
             <Modal open={paymentModal} onClose={() => setPaymentModal(false)} title="Record Payment"
                 footer={
                     <>
-                        <Button variant="ghost" onClick={() => setPaymentModal(false)}>Cancel</Button>
+                        <ModalCancelButton onClick={() => setPaymentModal(false)} />
                         <Button variant="primary" loading={paymentForm.processing}
                             onClick={() => paymentForm.post(route('ap.record-payment', payable.id), { onSuccess: () => setPaymentModal(false) })}>
                             Save Payment
@@ -204,7 +204,7 @@ export function APContent({
             <Modal open={checkModal} onClose={() => setCheckModal(false)} title="Mark as Checked"
                 footer={
                     <>
-                        <Button variant="ghost" onClick={() => setCheckModal(false)}>Cancel</Button>
+                        <ModalCancelButton onClick={() => setCheckModal(false)} />
                         <Button variant="primary" loading={checkForm.processing}
                             onClick={() => checkForm.post(route('ap.check', payable.id), { onSuccess: () => setCheckModal(false) })}>
                             Confirm Check
@@ -223,7 +223,7 @@ export function APContent({
             <Modal open={releaseModal} onClose={() => setReleaseModal(false)} title="Release & File"
                 footer={
                     <>
-                        <Button variant="ghost" onClick={() => setReleaseModal(false)}>Cancel</Button>
+                        <ModalCancelButton onClick={() => setReleaseModal(false)} />
                         <Button variant="primary" loading={releaseForm.processing}
                             onClick={() => releaseForm.post(route('ap.release', payable.id), { onSuccess: () => setReleaseModal(false) })}>
                             Release

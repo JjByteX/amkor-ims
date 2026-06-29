@@ -72,7 +72,6 @@ export default function BirCreate({ documentTypes, sourceTypes, paymentModes, va
                     <PageHeader
                         breadcrumb={[{ label: 'BIR Compliance', href: route('bir.index') }]}
                         title="New BIR Transaction"
-                        subtitle="Record an Acknowledgement Receipt, Service Invoice, or Statement of Account"
                         actions={
                             <>
                                 <FormCancelButton onClick={() => router.get(route('bir.index'))} />

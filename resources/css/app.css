@@ -231,10 +231,12 @@
    GLOBAL BASE STYLES
    ============================================================ */
 
-*, *::before, *::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+@layer base {
+    *, *::before, *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
 }
 
 html {
@@ -283,10 +285,12 @@ button, input, select, textarea {
 }
 
 /* Smooth dark-mode transition on all elements */
-*, *::before, *::after {
-    transition-property: background-color, border-color, color, fill, stroke;
-    transition-duration: 0.15s;
-    transition-timing-function: ease;
+@layer base {
+    *, *::before, *::after {
+        transition-property: background-color, border-color, color, fill, stroke;
+        transition-duration: 0.15s;
+        transition-timing-function: ease;
+    }
 }
 
 /* ============================================================

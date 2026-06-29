@@ -39,7 +39,6 @@ export default function LedgerCreate({ categories, fundTypes, currencies }) {
                     <PageHeader
                         breadcrumb={[{ label: 'Disbursement', href: route('disbursement.ledger.index') }]}
                         title="New Ledger Entry"
-                        subtitle="Record a disbursement entry manually"
                         actions={
                             <>
                                 <FormCancelButton onClick={() => router.get(route('disbursement.ledger.index'))} />

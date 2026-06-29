@@ -9,7 +9,7 @@ import PageHeader from '../../Components/Shared/PageHeader';
 import Card from '../../Components/UI/Card';
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
-import Modal from '../../Components/UI/Modal';
+import Modal, { ModalCancelButton } from '../../Components/UI/Modal';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -125,7 +125,6 @@ export default function AttendanceShow({ record, statuses, leaveTypes, canManage
 
                 <PageHeader
                     title="Attendance Record"
-                    subtitle={fmt(record.work_date)}
                     actions={
                         <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
                             <Button variant="ghost" icon={ArrowLeft} onClick={() => router.get(route('attendance.index'))}>
@@ -307,7 +306,7 @@ export default function AttendanceShow({ record, statuses, leaveTypes, canManage
                     title="Delete Attendance Record"
                     footer={
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-1)' }}>
-                            <Button variant="ghost" onClick={() => setShowDelete(false)}>Cancel</Button>
+                            <ModalCancelButton onClick={() => setShowDelete(false)} />
                             <Button variant="danger" icon={Trash2} loading={processing} onClick={handleDelete}>
                                 Delete Record
                             </Button>

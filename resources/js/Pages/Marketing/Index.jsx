@@ -323,7 +323,6 @@ export default function MarketingIndex({
 
                 <PageHeader
                     title="Marketing"
-                    subtitle={`${total} material${total !== 1 ? 's' : ''} · ${year}`}
                     actions={
                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
                             <Button
@@ -385,6 +384,10 @@ export default function MarketingIndex({
                     pagination={materials}
                     onPageChange={(page) =>
                         router.get(route('marketing.index'), { ...filters, search: searchInput, page }, { preserveState: true })
+                    }
+                    autoPageSize
+                    onPageSizeChange={(n) =>
+                        router.get(route('marketing.index'), { ...filters, search: searchInput, per_page: n, page: 1 }, { preserveState: true })
                     }
                     toolbar={
                         <FilterStrip>

@@ -159,7 +159,6 @@ export default function CreditCardIndex({ payments, cards, summary, filters, sta
 
                 <PageHeader
                     title="Credit Card Monitoring"
-                    subtitle={`${payments.total} payment${payments.total !== 1 ? 's' : ''}`}
                     actions={
                         <div className="flex" style={{ gap: 'var(--space-2)' }}>
                             <Button
@@ -223,6 +222,8 @@ export default function CreditCardIndex({ payments, cards, summary, filters, sta
                     rows={payments.data ?? []}
                     pagination={payments}
                     onPageChange={(page) => applyFilter({ page })}
+                    autoPageSize
+                    onPageSizeChange={(n) => applyFilter({ per_page: n, page: 1 })}
                     toolbar={
                         <FilterStrip>
                             <FilterField grow>

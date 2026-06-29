@@ -18,7 +18,7 @@ import { motion, LayoutGroup } from 'framer-motion';
  *   --font-weight-semibold: label weight
  *   --radius-md           : pill corner radius (8px)
  *   --space-1             : internal padding unit (8px)
- *   --height-btn-sm       : segment height (34px)
+ *   --height-input        : total component height — matches Input/search field (40px)
  *
  * Props:
  *   tabs      : { key, label, icon?, count? }[]   — tab definitions
@@ -65,6 +65,10 @@ export default function SegmentedControl({
                 padding      : '3px',
                 gap          : '2px',
                 position     : 'relative',
+                /* Lock the outer height to match Input / search fields exactly.
+                   2 × border(1px) + 2 × padding(3px) = 8px overhead, so the
+                   inner buttons get calc(--height-input - 8px) = 32px.        */
+                height       : 'var(--height-input)',
                 ...style,
             }}
         >
@@ -101,7 +105,7 @@ export default function SegmentedControl({
                                 : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]',
                         ].join(' ')}
                         style={{
-                            height      : 'var(--height-btn-sm)',
+                            height      : 'calc(var(--height-input) - 8px)', /* 40px − 2×border(1px) − 2×padding(3px) = 32px */
                             paddingLeft : 'var(--space-2)',
                             paddingRight: 'var(--space-2)',
                             fontSize    : 'var(--font-size-small)',

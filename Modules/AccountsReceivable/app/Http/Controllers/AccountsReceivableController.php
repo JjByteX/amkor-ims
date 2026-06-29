@@ -74,7 +74,8 @@ class AccountsReceivableController extends Controller
         $month = $request->get('month');
         $account = $request->get('account'); // Phase 3.5 — corporate account filter
 
-        $query = Collectible::with(['branch', 'createdBy'])
+                $perPage = max(5, min(100, (int) $request->get('per_page', 25)));
+$query = Collectible::with(['branch', 'createdBy'])
             ->latest('date');
 
         // Scoped views per Module 4 matrix
@@ -100,7 +101,7 @@ class AccountsReceivableController extends Controller
             $query->forMonth((int) $y, (int) $m);
         }
 
-        $collectibles = $query->paginate(25)->withQueryString();
+        $collectibles = $query->paginate($perPage)->withQueryString();
 
         // Summary totals for the current filtered set (first 500 rows for performance)
         $summaryQuery = Collectible::search($search)
@@ -132,7 +133,7 @@ class AccountsReceivableController extends Controller
         return Inertia::render('AccountsReceivable/Index', [
             'collectibles' => $collectibles,
             'summary' => $summary,
-            'filters' => compact('search', 'dept', 'status', 'agent', 'month', 'account'),
+            'filters' => compact('search', 'dept', 'status', 'agent', 'month', 'account') + ['per_page' => $perPage],
             'departments' => Collectible::DEPARTMENTS,
             'statuses' => Collectible::STATUSES,
             'approvalStatuses' => Collectible::APPROVAL_STATUSES,

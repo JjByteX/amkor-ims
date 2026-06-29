@@ -209,7 +209,6 @@ export default function VisaIndex({ applications, filters, statuses, agentCodes,
 
                 <PageHeader
                     title="Visa & Documentation"
-                    subtitle={`${applications.total} application${applications.total !== 1 ? 's' : ''}`}
                     actions={
                         <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
                             <Button variant="ghost" icon={BarChart2}
@@ -253,6 +252,8 @@ export default function VisaIndex({ applications, filters, statuses, agentCodes,
                     rows={applications.data}
                     pagination={applications}
                     onPageChange={(page) => applyFilter({ page })}
+                    autoPageSize
+                    onPageSizeChange={(n) => applyFilter({ per_page: n, page: 1 })}
                     toolbar={
                         <FilterStrip>
                             <FilterField grow>

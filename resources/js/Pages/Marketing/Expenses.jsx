@@ -16,7 +16,7 @@ import Badge from '../../Components/UI/Badge';
 import DataTable from '../../Components/Shared/DataTable';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
-import Modal from '../../Components/UI/Modal';
+import Modal, { ModalCancelButton } from '../../Components/UI/Modal';
 import Textarea from '../../Components/UI/Textarea';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -90,7 +90,7 @@ function ExpenseModal({ open, onClose, categories, currencies, platforms, expens
             size="wide"
             footer={
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-1)' }}>
-                    <Button variant="ghost" onClick={onClose}>Cancel</Button>
+                    <ModalCancelButton onClick={onClose} />
                     <Button icon={CheckCircle} loading={processing} onClick={handleSubmit}>
                         {isEdit ? 'Save Changes' : 'Save Expense'}
                     </Button>
@@ -352,7 +352,6 @@ export default function MarketingExpenses({
 
                 <PageHeader
                     title="Marketing Expenses"
-                    subtitle={`${year} · ${PHP(yearTotal)} total`}
                     actions={
                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
                             <Button variant="ghost" icon={ArrowLeft} onClick={() => router.get(route('marketing.index'))}>
@@ -429,6 +428,10 @@ export default function MarketingExpenses({
                     pagination={expenses}
                     onPageChange={(page) =>
                         router.get(route('marketing.expenses'), { ...filters, search: searchInput, page }, { preserveState: true })
+                    }
+                    autoPageSize
+                    onPageSizeChange={(n) =>
+                        router.get(route('marketing.expenses'), { ...filters, search: searchInput, per_page: n, page: 1 }, { preserveState: true })
                     }
                     toolbar={
                         <FilterStrip>

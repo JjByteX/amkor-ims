@@ -160,9 +160,6 @@ export default function ProfileTimePanel({ attentionItems = [], loginActivity = 
                 </div>
             </div>
 
-            {/* ── Divider ─────────────────────────────────────────────── */}
-            <div style={{ height: 1, background: 'var(--color-border-soft)' }} />
-
             {/* ── Attendance ──────────────────────────────────────────── */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
 

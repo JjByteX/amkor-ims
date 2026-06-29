@@ -8,7 +8,7 @@ class EventServiceProvider extends ServiceProvider
 {
     protected $listen = [];
 
-    protected static $shouldDiscoverEvents = true;
+    protected static $shouldDiscoverEvents = false;
 
     protected function configureEmailVerification(): void {}
 }

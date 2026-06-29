@@ -79,7 +79,6 @@ export default function APEdit({ payable, currencies, paymentModes, statuses, su
                     <PageHeader
                         breadcrumb={[{ label: 'Accounts Payable', href: route('ap.index') }]}
                         title={`Edit Payable — ${payable.supplier_name}`}
-                        subtitle="Update payable details"
                         actions={
                             <>
                                 <FormCancelButton onClick={() => router.get(route('ap.index'))} />

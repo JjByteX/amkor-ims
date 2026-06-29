@@ -178,7 +178,6 @@ export default function IataPaymentsIndex({ payments, summary, filters, statuses
 
                 <PageHeader
                     title="IATA Payments"
-                    subtitle={`${payments.total} payment${payments.total !== 1 ? 's' : ''}`}
                     actions={canWrite && (
                         <Button variant="primary" icon={Plus} onClick={() => router.visit(route('iata.create'))}>
                             Record Payment
@@ -230,6 +229,8 @@ export default function IataPaymentsIndex({ payments, summary, filters, statuses
                     rows={payments.data ?? []}
                     pagination={payments}
                     onPageChange={(page) => applyFilter({ page })}
+                    autoPageSize
+                    onPageSizeChange={(n) => applyFilter({ per_page: n, page: 1 })}
                     toolbar={
                         <FilterStrip>
                             <FilterField grow>

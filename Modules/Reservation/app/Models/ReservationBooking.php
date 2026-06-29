@@ -56,6 +56,7 @@ class ReservationBooking extends Model
 
         // Financials
         'selling_price',
+        'currency',              // Phase 1 — 'PHP' or 'USD'; tells Collectibles which column to sum into
         'net_payable',
         'income',
         'excess',
@@ -122,6 +123,7 @@ class ReservationBooking extends Model
         'escalation_acknowledged_at'    => 'datetime',
         'po_sent_to_mariposa_at'        => 'datetime',
         'selling_price'                 => 'decimal:2',
+        'currency'                      => 'string',
         'net_payable'                   => 'decimal:2',
         'income'                        => 'decimal:2',
         'excess'                        => 'decimal:2',
@@ -173,6 +175,13 @@ class ReservationBooking extends Model
         'credit_card'   => 'Credit Card',
         'check'         => 'Check',
         'on_account'    => 'On Account',
+    ];
+
+    // Phase 1 — selling_price currency; tracked separately because the
+    // business records PHP and USD as parallel amounts in collectibles monitoring.
+    public const CURRENCIES = [
+        'PHP' => 'PHP',
+        'USD' => 'USD',
     ];
 
     // QC agent codes

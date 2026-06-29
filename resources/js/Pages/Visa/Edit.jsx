@@ -87,7 +87,6 @@ export default function VisaEdit({ application, visaTypes, agentCodes, statuses,
                     <PageHeader
                         breadcrumb={[{ label: 'Visa', href: route('visa.index') }]}
                         title={`Edit — ${application.customer_name}`}
-                        subtitle={application.visa_type}
                         actions={
                             <>
                                 <FormCancelButton onClick={() => history.back()} />

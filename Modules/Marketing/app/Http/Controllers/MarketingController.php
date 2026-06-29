@@ -68,7 +68,7 @@ class MarketingController extends Controller
             ->forType($type)
             ->forYear($year)
             ->orderByDesc('created_at')
-            ->paginate(25)
+            ->paginate($perPage)
             ->withQueryString();
 
         // Status summary counts for the year
@@ -80,7 +80,7 @@ class MarketingController extends Controller
         return Inertia::render('Marketing/Index', [
             'materials' => $materials,
             'summary' => $summary,
-            'filters' => compact('search', 'status', 'type', 'year'),
+            'filters' => compact('search', 'status', 'type', 'year') + ['per_page' => $perPage],
             'materialTypes' => MarketingMaterial::MATERIAL_TYPES,
             'statuses' => MarketingMaterial::STATUSES,
             'platforms' => MarketingMaterial::PLATFORMS,
@@ -335,6 +335,7 @@ class MarketingController extends Controller
         $year = (int) $request->get('year', now()->year);
         $month = $request->get('month') ? (int) $request->get('month') : null;
 
+        $perPage = max(5, min(100, (int) $request->get('per_page', 30)));
         $query = MarketingExpense::with(['createdBy', 'approvedBy', 'material'])
             ->search($search)
             ->forCategory($category)
@@ -345,7 +346,7 @@ class MarketingController extends Controller
             $query->forPeriod($month, null);
         }
 
-        $expenses = $query->orderByDesc('expense_date')->paginate(30)->withQueryString();
+        $expenses = $query->orderByDesc('expense_date')->paginate($perPage)->withQueryString();
 
         // Monthly totals for the selected year
         $monthlyTotals = MarketingExpense::forYear($year)
@@ -400,7 +401,7 @@ class MarketingController extends Controller
             'budgetVsSpend' => $budgetVsSpend,   // Phase 3.8 — variance table
             'overallBudget' => (float) $overallBudget,
             'overallSpend'  => (float) $overallSpend,
-            'filters' => compact('search', 'category', 'status', 'year', 'month'),
+            'filters' => compact('search', 'category', 'status', 'year', 'month') + ['per_page' => $perPage],
             'categories' => MarketingExpense::CATEGORIES,
             'statuses' => MarketingExpense::STATUSES,
             'currencies' => MarketingExpense::CURRENCIES,

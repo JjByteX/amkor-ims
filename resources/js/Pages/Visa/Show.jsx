@@ -10,7 +10,7 @@ import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
 import Input from '../../Components/UI/Input';
 import Select from '../../Components/UI/Select';
-import Modal from '../../Components/UI/Modal';
+import Modal, { ModalCancelButton } from '../../Components/UI/Modal';
 import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
 import ConfirmDialog from '../../Components/Shared/ConfirmDialog';
 import ContactLinkPanel from '../../Components/Shared/ContactLinkPanel';
@@ -348,7 +348,7 @@ export function VisaContent({ application, statuses, paymentModes, canWrite, can
                         error={orForm.errors.or_number}
                     />
                     <div className="flex justify-end gap-2">
-                        <Button variant="ghost" type="button" onClick={() => setOrModal(false)}>Cancel</Button>
+                        <ModalCancelButton type="button" onClick={() => setOrModal(false)} />
                         <Button variant="primary" type="submit" loading={orForm.processing}>Record OR</Button>
                     </div>
                 </form>

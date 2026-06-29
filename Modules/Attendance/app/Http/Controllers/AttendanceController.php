@@ -59,7 +59,8 @@ class AttendanceController extends Controller
         $search     = $request->get('search');
         $department = $request->get('department'); // 4.6
 
-        $query = AttendanceRecord::with(['user', 'branch', 'recordedBy'])
+                $perPage = max(5, min(100, (int) $request->get('per_page', 30)));
+$query = AttendanceRecord::with(['user', 'branch', 'recordedBy'])
             ->forMonth($year, $month)
             ->forStatus($status)
             ->forBranch($branchId ?: null)
@@ -109,7 +110,7 @@ class AttendanceController extends Controller
             $query->forBranch($user->branch_id);
         }
 
-        $records = $query->paginate(30)->withQueryString();
+        $records = $query->paginate($perPage)->withQueryString();
 
         // Summary stats for the selected month — now includes overtime + overbreak
         $statsBase = AttendanceRecord::forMonth($year, $month);
@@ -190,7 +191,7 @@ class AttendanceController extends Controller
             'records'     => $records,
             'stats'       => $stats,
             'teamStats'   => $teamStats,
-            'filters'     => compact('month', 'year', 'empId', 'branchId', 'status', 'search', 'department'),
+            'filters'     => compact('month', 'year', 'empId', 'branchId', 'status', 'search', 'department') + ['per_page' => $perPage],
             'todayRecord' => $todayRecord,
             'statuses'    => AttendanceRecord::STATUSES,
             'leaveTypes'  => AttendanceRecord::LEAVE_TYPES,

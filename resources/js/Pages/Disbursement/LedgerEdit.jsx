@@ -39,7 +39,6 @@ export default function LedgerEdit({ entry, categories, fundTypes, currencies })
                     <PageHeader
                         breadcrumb={[{ label: 'Disbursement', href: route('disbursement.ledger.index') }]}
                         title="Edit Ledger Entry"
-                        subtitle={`Entry #${entry.id} — ${entry.payee ?? entry.description ?? ''}`}
                         actions={
                             <>
                                 <FormCancelButton onClick={() => router.get(route('disbursement.ledger.index'))} />

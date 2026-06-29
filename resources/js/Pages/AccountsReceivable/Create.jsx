@@ -51,7 +51,6 @@ export default function ARCreate({ departments, statuses, defaultDept }) {
                     <PageHeader
                         breadcrumb={[{ label: 'Accounts Receivable', href: route('ar.index') }]}
                         title="New Collectible"
-                        subtitle="Record an accounts receivable / collectible transaction"
                         actions={
                             <>
                                 <FormCancelButton onClick={() => router.visit(route('ar.index'))} />

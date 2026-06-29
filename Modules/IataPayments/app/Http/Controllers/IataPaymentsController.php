@@ -46,7 +46,8 @@ class IataPaymentsController extends Controller
         $status = $request->get('status');
         $month = $request->get('month');
 
-        $query = IataPayment::with(['contact', 'branch', 'createdBy', 'checker', 'approver', 'voucher'])
+                $perPage = max(5, min(100, (int) $request->get('per_page', 25)));
+$query = IataPayment::with(['contact', 'branch', 'createdBy', 'checker', 'approver', 'voucher'])
             ->latest('due_date');
 
         $query->search($search)->forStatus($status);
@@ -56,7 +57,7 @@ class IataPaymentsController extends Controller
             $query->forMonth((int) $y, (int) $m);
         }
 
-        $payments = $query->paginate(25)->withQueryString();
+        $payments = $query->paginate($perPage)->withQueryString();
 
         // Base query for summary — same filters as the listing.
         // Count overdue using due_date < today so the figure is always accurate
@@ -78,7 +79,7 @@ class IataPaymentsController extends Controller
         return Inertia::render('IataPayments/Index', [
             'payments' => $payments,
             'summary' => $summary,
-            'filters' => compact('search', 'status', 'month'),
+            'filters' => compact('search', 'status', 'month') + ['per_page' => $perPage],
             'statuses' => IataPayment::STATUSES,
             'approvalStatuses' => IataPayment::APPROVAL_STATUSES,
             'canWrite' => $this->canPrepare($request),

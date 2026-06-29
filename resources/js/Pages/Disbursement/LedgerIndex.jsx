@@ -137,7 +137,6 @@ export default function LedgerIndex({
 
                 <PageHeader
                     title="Disbursement Ledger"
-                    subtitle="Daily cash and check disbursement entries"
                     actions={
                         <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
                             {canWrite && (
@@ -188,6 +187,8 @@ export default function LedgerIndex({
                     rows={entries.data ?? []}
                     pagination={entries}
                     onPageChange={(page) => applyFilter({ page })}
+                    autoPageSize
+                    onPageSizeChange={(n) => applyFilter({ per_page: n, page: 1 })}
                     toolbar={
                         <FilterStrip>
                             <FilterField grow>

@@ -144,6 +144,7 @@ export default function MonthPicker({
     placeholder = 'Select month',
     disabled    = false,
     required    = false,
+    clearable   = false,
     className   = '',
     id,
 }) {
@@ -206,7 +207,7 @@ export default function MonthPicker({
                 </span>
 
                 {/* Clear button */}
-                {parsed && !disabled && (
+                {clearable && parsed && !disabled && (
                     <button onClick={handleClear} tabIndex={-1} aria-label="Clear month"
                         style={{ position:'absolute', right:'calc(var(--height-input, 40px) + 2px)', top:'50%', transform:'translateY(-50%)', display:'flex', alignItems:'center', justifyContent:'center', width:18, height:18, borderRadius:'50%', border:'none', background:'var(--color-text-muted)', color:'var(--color-card)', fontSize:11, lineHeight:1, cursor:'pointer', opacity:0.55 }}
                     >×</button>

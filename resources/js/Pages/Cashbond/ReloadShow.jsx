@@ -10,7 +10,7 @@ import {
 import ApprovalStepper from '../../Components/Shared/ApprovalStepper';
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
-import Modal from '../../Components/UI/Modal';
+import Modal, { ModalCancelButton } from '../../Components/UI/Modal';
 import Input from '../../Components/UI/Input';
 import Textarea from '../../Components/UI/Textarea';
 import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
@@ -173,7 +173,7 @@ export function ReloadContent({ reload, approvalStatuses, canWrite, canCheck, ca
                         onChange={(e) => checkForm.setData('audit_remarks', e.target.value)}
                     />
                     <div className="flex justify-end" style={{ gap: 'var(--space-1)' }}>
-                        <Button variant="ghost" type="button" onClick={() => setCheckModal(false)}>Cancel</Button>
+                        <ModalCancelButton type="button" onClick={() => setCheckModal(false)} />
                         <Button variant="primary" type="submit" loading={checkForm.processing} icon={CheckCircle2}>Confirm Check</Button>
                     </div>
                 </form>
@@ -190,7 +190,7 @@ export function ReloadContent({ reload, approvalStatuses, canWrite, canCheck, ca
                         error={releaseForm.errors.deposit_date}
                     />
                     <div className="flex justify-end" style={{ gap: 'var(--space-1)' }}>
-                        <Button variant="ghost" type="button" onClick={() => setReleaseModal(false)}>Cancel</Button>
+                        <ModalCancelButton type="button" onClick={() => setReleaseModal(false)} />
                         <Button variant="primary" type="submit" loading={releaseForm.processing}>Confirm Deposit</Button>
                     </div>
                 </form>
@@ -222,7 +222,6 @@ export default function CashbondReloadShow({ reload, approvalStatuses, canWrite,
                 <PageHeader
                     breadcrumb={[{ label: 'Cashbond Monitoring', href: route('cashbond.index') }]}
                     title={reload.reload_no}
-                    subtitle={`${reload.portal?.name ?? ''} · ${fmt(reload.request_date)}`}
                 />
 
                 <ReloadContent

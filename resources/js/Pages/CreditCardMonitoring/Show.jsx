@@ -6,7 +6,7 @@ import DetailPanel, {PanelActions, PanelCol, PanelColRight, PanelColumns, PanelD
 import ApprovalStepper from '../../Components/Shared/ApprovalStepper';
 import Button from '../../Components/UI/Button';
 import Badge from '../../Components/UI/Badge';
-import Modal from '../../Components/UI/Modal';
+import Modal, { ModalCancelButton } from '../../Components/UI/Modal';
 import Input from '../../Components/UI/Input';
 import Textarea from '../../Components/UI/Textarea';
 import CurrencyDisplay from '../../Components/Shared/CurrencyDisplay';
@@ -122,7 +122,7 @@ export function CreditCardContent({ payment, statuses, approvalStatuses, canWrit
                         value={checkForm.data.audit_remarks}
                         onChange={(e) => checkForm.setData('audit_remarks', e.target.value)} />
                     <div className="flex justify-end gap-2">
-                        <Button variant="ghost" type="button" onClick={() => setCheckOpen(false)}>Cancel</Button>
+                        <ModalCancelButton type="button" onClick={() => setCheckOpen(false)} />
                         <Button variant="primary" type="submit" loading={checkForm.processing}>Confirm Check</Button>
                     </div>
                 </form>
@@ -135,7 +135,7 @@ export function CreditCardContent({ payment, statuses, approvalStatuses, canWrit
                         Approve payment of <strong><CurrencyDisplay amount={payment.amount} currency="PHP" /></strong> for {card?.card_name}?
                     </p>
                     <div className="flex justify-end gap-2">
-                        <Button variant="ghost" type="button" onClick={() => setApproveOpen(false)}>Cancel</Button>
+                        <ModalCancelButton type="button" onClick={() => setApproveOpen(false)} />
                         <Button variant="primary" type="submit" loading={approveForm.processing}>Approve</Button>
                     </div>
                 </form>
@@ -149,7 +149,7 @@ export function CreditCardContent({ payment, statuses, approvalStatuses, canWrit
                         onChange={(e) => releaseForm.setData('payment_date', e.target.value)}
                         error={releaseForm.errors.payment_date} />
                     <div className="flex justify-end gap-2">
-                        <Button variant="ghost" type="button" onClick={() => setReleaseOpen(false)}>Cancel</Button>
+                        <ModalCancelButton type="button" onClick={() => setReleaseOpen(false)} />
                         <Button variant="primary" type="submit" loading={releaseForm.processing}>Confirm Release</Button>
                     </div>
                 </form>

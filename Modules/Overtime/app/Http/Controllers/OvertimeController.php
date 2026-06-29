@@ -135,7 +135,8 @@ class OvertimeController extends Controller
         $year             = $request->get('year', now()->year);
         $search           = $request->get('search');
 
-        $query = OvertimeRequest::with(['employee.branch', 'approver', 'rejector', 'requestedFor'])
+                $perPage = max(5, min(100, (int) $request->get('per_page', 25)));
+$query = OvertimeRequest::with(['employee.branch', 'approver', 'rejector', 'requestedFor'])
             ->orderBy('work_date', 'desc');
 
         // Branch supervisor: scope to own branch only
@@ -171,7 +172,7 @@ class OvertimeController extends Controller
             });
         }
 
-        $requests = $query->paginate(25)->through(fn ($r) => $this->formatRequest($r));
+        $requests = $query->paginate($perPage)->through(fn ($r) => $this->formatRequest($r));
 
         $branches  = Branch::orderBy('name')->get(['id', 'name']);
         $employees = Employee::active()->orderBy('last_name')->get(['id', 'first_name', 'last_name', 'employee_code']);
@@ -196,7 +197,7 @@ class OvertimeController extends Controller
             'reasons'         => OvertimeRequest::REASONS,
             'compensations'   => OvertimeRequest::COMPENSATION_TYPES,
             'requestTypes'    => OvertimeRequest::REQUEST_TYPES,
-            'filters'         => compact('status', 'branchId', 'employeeId', 'compensationType', 'month', 'year', 'search'),
+            'filters'         => compact('status', 'branchId', 'employeeId', 'compensationType', 'month', 'year', 'search') + ['per_page' => $perPage],
             'highlight'       => $request->get('highlight'),
         ]);
     }

@@ -53,7 +53,6 @@ export default function MarketingForm({ material, materialTypes, platforms, mode
                     <PageHeader
                         breadcrumb={[{ label: 'Marketing', href: route('marketing.index') }]}
                         title={isEdit ? 'Edit Material' : 'New Material'}
-                        subtitle={isEdit ? material.title : 'Create a marketing material'}
                         actions={
                             <>
                                 <FormCancelButton onClick={() => router.get(route('marketing.index'))} />

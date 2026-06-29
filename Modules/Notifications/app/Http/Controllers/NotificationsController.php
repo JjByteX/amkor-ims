@@ -14,7 +14,8 @@ class NotificationsController extends Controller
     {
         $status = $request->string('status')->toString();
 
-        $query = $request->user()
+                $perPage = max(5, min(100, (int) $request->get('per_page', 30)));
+$query = $request->user()
             ->notifications()
             ->when($status === 'unread', fn ($q) => $q->whereNull('read_at'))
             ->when($status === 'archived', fn ($q) => $q->whereNotNull('archived_at'))
@@ -22,8 +23,8 @@ class NotificationsController extends Controller
             ->latest();
 
         return Inertia::render('Notifications/Index', [
-            'notifications' => $query->paginate(30)->withQueryString(),
-            'filters' => ['status' => $status],
+            'notifications' => $query->paginate($perPage)->withQueryString(),
+            'filters' => ['status' => $status, 'per_page' => $perPage],
             'unreadCount' => $request->user()->unreadNotifications()->whereNull('archived_at')->count(),
         ]);
     }

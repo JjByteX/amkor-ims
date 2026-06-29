@@ -13,7 +13,7 @@ import ConfirmDialog from '@/Components/Shared/ConfirmDialog';
 import Badge from '@/Components/UI/Badge';
 import Button from '@/Components/UI/Button';
 import SlideOver from '@/Components/UI/SlideOver';
-import Modal from '@/Components/UI/Modal';
+import Modal, { ModalCancelButton } from '@/Components/UI/Modal';
 import Select from '@/Components/UI/Select';
 import Textarea from '@/Components/UI/Textarea';
 import DatePicker from '@/Components/UI/DatePicker';
@@ -246,7 +246,7 @@ function RequestOtForm({ approver, reasons, compensations, requestTypes, employe
 
             {/* Footer */}
             <div style={{ display: 'flex', gap: 'var(--space-1)', justifyContent: 'flex-end', paddingTop: 'var(--space-2)' }}>
-                <Button variant="ghost" size="sm" onClick={onClose} disabled={processing}>Cancel</Button>
+                <ModalCancelButton size="sm" onClick={onClose} disabled={processing} />
                 <Button variant="primary" size="sm" loading={processing} onClick={submit}>Submit</Button>
             </div>
         </div>
@@ -273,7 +273,7 @@ function RejectModal({ open, onClose, onConfirm, processing }) {
             title="Reject OT Request"
             footer={
                 <>
-                    <Button variant="ghost" size="sm" onClick={onClose} disabled={processing}>Cancel</Button>
+                    <ModalCancelButton size="sm" onClick={onClose} disabled={processing} />
                     <Button variant="danger" size="sm" loading={processing} onClick={handleConfirm}>Reject</Button>
                 </>
             }
@@ -522,6 +522,8 @@ function HrView({ requests, pendingCount, branches, employees, reasons, compensa
                 keyField="id"
                 pagination={requests?.meta ?? requests}
                 onPageChange={(page) => applyFilters({ page })}
+                autoPageSize
+                onPageSizeChange={(n) => applyFilters({ per_page: n, page: 1 })}
                 toolbar={
                     <FilterStrip>
                         <SegmentedControl tabs={tabs} activeKey={activeTab} onChange={handleTabChange} />

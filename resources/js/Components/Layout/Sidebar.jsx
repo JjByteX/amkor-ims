@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     PanelLeftOpen,
     Gauge,
-    PlaneTakeoff, FileCheck2, Ticket,
+    PlaneTakeoff, FileCheck2, Ticket, MapPin,
     ChartNoAxesCombined,
     CreditCard, Landmark, WalletCards, ShieldCheck, ReceiptText, Building2, Files,
     UsersRound, CalendarClock, Megaphone,
@@ -116,6 +116,26 @@ const NAV_SECTIONS = [
                 href : '/airline-rates',
                 icon : <Ticket size={20} />,
                 label: 'Airline Rates',
+                roles: [
+                    'president',
+                    'chief_operating_officer',
+                    'finance_admin_supervisor',
+                    'administrative_assistant',
+                    'accounting_assistant',
+                    'general_sales_manager',
+                    'sales_reservation_officer',
+                    'sales_ticketing_officer',
+                    'group_sales_officer',
+                    'branch_supervisor',
+                    'branch_sales_officer',
+                ],
+            },
+            {
+                // Tour Packages — managed by president/COO/GSM; viewed by all booking + Ormoc roles
+                key  : 'tour-packages',
+                href : '/tour-packages',
+                icon : <MapPin size={20} />,
+                label: 'Tour Packages',
                 roles: [
                     'president',
                     'chief_operating_officer',

@@ -86,7 +86,6 @@ export default function VisaCreate({ visaTypes, agentCodes, statuses, paymentMod
                     <PageHeader
                         breadcrumb={[{ label: 'Visa & Documentation', href: route('visa.index') }]}
                         title="New Application"
-                        subtitle="Record a visa or documentation service"
                         actions={
                             <>
                                 <FormCancelButton onClick={() => history.back()} />

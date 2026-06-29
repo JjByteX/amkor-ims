@@ -52,7 +52,6 @@ export default function AREdit({ collectible, departments, statuses }) {
 
                 <PageHeader
                     title="Edit Collectible"
-                    subtitle={`Editing: ${collectible.customer_name}`}
                 />
 
                 <form onSubmit={handleSubmit} className="flex flex-col gap-[var(--space-3)]">

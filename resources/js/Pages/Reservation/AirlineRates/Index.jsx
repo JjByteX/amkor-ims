@@ -11,7 +11,7 @@ import ConfirmDialog from '../../../Components/Shared/ConfirmDialog';
 import Button from '../../../Components/UI/Button';
 import Input from '../../../Components/UI/Input';
 import Select from '../../../Components/UI/Select';
-import Modal from '../../../Components/UI/Modal';
+import Modal, { ModalCancelButton } from '../../../Components/UI/Modal';
 
 const fmt = (d) => d ? new Date(d).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
 
@@ -198,6 +198,8 @@ export default function AirlineRatesIndex({ rates, filters, currencies, canWrite
                     rows={rates.data}
                     pagination={rates}
                     onPageChange={(page) => applyFilters({ page })}
+                    autoPageSize
+                    onPageSizeChange={(n) => applyFilters({ per_page: n, page: 1 })}
                     keyField="id"
                     empty="No airline rates recorded for this period."
                     toolbar={
@@ -223,9 +225,17 @@ export default function AirlineRatesIndex({ rates, filters, currencies, canWrite
                 open={formOpen}
                 onClose={() => setFormOpen(false)}
                 title={editing ? 'Edit Airline Rate' : 'Add Airline Rate'}
+                footer={
+                    <>
+                        <ModalCancelButton onClick={() => setFormOpen(false)} />
+                        <Button variant="primary" loading={saving} onClick={submitForm}>
+                            {editing ? 'Save Changes' : 'Add Rate'}
+                        </Button>
+                    </>
+                }
             >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                    <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
+                    <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
                         <Input
                             label="Airline"
                             value={form.airline}
@@ -238,7 +248,7 @@ export default function AirlineRatesIndex({ rates, filters, currencies, canWrite
                             onChange={(e) => setForm({ ...form, fare_class: e.target.value })}
                         />
                     </div>
-                    <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
+                    <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
                         <Input
                             label="Origin"
                             value={form.origin}
@@ -254,7 +264,7 @@ export default function AirlineRatesIndex({ rates, filters, currencies, canWrite
                             required
                         />
                     </div>
-                    <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
+                    <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
                         <Input
                             label="Rate"
                             type="number"
@@ -281,13 +291,6 @@ export default function AirlineRatesIndex({ rates, filters, currencies, canWrite
                         value={form.remarks}
                         onChange={(e) => setForm({ ...form, remarks: e.target.value })}
                     />
-
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-1)' }}>
-                        <Button variant="ghost" onClick={() => setFormOpen(false)}>Cancel</Button>
-                        <Button variant="primary" loading={saving} onClick={submitForm}>
-                            {editing ? 'Save Changes' : 'Add Rate'}
-                        </Button>
-                    </div>
                 </div>
             </Modal>
 

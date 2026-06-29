@@ -107,7 +107,8 @@ class CreditCardMonitoringController extends Controller
         $status = $request->get('status');
         $month = $request->get('month');
 
-        $query = CreditCardPayment::with(['creditCard', 'createdBy', 'checker', 'approver'])
+                $perPage = max(5, min(100, (int) $request->get('per_page', 25)));
+$query = CreditCardPayment::with(['creditCard', 'createdBy', 'checker', 'approver'])
             ->latest('due_date');
 
         $query->forCard($cardId)->forStatus($status);
@@ -117,7 +118,7 @@ class CreditCardMonitoringController extends Controller
             $query->forMonth((int) $y, (int) $m);
         }
 
-        $payments = $query->paginate(25)->withQueryString();
+        $payments = $query->paginate($perPage)->withQueryString();
         $cards = CreditCard::active()->get(['id', 'card_name', 'bank_name', 'last_four']);
 
         $summary = CreditCardPayment::forCard($cardId)->forStatus($status)
@@ -132,7 +133,7 @@ class CreditCardMonitoringController extends Controller
             'payments' => $payments,
             'cards' => $cards,
             'summary' => $summary,
-            'filters' => compact('cardId', 'status', 'month'),
+            'filters' => compact('cardId', 'status', 'month') + ['per_page' => $perPage],
             'statuses' => CreditCardPayment::STATUSES,
             'approvalStatuses' => CreditCardPayment::APPROVAL_STATUSES,
             'canWrite' => $this->canPrepare($request),

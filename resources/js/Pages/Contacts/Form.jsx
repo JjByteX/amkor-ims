@@ -60,7 +60,6 @@ function ContactForm({ contact, types, currencies, defaultType }) {
                 <PageHeader
                     breadcrumb={[{ label: 'Contacts', href: isEditing ? route('contacts.show', contact.id) : route('contacts.index', { type: data.type }) }]}
                     title={isEditing ? `Edit: ${contact.name}` : 'Add Contact'}
-                    subtitle={isEditing ? 'Update contact details.' : 'Add a new contact to the directory.'}
                     actions={
                         <>
                             <FormCancelButton onClick={() => router.get(route('contacts.index', { type: data.type }))} />

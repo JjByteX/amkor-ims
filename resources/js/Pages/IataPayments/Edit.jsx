@@ -49,7 +49,6 @@ export default function IataPaymentsEdit({ payment, operators }) {
                     <PageHeader
                         breadcrumb={[{ label: 'IATA Payments', href: route('iata.index') }]}
                         title="Edit IATA Payment"
-                        subtitle={payment.payment_no}
                         actions={
                             <>
                                 <FormCancelButton onClick={() => router.visit(route('iata.index'))} />

@@ -154,7 +154,6 @@ function ContactsIndex({ contacts, filters, canWrite, typeCounts }) {
         <PageStack>
             <PageHeader
                 title="Contacts & Directory"
-                subtitle="Corporate accounts, sub-agents, suppliers, and bank references."
                 actions={
                     canWrite && (
                         <Button
@@ -196,6 +195,8 @@ function ContactsIndex({ contacts, filters, canWrite, typeCounts }) {
                     empty={`No ${TABS.find(t => t.key === activeTab)?.label ?? 'contacts'} found.`}
                     pagination={contacts}
                     onPageChange={(page) => router.get(route('contacts.index'), { type: activeTab, search: searchInput, active: filters.active, page }, { preserveScroll: true, preserveState: true })}
+                    autoPageSize
+                    onPageSizeChange={(n) => router.get(route('contacts.index'), { type: activeTab, search: searchInput, active: filters.active, per_page: n, page: 1 }, { preserveScroll: true, preserveState: true })}
                     panelOpen={showPanel}
                     selectedKey={panel.id}
                     toolbar={

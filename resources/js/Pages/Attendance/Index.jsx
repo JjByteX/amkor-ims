@@ -330,7 +330,6 @@ export default function AttendanceIndex({
 
                 <PageHeader
                     title="Attendance"
-                    subtitle={`${MONTHS[month - 1]} ${year}`}
                     actions={
                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
                             <Button variant="primary" icon={Download} onClick={() => {}}>Export</Button>
@@ -354,6 +353,8 @@ export default function AttendanceIndex({
                         panelOpen={showPanel} selectedKey={panel.id}
                         columns={columns} rows={records.data ?? []} pagination={records}
                         onPageChange={(page) => router.get(route('attendance.index'), { ...filters, search: searchInput, page }, { preserveState: true })}
+                        autoPageSize
+                        onPageSizeChange={(n) => router.get(route('attendance.index'), { ...filters, search: searchInput, per_page: n, page: 1 }, { preserveState: true })}
                         toolbar={
                             <FilterStrip>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)', flex: '0 0 auto' }}>

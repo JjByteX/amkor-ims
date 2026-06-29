@@ -45,7 +45,6 @@ export default function VoucherCreate({ types, currencies }) {
                     <PageHeader
                         breadcrumb={[{ label: 'Disbursement', href: route('disbursement.vouchers.index') }]}
                         title="New Voucher"
-                        subtitle="Create a cash or check voucher"
                         actions={
                             <>
                                 <FormCancelButton onClick={() => router.get(route('disbursement.vouchers.index'))} />

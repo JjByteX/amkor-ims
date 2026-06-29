@@ -1,0 +1,40 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+/**
+ * Fixes a real bug, not a cosmetic gap: ReservationBooking::$fillable already
+ * lists 'contact_id', and the model already has a contact() relationship
+ * (belongsTo Contact). ReservationController already reads and writes
+ * contact_id directly (link/unlink-to-Contact, and the "other bookings/visas
+ * under this same Contact" cross-module lookups). None of that has ever had
+ * a column to write to — reservation_bookings never got this migration, so
+ * every one of those code paths throws a SQL error the moment it runs.
+ *
+ * Column shape matches the contact_id already in use on payables and
+ * collectibles (see Modules/AccountsPayable and Modules/AccountsReceivable)
+ * for consistency: nullable foreignId → contacts.id, set null on delete
+ * (a booking shouldn't be deleted just because its linked Contact was).
+ */
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('reservation_bookings', function (Blueprint $table) {
+            $table->foreignId('contact_id')
+                ->nullable()
+                ->after('corporate_account')
+                ->constrained('contacts')
+                ->nullOnDelete();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('reservation_bookings', function (Blueprint $table) {
+            $table->dropConstrainedForeignId('contact_id');
+        });
+    }
+};

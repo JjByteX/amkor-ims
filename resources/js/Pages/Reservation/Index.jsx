@@ -131,7 +131,6 @@ export default function ReservationIndex({
             <PageStack>
                 <PageHeader
                     title="Reservation & Booking"
-                    subtitle={`${bookings.total ?? 0} booking${bookings.total === 1 ? '' : 's'}`}
                     actions={canWrite && (
                         <Button icon={Plus} onClick={() => router.get(route('reservation.create'))}>
                             New Booking
@@ -194,6 +193,8 @@ export default function ReservationIndex({
                         columns={columns}
                         pagination={bookings}
                         onPageChange={(page) => apply({ page })}
+                        autoPageSize
+                        onPageSizeChange={(n) => apply({ per_page: n, page: 1 })}
                         panelOpen={showPanel}
                         selectedKey={panel.id}
                         toolbar={

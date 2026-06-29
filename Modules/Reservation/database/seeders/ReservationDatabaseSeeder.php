@@ -1114,6 +1114,9 @@ class ReservationDatabaseSeeder extends Seeder
 
         DB::table('reservation_bookings')->insert($bookings);
 
+        // ── Tour Packages ────────────────────────────────────────────────────────
+        $this->call(TourPackageDatabaseSeeder::class);
+
         // ── Airline Rates ────────────────────────────────────────────────────────
         DB::table('airline_rates')->delete();
 

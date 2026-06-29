@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
+import Button from './Button';
 
 /**
  * Modal — accessible dialog overlay.
@@ -113,5 +114,25 @@ export default function Modal({
                 )}
             </div>
         </div>
+    );
+}
+
+/**
+ * ModalCancelButton — universal Cancel button for popups/modals.
+ * Single source of truth for every modal footer's Cancel button —
+ * mirrors FormCancelButton's role for full-page create/edit forms.
+ * Change the look once here (or in Button.jsx's 'cancel' variant) and
+ * every popup picks it up automatically.
+ */
+export function ModalCancelButton({ onClick, children = 'Cancel', ...rest }) {
+    return (
+        <Button
+            type="button"
+            variant="cancel"
+            onClick={onClick}
+            {...rest}
+        >
+            {children}
+        </Button>
     );
 }

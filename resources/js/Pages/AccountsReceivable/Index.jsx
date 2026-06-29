@@ -209,7 +209,6 @@ export default function ARIndex({
 
                 <PageHeader
                     title="Accounts Receivable / Collectibles"
-                    subtitle={`${collectibles.total} record${collectibles.total !== 1 ? 's' : ''}`}
                     actions={canWrite && (
                         <Button variant="primary" icon={Plus} onClick={() => router.visit(route('ar.create'))}>
                             New Collectible
@@ -262,6 +261,8 @@ export default function ARIndex({
                     rows={collectibles.data}
                     pagination={collectibles}
                     onPageChange={(page) => applyFilter({ page })}
+                    autoPageSize
+                    onPageSizeChange={(n) => applyFilter({ per_page: n, page: 1 })}
                     toolbar={
                         <FilterStrip>
                             <FilterField grow>

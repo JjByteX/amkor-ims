@@ -65,7 +65,8 @@ class VisaController extends Controller
         $month = $request->get('month');   // YYYY-MM
         $year = (int) $request->get('year', now()->year);
 
-        $query = VisaApplication::with(['branch', 'createdBy'])
+                $perPage = max(5, min(100, (int) $request->get('per_page', 25)));
+$query = VisaApplication::with(['branch', 'createdBy'])
             ->latest('date');
 
         // Visa officers see only their own records (own branch); supervisor sees all
@@ -88,11 +89,11 @@ class VisaController extends Controller
             $query->forMonth((int) $y, (int) $m);
         }
 
-        $applications = $query->paginate(25)->withQueryString();
+        $applications = $query->paginate($perPage)->withQueryString();
 
         return Inertia::render('Visa/Index', [
             'applications' => $applications,
-            'filters' => compact('search', 'agent', 'status', 'month', 'year'),
+            'filters' => compact('search', 'agent', 'status', 'month', 'year') + ['per_page' => $perPage],
             'statuses' => VisaApplication::STATUSES,
             'agentCodes' => VisaApplication::AGENT_CODES,
             'canWrite' => $this->canWrite($request),

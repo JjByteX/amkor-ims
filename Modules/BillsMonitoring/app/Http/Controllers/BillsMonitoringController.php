@@ -43,7 +43,8 @@ class BillsMonitoringController extends Controller
         $status = $request->get('status');
         $month = $request->get('month');
 
-        $query = Bill::with(['branch', 'createdBy', 'voucher'])
+                $perPage = max(5, min(100, (int) $request->get('per_page', 25)));
+$query = Bill::with(['branch', 'createdBy', 'voucher'])
             ->latest('due_date');
 
         $query->search($search)->forType($type)->forStatus($status);
@@ -53,7 +54,7 @@ class BillsMonitoringController extends Controller
             $query->forMonth((int) $y, (int) $m);
         }
 
-        $bills = $query->paginate(25)->withQueryString();
+        $bills = $query->paginate($perPage)->withQueryString();
 
         // Base query for summary — same filters as the listing.
         // Count overdue using due_date < today so the figure is always accurate
@@ -75,7 +76,7 @@ class BillsMonitoringController extends Controller
         return Inertia::render('BillsMonitoring/Index', [
             'bills' => $bills,
             'summary' => $summary,
-            'filters' => compact('search', 'type', 'status', 'month'),
+            'filters' => compact('search', 'type', 'status', 'month') + ['per_page' => $perPage],
             'billTypes' => Bill::BILL_TYPES,
             'statuses' => Bill::STATUSES,
             'approvalStatuses' => Bill::APPROVAL_STATUSES,

@@ -45,7 +45,6 @@ export default function VoucherEdit({ voucher, types, currencies }) {
                     <PageHeader
                         breadcrumb={[{ label: 'Disbursement', href: route('disbursement.vouchers.index') }]}
                         title={`Edit Voucher — ${voucher.voucher_no}`}
-                        subtitle="Update voucher details"
                         actions={
                             <>
                                 <FormCancelButton onClick={() => router.get(route('disbursement.vouchers.index'))} />
